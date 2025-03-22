@@ -129,6 +129,7 @@
         }
 
         .modal {
+            box-sizing: border-box;
             position: fixed;
             overflow: hidden;
             top: 50%;
@@ -176,6 +177,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px;
             background-color: #00ffdd7c;
             padding: 5px 6px;
             border-radius: 6px;
@@ -185,6 +188,7 @@
             height: 30px;
             padding: 5px;
             box-sizing: border-box;
+            width: 100%;
         }
 
         .sms-item {
@@ -233,6 +237,11 @@
         .icon svg {
             fill: #ff0000c0;
         }
+
+        #smsList {
+            width: 94%;
+            max-width: 600px;
+        }
     </style>
 </head>
 
@@ -240,41 +249,40 @@
     <div class="container">
         <button id="SMS" class="btn" style="margin-bottom: 20px;padding: 20px;font-size: 30px;">F50短信收发客户端</button>
         <button id="CLEAR" class="btn" style="padding: 20px;font-size: 30px;">清除登录数据</button>
+        <div class="modal" id="tokenModal" style="display: none;">
+            <div class="title">请输入密码</div>
+            <div class="content" style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
+                <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
+                    style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
+                <input id="tokenInput" placeholder="管理密码" type="password" value=""
+                    style="margin:0 4px;margin-bottom: 20px;height: 30px;">
+            </div>
+            <div class="btn" style="text-align: right;">
+                <button onclick="onTokenConfirm()">确认</button>
+                <button onclick="closeModal('#tokenModal')">取消</button>
+            </div>
+        </div>
+        <div class="modal" id="smsList" style="display: none;">
+            <div class="title" style="margin-bottom: 6px;">短信列表</div>
+            <div class="action" style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 #00ffdd96;">
+                <span>收件人：</span>
+                <input id="PhoneInput" type="number" style="flex: 1;margin-right: 6px"></input>
+            </div>
+            <div class="content" id="content">
+                <ul id="sms-list">
+                </ul>
+            </div>
+            <div class="action" style="background-color: #00ffdd17;box-shadow: 0 0 10px 0 #00ffdd96;">
+                <input id="SMSInput" type="text" style="flex: 1;margin-right: 6px"></input>
+                <div class="btn" style="height: 30px;min-width: 103px;">
+                    <button onclick="sendSMS()">发送</button>
+                    <button onclick="closeModal('#smsList')">关闭</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="footer">
         <p>Made by MiniKano with love ❤️</p>
-    </div>
-    <div class="modal" id="tokenModal" style="display: none;">
-        <div class="title">请输入密码</div>
-        <div class="content" style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
-            <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
-                style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
-            <input id="tokenInput" placeholder="管理密码" type="password" value=""
-                style="margin:0 4px;margin-bottom: 20px;height: 30px;">
-        </div>
-        <div class="btn" style="text-align: right;">
-            <button onclick="onTokenConfirm()">确认</button>
-            <button onclick="closeModal('#tokenModal')">取消</button>
-        </div>
-    </div>
-    <div class="modal" id="smsList" style="display: none;">
-        <div class="title" style="margin-bottom: 6px;">短信列表</div>
-        <div class="action" style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 #00ffdd96;">
-            <span>收件人：</span>
-            <input id="PhoneInput" type="number" style="flex: 1;margin-right: 6px"></input>
-        </div>
-        <div class="content" id="content">
-            <ul id="sms-list">
-            </ul>
-        </div>
-        <div class="action" style="background-color: #00ffdd17;box-shadow: 0 0 10px 0 #00ffdd96;">
-            <input id="SMSInput" type="text" style="flex: 1;margin-right: 6px"></input>
-            <div class="btn" style="height: 30px;min-width: 103px;">
-                <button onclick="sendSMS()">发送</button>
-                <button onclick="closeModal('#smsList')">关闭</button>
-            </div>
-        </div>
-
     </div>
     <script>
         function SHA256(e) { function t(e, t) { var n = (65535 & e) + (65535 & t); return (e >> 16) + (t >> 16) + (n >> 16) << 16 | 65535 & n } function n(e, t) { return e >>> t | e << 32 - t } function r(e, t) { return e >>> t } function o(e, t, n) { return e & t ^ ~e & n } function i(e, t, n) { return e & t ^ e & n ^ t & n } function a(e) { return n(e, 2) ^ n(e, 13) ^ n(e, 22) } function s(e) { return n(e, 6) ^ n(e, 11) ^ n(e, 25) } function c(e) { return n(e, 7) ^ n(e, 18) ^ r(e, 3) } function u(e) { return n(e, 17) ^ n(e, 19) ^ r(e, 10) } var l = 8, d = 1; return e = function (e) { e = e.replace(/\\r\\n/g, "\\n"); for (var t = "", n = 0; n < e.length; n++) { var r = e.charCodeAt(n); r < 128 ? t += String.fromCharCode(r) : r > 127 && r < 2048 ? (t += String.fromCharCode(r >> 6 | 192), t += String.fromCharCode(63 & r | 128)) : (t += String.fromCharCode(r >> 12 | 224), t += String.fromCharCode(r >> 6 & 63 | 128), t += String.fromCharCode(63 & r | 128)) } return t }(e), function (e) { for (var t = d ? "0123456789ABCDEF" : "0123456789abcdef", n = "", r = 0; r < 4 * e.length; r++)n += t.charAt(e[r >> 2] >> 8 * (3 - r % 4) + 4 & 15) + t.charAt(e[r >> 2] >> 8 * (3 - r % 4) & 15); return n }(function (e, n) { var r, l, d, p, h, f, m, g, _, b, v, $, S = new Array(1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298), y = new Array(1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225), C = new Array(64); e[n >> 5] |= 128 << 24 - n % 32, e[15 + (n + 64 >> 9 << 4)] = n; for (var _ = 0; _ < e.length; _ += 16) { r = y[0], l = y[1], d = y[2], p = y[3], h = y[4], f = y[5], m = y[6], g = y[7]; for (var b = 0; b < 64; b++)C[b] = b < 16 ? e[b + _] : t(t(t(u(C[b - 2]), C[b - 7]), c(C[b - 15])), C[b - 16]), v = t(t(t(t(g, s(h)), o(h, f, m)), S[b]), C[b]), $ = t(a(r), i(r, l, d)), g = m, m = f, f = h, h = t(p, v), p = d, d = l, l = r, r = t(v, $); y[0] = t(r, y[0]), y[1] = t(l, y[1]), y[2] = t(d, y[2]), y[3] = t(p, y[3]), y[4] = t(h, y[4]), y[5] = t(f, y[5]), y[6] = t(m, y[6]), y[7] = t(g, y[7]) } return y }(function (e) { for (var t = Array(), n = (1 << l) - 1, r = 0; r < e.length * l; r += l)t[r >> 5] |= (e.charCodeAt(r / l) & n) << 24 - r % 32; return t }(e), e.length * l)) }
@@ -546,7 +554,7 @@
             let tkInput = document.querySelector('#tokenInput')
             let password = tkInput && (tkInput.value)
             let ip = IPInput && (IPInput.value)
-            if (!password || !password?.trim() || !ip || !ip?.trim()) return createToast('请输入ip和密码！', 'red')
+            if (!password || !password?.trim() || !ip || !ip?.trim()) return createToast('请输入密码！', 'red')
             localStorage.setItem('kano_sms_pwd', password.trim())
             localStorage.setItem('kano_sms_ip', ip.trim())
             closeModal('#tokenModal')
@@ -645,35 +653,51 @@
             }
         }
 
-        var deleteSMS = async (id) => {
-            const message = document.querySelector(`#message${id}`)
-            !isNaN(Number(window['deleteSMSConfirmCount' + id])) || (window['deleteSMSConfirmCount' + id] = 0)
-            if (message && !window['isDisabledDeleteSMS' + id]) {
-                message.style.display = 'block'
-                window['deleteSMSConfirmCount' + id] += 1
-                clearTimeout(window['deleteSMSTimer' + id])
-                window['deleteSMSTimer' + id] = setTimeout(() => {
-                    window['deleteSMSConfirmCount' + id] = 0
-                    message.style.display = 'none'
-                    window['isDisabledDeleteSMS' + id] = false
-                }, 2000)
-                if (window['deleteSMSConfirmCount' + id] < 2) return
-                window['isDisabledDeleteSMS' + id] = true
-                try {
-                    const res = await removeSmsById(id)
-                    if (res && res.result == 'success') {
-                        createToast('删除成功！', 'green')
-                        handleSmsRender()
-                    } else {
-                        createToast((res && res.message) ? res.message : '发送失败', 'red')
-                    }
-                } catch {
-                    createToast('操作失败，请检查网络和密码', 'red')
-                    out()
+        const deleteState = new Map();
+        const deleteSMS = async (id) => {
+            const message = document.querySelector(`#message${id}`);
+
+            if (!message) return;
+
+            // 获取当前 id 的删除状态
+            let state = deleteState.get(id) || { confirmCount: 0, timer: null, isDeleting: false };
+
+            if (state.isDeleting) return; // 正在删除时禁止操作
+
+            state.confirmCount += 1;
+            message.style.display = 'block';
+
+            // 清除之前的计时器，重新设置 2 秒后重置状态
+            clearTimeout(state.timer);
+            state.timer = setTimeout(() => {
+                state.confirmCount = 0;
+                message.style.display = 'none';
+                deleteState.set(id, state);
+            }, 2000);
+
+            deleteState.set(id, state);
+
+            if (state.confirmCount < 2) return; // 第一次点击时仅提示
+
+            // 进入删除状态，防止重复点击
+            state.isDeleting = true;
+            deleteState.set(id, state);
+
+            try {
+                const res = await removeSmsById(id);
+                if (res?.result === 'success') {
+                    createToast('删除成功！', 'green');
+                    handleSmsRender();
+                } else {
+                    createToast(res?.message || '删除失败', 'red');
                 }
-                window['isDisabledDeleteSMS' + id] = false
+            } catch {
+                createToast('操作失败，请检查网络和密码', 'red');
             }
-        }
+
+            // 删除完成后，清理状态
+            deleteState.delete(id);
+        };
 
         let isFirstRender = true
         let handleSmsRender = async () => {
@@ -687,6 +711,15 @@
             let res = await getSms()
             if (res && res.length) {
                 const dateStrArr = ['年', '月', '日', ':', ':', '']
+                console.log(res)
+                res.sort((a,b)=>{
+                    let date_a = a.date.split(',')
+                    let date_b = b.date.split(',')
+                    date_a.pop()
+                    date_b.pop()
+                    return Number(date_b.join('')) - Number(date_a.join(''))
+                })
+                console.log(res)
                 list.innerHTML = res.map(item => {
                     let date = item.date.split(',')
                     date.pop()
