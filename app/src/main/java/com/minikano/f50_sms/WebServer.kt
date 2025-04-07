@@ -5,9 +5,9 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class WebServer(context: Context, port: Int) : NanoHTTPD(port) {
+class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
-    private val targetServer = "http://192.168.0.1"  // 目标服务器地址
+    private val targetServer = "http://$gatewayIp"  // 目标服务器地址
 
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
@@ -43,7 +43,7 @@ class WebServer(context: Context, port: Int) : NanoHTTPD(port) {
                     conn.setRequestProperty(key, value)
                 }
             }
-            conn.setRequestProperty("Referer", "http://192.168.0.1") // 添加 Referer 头
+            conn.setRequestProperty("Referer", targetServer) // 添加 Referer 头
 
             // 处理 POST 请求体
             if (method == "POST" || method == "PUT") {
