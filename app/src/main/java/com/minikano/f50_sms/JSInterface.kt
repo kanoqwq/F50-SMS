@@ -2,6 +2,7 @@ package com.minikano.f50_sms
 
 import android.util.Log
 import android.webkit.JavascriptInterface
+import kotlin.system.exitProcess
 
 class JSInterface {
     private var value: String = ""
@@ -11,7 +12,12 @@ class JSInterface {
         // 你可以把这个值保存到 App 的变量、SharedPreferences、全局类等
         this.value = value
     }
+    @JavascriptInterface
     fun getValue(): String {
         return this.value
+    }
+    @JavascriptInterface
+    fun exit(){
+        exitProcess(0)
     }
 }
