@@ -23,12 +23,12 @@
         }
 
         .container {
+            overflow: auto;
             display: flex;
             flex-direction: column;
             height: 100vh;
             max-width: 1200px;
             margin: 0 auto;
-            justify-content: center;
             align-items: center;
         }
 
@@ -311,13 +311,56 @@
             border-radius: 6px;
             text-align: center;
         }
+
+        .nice-table {
+            user-select: none;
+            -webkit-user-select: none;
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+
+        .nice-table thead {
+            background-color: #FEBFA3;
+            color: white;
+        }
+
+        .nice-table th,
+        .nice-table td {
+            padding: 7px 8px;
+            text-align: center;
+        }
+
+        .nice-table tbody tr {
+            border-bottom: 1px solid #eeeeee;
+            transition: background-color 0.2s;
+        }
+
+        .nice-table tbody tr:hover {
+            background-color: #f1faff;
+        }
+
+        .nice-table td {
+            color: #333;
+        }
+
+        input {
+            box-sizing: border-box;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
+            <strong>ZTE-UFI管理工具</strong>
+        </div>
         <div style="flex-shrink: 0;text-align: center;">
-            <button id="SMS" class="btn" style="margin-bottom: 10px;padding: 14px;font-size: 20px;">ZTE短信收发客户端</button>
+            <button id="SMS" class="btn" style="margin-bottom: 10px;padding: 14px;font-size: 20px;">短信收发</button>
             <div style="margin-bottom: 10px;">
                 <button id="CLEAR" class="btn" style="padding: 8px;font-size: 14px;">退出登录</button>
                 <button id="ADB" class="btn" style="padding: 8px;font-size: 14px;">开启ADB调试</button>
@@ -336,10 +379,192 @@
                 </select>
             </div>
         </div>
-        <div style="flex-shrink:0;margin-bottom: 20px;">
+        <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
             <div class="title" style="margin: 6px 0 ;"><strong>机器状态</strong></div>
             <ul class="deviceList" id="STATUS">
             </ul>
+        </div>
+        <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;">
+            <div class="title" style="margin: 6px 0 ;"><strong>锁频/锁小区</strong></div>
+            <div style="margin:10px 0;">
+                <p class="title"><i style="font-size: 12px;">🚀 本设置可以不用重启，更改完成后切换一下网络模式即可 🚀</i></p>
+                <form class="bands" id="bandsForm" onsubmit="submitBandForm(event)">
+                    <table class="nice-table">
+                        <thead>
+                            <tr>
+                                <th>选择</th>
+                                <th>Band</th>
+                                <th>频率范围 (MHz)</th>
+                                <th>制式</th>
+                                <th>运营商</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="1" id=""></td>
+                                <td>B1</td>
+                                <td>2100</td>
+                                <td>FDD-LTE</td>
+                                <td>联通/电信</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="3" id=""></td>
+                                <td>B3</td>
+                                <td>1800</td>
+                                <td>FDD-LTE</td>
+                                <td>三大运营商</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="5" id=""></td>
+                                <td>B5</td>
+                                <td>850</td>
+                                <td>FDD-LTE</td>
+                                <td>电信</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="8" id=""></td>
+                                <td>B8</td>
+                                <td>900</td>
+                                <td>FDD-LTE</td>
+                                <td>移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="34" id=""></td>
+                                <td>B34</td>
+                                <td>2000</td>
+                                <td>TD-LTE</td>
+                                <td>移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="38" id=""></td>
+                                <td>B38</td>
+                                <td>2600</td>
+                                <td>TD-LTE</td>
+                                <td>移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="39" id=""></td>
+                                <td>B39</td>
+                                <td>1900</td>
+                                <td>TD-LTE</td>
+                                <td>移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="40" id=""></td>
+                                <td>B40</td>
+                                <td>2300</td>
+                                <td>TD-LTE</td>
+                                <td>联通/电信</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="4G" data-band="41" id=""></td>
+                                <td>B41</td>
+                                <td>2500–2690</td>
+                                <td>TD-LTE</td>
+                                <td>三大运营商</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="1" id=""></td>
+                                <td>N1</td>
+                                <td>1920–1980 / 2110–2170</td>
+                                <td>FDD</td>
+                                <td>联通/电信</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="5" id=""></td>
+                                <td>N5</td>
+                                <td>824–849 / 869–894</td>
+                                <td>FDD</td>
+                                <td>中国电信</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="8" id=""></td>
+                                <td>N8</td>
+                                <td>880–915 / 925–960</td>
+                                <td>FDD</td>
+                                <td>中国移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="28" id=""></td>
+                                <td>N28</td>
+                                <td>703–748 / 758–803</td>
+                                <td>FDD</td>
+                                <td>中国广电</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="41" id=""></td>
+                                <td>N41</td>
+                                <td>2515–2675</td>
+                                <td>TDD</td>
+                                <td>中国移动</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" data-type="5G" data-band="78" id=""></td>
+                                <td>N78</td>
+                                <td>3300–3600</td>
+                                <td>TDD</td>
+                                <td>联通/电信</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="submit" class="btn"
+                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁频段!</button>
+                </form>
+            </div>
+            <div style="margin: 10px 0;margin-top: 20px;">
+                <p class="title"><i style="font-size: 12px;">🚀 注意，选错小区可能会导致信号不稳定/无信号等问题 🚀</i></p>
+                <div class="title" style="margin: 10px 0 ;margin-top: 20px;"><strong>已锁小区</strong></div>
+                <table class="nice-table" id="LOCKED_CELL_FORM">
+                    <thead>
+                        <tr>
+                            <th>类型</th>
+                            <th>PCI</th>
+                            <th>EARFCN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+                <div class="title" style="margin: 10px 0 ;"><strong>小区列表</strong></div>
+                <form id="cellForm" onsubmit="submitCellForm(event)">
+                    <table class="nice-table">
+                        <thead>
+                            <tr>
+                                <th>频段</th>
+                                <th>EARFCN</th>
+                                <th>PCI</th>
+                                <th>RSRP</th>
+                                <th>RSRQ</th>
+                                <th>SINR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                    <div style="padding: 8px;margin-top: 10px;">
+                        <strong>网络选择：</strong>
+                        <label style="margin-right: 20px;"><span>4G </span>
+                            <input checked type="radio" name="RAT" value="12" />
+                        </label>
+                        <label><span>5G </span>
+                            <input type="radio" name="RAT" value="16" />
+                        </label>
+                    </div>
+                    <div style="margin: 10px;">
+                        <input style="padding: 8px; width: 100%" id="PCI" name="PCI" type="text" placeholder="PCI">
+                    </div>
+                    <div style="margin: 10px;">
+                        <input style="padding: 8px; width: 100%;" id="EARFCN" name="EARFCN" type="text"
+                            placeholder="EARFCN">
+                    </div>
+                    <button type="submit" class="btn"
+                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁小区!</button>
+                </form>
+                <button onclick="unlockAllCell()" class="btn"
+                    style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
+            </div>
         </div>
         <div class="modal" id="tokenModal" style="display: none;">
             <div class="title">请输入密码</div>
@@ -569,7 +794,7 @@
                 const params = new URLSearchParams();
                 params.append('_', Date.now().toString());
 
-                const cmd = 'rssi,Z5g_rsrp,wifi_access_sta_num,loginfo,data_volume_alert_percent,data_volume_limit_size,realtime_rx_thrpt,realtime_tx_thrpt,realtime_time,monthly_tx_bytes,monthly_rx_bytes,monthly_time,network_type,network_provider';
+                const cmd = 'network_information,Lte_ca_status,rssi,Z5g_rsrp,lte_rsrp,wifi_access_sta_num,loginfo,data_volume_alert_percent,data_volume_limit_size,realtime_rx_thrpt,realtime_tx_thrpt,realtime_time,monthly_tx_bytes,monthly_rx_bytes,monthly_time,network_type,network_provider,ppp_status';
 
                 const res = await fetch(`http://${KANO_baseURL}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=${cmd}&${params.toString()}`, {
                     headers: {
@@ -590,6 +815,7 @@
                 clearTimeout(timeoutId); // 清理定时器
             }
         };
+
         function fetchWithTimeout(url = '', options = {}, timeout = 10000) {
             const controller = new AbortController()
             const tid = setTimeout(() => controller.abort(), timeout);
@@ -739,6 +965,8 @@
                 handlerPerformaceStatus()
                 initNetworktype()
                 initSMBStatus()
+                initLightStatus()
+                initBandForm()
             }
             catch {
                 createToast('登录失败，请检查网络！', 'red')
@@ -947,6 +1175,32 @@
                 return
             }
             if (res) {
+
+                let aaa = {
+                    "Nr_fcn": 627264,//5G 频点
+                    "Nr_pci": 519,//5G PCI
+                    "Nr_bands": 78,// 5G 注册频段
+                    "Nr_band_widths": "", //5G 频宽
+                    "Nr_cell_id": 4032733247, // 5G 小区ID
+                    // "Nr_signal_strength": -77, // 5G信号强度
+                    "Nr_snr": 22, // 5G SNR dB
+                    "nr_rsrp": -78, // 5G RSRP dBm
+                    "nr_rsrq": -5, // 5G RSRQ dB
+                    "nr_rssi": "", // 5G RSSI
+
+                    "Lte_fcn": 300, // 4G 频点
+                    "Lte_bands": 1, //4G 注册频段
+                    "Lte_bands_widths": 20000, // 4G 频宽
+                    "Lte_pci": 445, // 4G PCI
+                    "Lte_cell_id": 29957890, // 4G 小区ID
+                    // "Lte_signal_strength": -78, // 4G 信号强度
+                    "Lte_snr": 22, // 4G 信噪比dB
+                    "lte_rsrp": -78,// 4G RSRP dBm
+                    "lte_rsrq": -7,// 4G RSRQ dB
+                    "lte_rssi": -53, // RSSI dBm
+                    "Lte_ca_status": "off", // 4G 载波聚合
+                }
+
                 const status = document.querySelector('#STATUS')
                 let html = ''
                 html += '<li style="padding-top: 15px;">'
@@ -954,6 +1208,30 @@
                         ${res.network_type ? `<strong  class="green">蜂窝状态：${res.network_provider} ${res.network_type}</strong>` : ''}
                         ${res.wifi_access_sta_num ? `<strong  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
                         ${res.rssi ? `<strong  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
+                        ${res.Z5g_rsrp ? `<strong  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
+                        ${res.lte_rsrp ? `<strong  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
+                        
+                        ${res.Lte_fcn ? `<strong  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
+                        ${res.Lte_bands ? `<strong  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
+                        ${res.Lte_bands_widths ? `<strong  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
+                        ${res.Lte_pci ? `<strong  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
+                        ${res.Lte_cell_id ? `<strong  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
+                        ${res.Lte_snr ? `<strong  class="blue">4G SNR：${res.Lte_snr}dB</strong>` : ''}
+                        ${res.lte_rsrp ? `<strong  class="green">4G RSRP：${res.lte_rsrp}dBm</strong>` : ''}
+                        ${res.lte_rsrq ? `<strong  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
+                        ${res.lte_rssi ? `<strong  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
+                        ${res.Lte_ca_status ? `<strong  class="blue">4G 载波聚合：${res.Lte_ca_status}</strong>` : ''}
+
+                        ${res.Nr_fcn ? `<strong  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
+                        ${res.Nr_bands ? `<strong  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
+                        ${res.Nr_bands_widths ? `<strong  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
+                        ${res.Nr_pci ? `<strong  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
+                        ${res.Nr_cell_id ? `<strong  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
+                        ${res.Nr_snr ? `<strong  class="green">5G SNR：${res.Nr_snr}dB</strong>` : ''}
+                        ${res.Nr_rsrp ? `<strong  class="blue">5G RSRP：${res.Nr_rsrp}dBm</strong>` : ''}
+                        ${res.Nr_rsrq ? `<strong  class="green">5G RSRQ：${res.Nr_rsrq}</strong>` : ''}
+                        ${res.Nr_rssi ? `<strong  class="blue">5G RSSI：${res.Nr_rssi}</strong>` : ''}
+
                         ${res.realtime_time ? `<strong  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
                         ${res.realtime_tx_thrpt != undefined && res.realtime_rx_thrpt != undefined ? `<strong  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
                         ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
@@ -977,6 +1255,9 @@
             }))
             btn.onclick = async () => {
                 try {
+                    if (!initRequestData()) {
+                        return null
+                    }
                     const cookie = await login()
                     if (!cookie) {
                         createToast('登录失败，请检查密码', 'red')
@@ -1017,6 +1298,9 @@
             btn.style.backgroundColor = res.performance_mode == '1' ? '#018AD8' : ''
             btn.onclick = async () => {
                 try {
+                    if (!initRequestData()) {
+                        return null
+                    }
                     const cookie = await login()
                     if (!cookie) {
                         createToast('登录失败，请检查密码', 'red')
@@ -1064,12 +1348,21 @@
             handlerPerformaceStatus()
             initNetworktype()
             initSMBStatus()
+            initLightStatus()
+            initBandForm()
             createToast('您已退出登录', 'green')
             showModal('#tokenModal')
         }
 
         let initNetworktype = async () => {
             const selectEl = document.querySelector('#NET_TYPE')
+            if (!initRequestData() || !selectEl) {
+                selectEl.style.backgroundColor = 'gray'
+                selectEl.disabled = true
+                return null
+            }
+            selectEl.style.backgroundColor = ''
+            selectEl.disabled = false
             let res = await getData(new URLSearchParams({
                 cmd: 'net_select'
             }))
@@ -1193,6 +1486,221 @@
             el.style.backgroundColor = res.indicator_light_switch == '1' ? '#018AD8' : ''
         }
         initLightStatus()
+
+        const initBandForm = async () => {
+            const el = document.querySelector('#bandsForm')
+            if (!initRequestData() || !el) {
+                return null
+            }
+            let res = await getData(new URLSearchParams({
+                cmd: 'lte_band_lock,nr_band_lock'
+            }))
+
+            if (!res) return null
+
+            if (res['lte_band_lock']) {
+                const bands = res['lte_band_lock'].split(',')
+                if (bands && bands.length) {
+                    for (let band of bands) {
+                        //  data-type="4G" data-band="5"
+                        const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="4G"]`)
+                        if (el) el.checked = true
+                    }
+                }
+            }
+            if (res['nr_band_lock']) {
+                const bands = res['nr_band_lock'].split(',')
+                if (bands && bands.length) {
+                    for (let band of bands) {
+                        //  data-type="5G" data-band="5"
+                        const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="5G"]`)
+                        if (el) el.checked = true
+                    }
+                }
+            }
+        }
+        initBandForm()
+
+        const submitBandForm = async (e) => {
+            e.preventDefault()
+            if (!initRequestData()) {
+                out()
+                return null
+            }
+            const form = e.target
+            const bands = form.querySelectorAll('input[type="checkbox"]:checked')
+            const lte_bands = []
+            const nr_bands = []
+            //收集选中的数据
+            if (bands && bands.length) {
+                for (let band of bands) {
+                    const type = band.getAttribute('data-type')
+                    const b = band.getAttribute('data-band')
+                    if (type && b) {
+                        if (type == '4G') lte_bands.push(b)
+                        if (type == '5G') nr_bands.push(b)
+                    }
+                }
+            }
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            try {
+                const res = await (await Promise.all([
+                    (await postData(cookie, {
+                        goformId: 'LTE_BAND_LOCK',
+                        lte_band_lock: lte_bands.join(',')
+                    })).json(),
+                    (await postData(cookie, {
+                        goformId: 'NR_BAND_LOCK',
+                        nr_band_lock: nr_bands.join(',')
+                    })).json(),
+                ]))
+                if (res[0].result == 'success' || res[1].result == 'success') {
+                    createToast('设置频段成功！', 'green')
+                }
+                else {
+                    createToast('设置频段失败', 'red')
+                }
+            } catch {
+                createToast('设置频段失败', 'red')
+            } finally {
+                await initBandForm()
+            }
+        }
+
+        //锁小区
+        let initCellInfo = async () => {
+            try {
+                //已锁小区信息
+                //小区信息
+                const { neighbor_cell_info, locked_cell_info } = await getData(new URLSearchParams({
+                    cmd: 'neighbor_cell_info,locked_cell_info'
+                }))
+
+                if (neighbor_cell_info) {
+                    const cellBodyEl = document.querySelector('#cellForm tbody')
+                    cellBodyEl.innerHTML = neighbor_cell_info.map(item => {
+                        const { band, earfcn, pci, rsrp, rsrq, sinr } = item
+                        return `
+                    <tr onclick="onSelectCellRow(${pci},${earfcn})">
+                        <td>${band}</td>
+                        <td>${earfcn}</td>
+                        <td>${pci}</td>
+                        <td>${rsrp}</td>
+                        <td>${rsrq}</td>
+                        <td>${sinr}</td>
+                    </tr>
+                `
+                    }).join('')
+                }
+                if (locked_cell_info) {
+                    const lockedCellBodyEl = document.querySelector('#LOCKED_CELL_FORM tbody')
+                    lockedCellBodyEl.innerHTML = locked_cell_info.map(item => {
+                        const { earfcn, pci, rat } = item
+                        return `
+                    <tr>
+                        <td>${rat == '12' ? '4G' : '5G'}</td>
+                        <td>${earfcn}</td>
+                        <td>${pci}</td>
+                    </tr>
+                `
+                    }).join('')
+                }
+            } catch (e) {
+                // createToast(e.message)
+            }
+        }
+        initCellInfo()
+        requestInterval(() => initCellInfo(), 1500)
+
+        let onSelectCellRow = (pci, earfcn) => {
+            let pci_t = document.querySelector('#PCI')
+            let earfcn_t = document.querySelector('#EARFCN')
+            if (pci_t && earfcn_t) {
+                pci_t.value = pci
+                earfcn_t.value = earfcn
+                createToast(`已选择: ${pci},${earfcn}`)
+            }
+        }
+
+        //锁小区
+        const submitCellForm = async (e) => {
+            e.preventDefault()
+            if (!initRequestData()) {
+                out()
+                return null
+            }
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+
+                const ratEl = e.target.querySelector('input[name="RAT"]:checked')
+                const pciEl = e.target.querySelector('#PCI')
+                const earfcnEl = e.target.querySelector('#EARFCN')
+
+                if (!ratEl || !pciEl || !earfcnEl) return
+
+                const form = {
+                    pci: pciEl.value.trim(),
+                    earfcn: earfcnEl.value.trim(),
+                    rat: ratEl.value.trim()
+                }
+
+                if (!form.pci || !form.earfcn) {
+                    createToast('请填写完整数据', 'red')
+                    return
+                }
+
+                const res = await (await postData(cookie, {
+                    goformId: 'CELL_LOCK',
+                    ...form
+                })).json()
+
+                if (res.result == 'success') {
+                    createToast('设置小区成功！', 'green')
+                } else {
+                    throw '设置小区失败'
+                }
+            } catch (e) {
+                createToast('设置小区失败', 'red')
+            }
+        }
+
+        let unlockAllCell = async () => {
+            if (!initRequestData()) {
+                out()
+                return null
+            }
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+
+                const res = await (await postData(cookie, {
+                    goformId: 'UNLOCK_ALL_CELL',
+                })).json()
+
+                if (res.result == 'success') {
+                    createToast('解锁小区成功！', 'green')
+                } else {
+                    throw '解锁小区失败'
+                }
+
+            } catch {
+                createToast('解锁小区失败', 'red')
+            }
+        }
     </script>
 </body>
 

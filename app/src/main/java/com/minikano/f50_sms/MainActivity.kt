@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
         val gatewayIp = IPManager.getWifiGatewayIp(this)
         if (gatewayIp != null) {
-//            Toast.makeText(this, "当前网关地址：$gatewayIp", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "当前网关地址：$gatewayIp", Toast.LENGTH_SHORT).show()
             start(gatewayIp)
         } else {
             showAddressInputDialog(this) { inputAddress ->
