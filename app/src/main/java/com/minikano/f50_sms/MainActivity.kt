@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -59,6 +62,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
+
         val intent = Intent(this, WebService::class.java)
         startForegroundService(intent)
 
@@ -88,6 +93,7 @@ class MainActivity : ComponentActivity() {
                 ServerUI(
                     serverAddress = "http://localhost:$port",
                     gatewayIp,
+                    versionName = versionName ?: "未知" ,
                     onStopServer = {
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", false))
                         Log.d("kano_ZTE_LOG", "user touched stop btn")
@@ -97,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 InputUI(
                     gatewayIp = gatewayIp,
                     onGatewayIpChange = { gatewayIp = it },
+                    versionName = versionName ?: "未知" ,
                     onConfirm = {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
@@ -137,56 +144,92 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit, onConfirm: () -> Unit) {
+fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit, onConfirm: () -> Unit,versionName:String) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            shape = RoundedCornerShape(16.dp), // 圆角
+            elevation = CardDefaults.cardElevation(8.dp), // 阴影
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp) // 外边距
         ) {
-            Text("服务已停止", fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("请输入路由器管理 IP", fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = gatewayIp,
-                onValueChange = onGatewayIpChange,
-                label = { Text("路由器管理 IP") },
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onConfirm) {
-                Text("启动服务")
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("服务已停止", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("请输入路由器管理 IP", fontSize = 20.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = gatewayIp,
+                    onValueChange = onGatewayIpChange,
+                    label = { Text("路由器管理 IP") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(onClick = onConfirm) {
+                    Text("启动服务")
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("Created by Minikano with ❤️ ver: ${versionName}", fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                HyperlinkText(
+                    "View source code on Github(Minikano)",
+                    "Github(Minikano)",
+                    fontSize = 12.sp,
+                    "https://github.com/kanoqwq/F50-SMS"
+                )
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            Text("Created by Minikano with ❤️", fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("View source code on Github(Minikano)","Github(Minikano)",16.sp,"https://github.com/kanoqwq/F50-SMS")
         }
     }
 }
 
 @Composable
-fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit) {
+fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,versionName:String) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            shape = RoundedCornerShape(16.dp), // 圆角
+            elevation = CardDefaults.cardElevation(8.dp), // 阴影
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp) // 外边距
         ) {
-            Text("服务运行中", fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("页面地址: $serverAddress",serverAddress, fontSize = 16.sp, url = serverAddress)
-            Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("网关地址: $gatewayIP",gatewayIP, fontSize = 16.sp, url = "http://$gatewayIP")
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onStopServer) {
-                Text("停止服务")
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("服务运行中", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                HyperlinkText(
+                    "页面地址: $serverAddress",
+                    serverAddress,
+                    fontSize = 16.sp,
+                    url = serverAddress
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                HyperlinkText(
+                    "网关地址: $gatewayIP",
+                    gatewayIP,
+                    fontSize = 16.sp,
+                    url = "http://$gatewayIP"
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(onClick = onStopServer) {
+                    Text("停止服务")
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("Created by Minikano with ❤️ ver: ${versionName}", fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                HyperlinkText(
+                    "View source code on Github(Minikano)",
+                    "Github(Minikano)",
+                    fontSize = 12.sp,
+                    "https://github.com/kanoqwq/F50-SMS"
+                )
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            Text("Created by Minikano with ❤️", fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("View source code on Github(Minikano)","Github(Minikano)",16.sp,"https://github.com/kanoqwq/F50-SMS")
         }
     }
 }
@@ -195,17 +238,21 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit) {
 fun HyperlinkText(
     fullText: String,
     linkText: String,
-    fontSize: TextUnit= TextUnit.Unspecified,
+    fontSize: TextUnit,
     url: String,
 ) {
     val context = LocalContext.current
     val annotatedText = buildAnnotatedString {
+        // 整段默认字体大小
+        withStyle(style = SpanStyle(fontSize = fontSize)) {
+            append(fullText)
+        }
+
         val startIndex = fullText.indexOf(linkText)
         val endIndex = startIndex + linkText.length
 
-        append(fullText)
-
         if (startIndex >= 0) {
+            // 链接部分样式（覆盖字体大小、颜色、下划线）
             addStyle(
                 style = SpanStyle(
                     color = Color(0xFF1E88E5),
@@ -227,7 +274,7 @@ fun HyperlinkText(
 
     ClickableText(
         text = annotatedText,
-        style = MaterialTheme.typography.bodyLarge,
+        style = TextStyle(fontSize = fontSize), // 控制整体字体大小
         onClick = { offset ->
             annotatedText.getStringAnnotations("URL", offset, offset)
                 .firstOrNull()?.let {
