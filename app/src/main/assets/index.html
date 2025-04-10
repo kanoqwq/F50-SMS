@@ -1243,27 +1243,25 @@
                     </p></li>
                     <div class="title" style="margin: 6px 0;color:#000"><b>信号参数</b></div>
                     <li style="padding-top: 15px;"><p>
-                    ${res.Lte_fcn ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
+                    ${res.lte_rsrp ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
+                    ${res.Lte_snr ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${res.Lte_snr}dB</strong>` : ''}
                     ${res.Lte_bands ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
+                    ${res.Lte_fcn ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
                     ${res.Lte_bands_widths ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
                     ${res.Lte_pci ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
-                    ${res.Lte_cell_id ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
-                    ${res.Lte_ca_status ? `<strong onclick="copyText(event)"  class="blue">4G 载波聚合：${res.Lte_ca_status}</strong>` : ''}
-                    ${res.Lte_snr ? `<strong onclick="copyText(event)"  class="blue">4G SNR：${res.Lte_snr}dB</strong>` : ''}
-                    ${res.lte_rsrp ? `<strong onclick="copyText(event)"  class="green">4G RSRP：${res.lte_rsrp}dBm</strong>` : ''}
                     ${res.lte_rsrq ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
                     ${res.lte_rssi ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
-                    ${res.lte_rsrp ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
-                    ${res.Nr_fcn ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
+                    ${res.Lte_cell_id ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
+
+                    ${res.Z5g_rsrp ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
+                    ${res.Nr_snr ? `<strong onclick="copyText(event)"  class="green">5G SINR：${res.Nr_snr}dB</strong>` : ''}
                     ${res.Nr_bands ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
+                    ${res.Nr_fcn ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
                     ${res.Nr_bands_widths ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
-                    ${res.Nr_cell_id ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
                     ${res.Nr_pci ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
-                    ${res.Nr_snr ? `<strong onclick="copyText(event)"  class="green">5G SNR：${res.Nr_snr}dB</strong>` : ''}
-                    ${res.Nr_rsrp ? `<strong onclick="copyText(event)"  class="blue">5G RSRP：${res.Nr_rsrp}dBm</strong>` : ''}
                     ${res.Nr_rsrq ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.Nr_rsrq}</strong>` : ''}
                     ${res.Nr_rssi ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.Nr_rssi}</strong>` : ''}
-                    ${res.Z5g_rsrp ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
+                    ${res.Nr_cell_id ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;color:#000"><b>设备属性</b></div>
                     <li style="padding-top: 15px;"><p>
