@@ -826,7 +826,14 @@
                     signal: controller.signal
                 });
 
-                return await res.json();
+                //获取CPU温度，整合（如果有）
+                let cpu_t = null
+                try {
+                    const { temp } = await (await fetch('/api/temp')).json()
+                    cpu_t = temp
+                } catch {/*没有，不处理*/ }
+
+                return { ...await res.json(), cpu_temp: cpu_t }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.warn('请求超时');
@@ -1212,7 +1219,7 @@
                 if (!res) {
                     out()
                 }
-                list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center">没有短信</h2></li >`
+                list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center;height:100vh;">没有短信</h2></li >`
             }
         }
 
@@ -1233,10 +1240,12 @@
             if (res) {
                 const status = document.querySelector('#STATUS')
                 let html = ''
+                
                 html += `<li style="padding-top: 15px;"><p>
                     ${res.network_type ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}
                     ${res.wifi_access_sta_num ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
                     ${res.rssi ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
+                    ${res.cpu_temp ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}
                     ${res.realtime_time ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
                     ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
                     ${res.realtime_tx_thrpt != undefined && res.realtime_rx_thrpt != undefined ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}

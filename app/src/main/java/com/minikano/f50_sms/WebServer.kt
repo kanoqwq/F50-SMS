@@ -14,7 +14,31 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
 
-        // 静态文件逻辑：不以 /api 开头的路径，都尝试当作静态资源处理
+        //cpu温度
+        if (method == "GET" && uri == "/temp") {
+            return try {
+                val temp = ShellKano.runShellCommand("cat /sys/class/thermal/thermal_zone1/temp")
+                Log.d("kano_ZTE_LOG", "获取CPU温度成功: $temp")
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"temp":$temp}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取CPU温度出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取CPU温度失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        // 静态文件逻辑
         if (!session?.uri.orEmpty().startsWith("/api")) {
             return serveStaticFile(session?.uri ?: "/")
         }
