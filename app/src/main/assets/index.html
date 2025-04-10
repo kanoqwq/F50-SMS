@@ -39,6 +39,7 @@
             padding: 20px;
             border-radius: 16px;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             box-shadow: #0000004b 0px 0px 10px 0px;
             margin: 0 20px;
         }
@@ -51,7 +52,8 @@
         .deviceList li {
             border-radius: 10px;
             background-color: #ffffff70;
-            /* backdrop-filter: blur(10px); */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             padding: 4px;
             margin-bottom: 10px;
         }
@@ -117,11 +119,14 @@
             z-index: 0;
             width: 100%;
             left: 50%;
-            bottom: 4px;
+            bottom: 0px;
             transform: translateX(-50%);
             text-align: center;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 10px;
+            color: #666;
+            font-size: 14px;
             background-color: #ffffff79;
         }
 
