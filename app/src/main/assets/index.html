@@ -203,7 +203,6 @@
 
         .sms-item {
             position: relative;
-            max-width: 500px;
             padding: 10px;
             margin: 10px;
             border-radius: 10px;
@@ -251,9 +250,12 @@
         #smsList {
             display: flex;
             flex-direction: column;
-            width: 94%;
-            max-width: 600px;
-            max-height: 94%;
+            width: 100%;
+            max-height: 100% !important;
+        }
+
+        #smsList .content {
+            max-height: 100% !important;
         }
 
         .deviceList {
@@ -365,24 +367,38 @@
         <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
             <strong>ZTE-UFI管理工具</strong>
         </div>
-        <div style="flex-shrink: 0;text-align: center;">
-            <button id="SMS" class="btn" style="margin-bottom: 10px;padding: 14px;font-size: 20px;">短信收发</button>
+        <div class="actions" style="flex-shrink: 0;text-align: start;align-self: flex-start">
+            <style>
+                .actions button,
+                .actions select {
+                    padding: 8px;
+                    margin: 4px;
+                    font-size: 14px;
+                }
+            </style>
             <div style="margin-bottom: 10px;">
-                <button id="CLEAR" class="btn" style="padding: 8px;font-size: 14px;">退出登录</button>
-                <button id="ADB" class="btn" style="padding: 8px;font-size: 14px;">开启ADB调试</button>
-                <button id="PERF" class="btn" style="padding: 8px;font-size: 14px;">开启性能模式</button>
+                <div>
+                    <button id="CLEAR" class="btn">登录/退出登录</button>
+                    <button id="REBOOT" class="btn">重启设备</button>
+                </div>
+                <div>
+                    <button id="SMS" class="btn">短信收发</button>
+                    <button id="ADB" class="btn">开启ADB调试</button>
+                    <button id="PERF" class="btn">开启性能模式</button>
+                    <button id="LIGHT" class="btn">开启指示灯</button>
+                    <button id="SMB" class="btn">开启SMB</button>
+                    <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
+                        <option value="WL_AND_5G">5G/4G/3G</option>
+                        <option value="LTE_AND_5G">5G NSA</option>
+                        <option value="Only_5G">5G SA</option>
+                        <option value="WCDMA_AND_LTE">4G/3G</option>
+                        <option value="Only_LTE">仅4G</option>
+                        <option value="Only_WCDMA">仅3G</option>
+                    </select>
+                </div>
             </div>
             <div>
-                <button id="LIGHT" class="btn" style="padding: 8px;font-size: 14px;">开启指示灯</button>
-                <button id="SMB" class="btn" style="padding: 8px;font-size: 14px;">开启SMB</button>
-                <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
-                    <option value="WL_AND_5G">5G/4G/3G</option>
-                    <option value="LTE_AND_5G">5G NSA</option>
-                    <option value="Only_5G">5G SA</option>
-                    <option value="WCDMA_AND_LTE">4G/3G</option>
-                    <option value="Only_LTE">仅4G</option>
-                    <option value="Only_WCDMA">仅3G</option>
-                </select>
+
             </div>
         </div>
         <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
@@ -1007,6 +1023,7 @@
                 initSMBStatus()
                 initLightStatus()
                 initBandForm()
+                rebootDeviceBtnInit()
             }
             catch {
                 createToast('登录失败，请检查网络！', 'red')
@@ -1156,7 +1173,7 @@
             let list = document.querySelector('#sms-list')
             if (!list) createToast('没有找到短信列表节点', 'red')
             if (isFirstRender) {
-                list.innerHTML = ` <li><h2 style="padding: 30px;text-align:center">Loading...</h2></li>`
+                list.innerHTML = ` <li><h2 style="padding: 30px;text-align:center;height:100vh">Loading...</h2></li>`
             }
             isFirstRender = false
             showModal('#smsList')
@@ -1373,6 +1390,7 @@
             initSMBStatus()
             initLightStatus()
             initBandForm()
+            rebootDeviceBtnInit()
             createToast('您已退出登录', 'green')
             showModal('#tokenModal')
         }
@@ -1724,6 +1742,62 @@
                 createToast('解锁小区失败', 'red')
             }
         }
+
+        let rebootBtnCount = 1
+        let rebootTimer = null
+        let rebootDevice = async (e) => {
+            let target = e.target
+            if (!initRequestData()) {
+                out()
+                target.style.backgroundColor = 'gray'
+                return null
+            }
+            target.style.backgroundColor = ''
+            rebootTimer && clearTimeout(rebootTimer)
+            if (rebootBtnCount == 1) target.innerHTML = "确定重启？"
+            if (rebootBtnCount == 2) target.innerHTML = "那就重启咯？"
+            if (rebootBtnCount >= 3) {
+                target.innerHTML = "正在重启。。。"
+                try {
+                    const cookie = await login()
+                    if (!cookie) {
+                        createToast('登录失败，请检查密码', 'red')
+                        out()
+                        return null
+                    }
+
+                    const res = await (await postData(cookie, {
+                        goformId: 'REBOOT_DEVICE',
+                    })).json()
+
+                    if (res.result == 'success') {
+                        createToast('重启成功!', 'green')
+                    } else {
+                        throw '重启失败！请检查网络'
+                    }
+
+                } catch {
+                    createToast('重启失败！请检查网络', 'red')
+                }
+            }
+            rebootBtnCount++
+            timer = setTimeout(() => {
+                rebootBtnCount = 1
+                target.innerHTML = '重启设备'
+            }, 3000);
+        }
+
+        rebootDeviceBtnInit = () => {
+            let target = document.querySelector('#REBOOT')
+            if (!initRequestData()) {
+                target.style.backgroundColor = 'gray'
+                target.onclick = null
+                return null
+            }
+            target.style.backgroundColor = ''
+            target.onclick = rebootDevice
+        }
+        rebootDeviceBtnInit()
     </script>
 </body>
 
