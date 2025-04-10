@@ -627,7 +627,8 @@
                 const body = new URLSearchParams({
                     "goformId": "LOGIN",
                     "isTest": "false",
-                    "password": pwd
+                    "password": pwd,
+                    "user": "admin"
                 })
                 const res = await fetch("/api" + KANO_baseURL + "/goform/goform_set_cmd_process", {
                     method: "POST",

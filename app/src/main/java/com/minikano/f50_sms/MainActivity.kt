@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.unit.TextUnit
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -85,7 +86,7 @@ class MainActivity : ComponentActivity() {
 
             if (isServerRunning) {
                 ServerUI(
-                    serverAddress = "http://0.0.0.0:$port",
+                    serverAddress = "http://localhost:$port",
                     gatewayIp,
                     onStopServer = {
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", false))
@@ -149,7 +150,7 @@ fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit, onConfirm: (
             Spacer(modifier = Modifier.height(32.dp))
             Text("Created by Minikano with ❤️", fontSize = 12.sp)
             Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("View Source on Github(Minikano)","Github(Minikano)","https://github.com/kanoqwq/F50-SMS")
+            HyperlinkText("View source code on Github(Minikano)","Github(Minikano)",16.sp,"https://github.com/kanoqwq/F50-SMS")
         }
     }
 }
@@ -164,9 +165,9 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit) {
         ) {
             Text("服务运行中", fontSize = 24.sp)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("页面地址: $serverAddress", fontSize = 16.sp)
+            HyperlinkText("页面地址: $serverAddress",serverAddress, fontSize = 16.sp, url = serverAddress)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("网关地址: $gatewayIP", fontSize = 16.sp)
+            HyperlinkText("网关地址: $gatewayIP",gatewayIP, fontSize = 16.sp, url = "http://$gatewayIP")
             Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onStopServer) {
                 Text("停止服务")
@@ -174,7 +175,7 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
             Text("Created by Minikano with ❤️", fontSize = 12.sp)
             Spacer(modifier = Modifier.height(16.dp))
-            HyperlinkText("View Source on Github(Minikano)","Github(Minikano)","https://github.com/kanoqwq/F50-SMS")
+            HyperlinkText("View source code on Github(Minikano)","Github(Minikano)",16.sp,"https://github.com/kanoqwq/F50-SMS")
         }
     }
 }
@@ -183,7 +184,8 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit) {
 fun HyperlinkText(
     fullText: String,
     linkText: String,
-    url: String
+    fontSize: TextUnit= TextUnit.Unspecified,
+    url: String,
 ) {
     val context = LocalContext.current
     val annotatedText = buildAnnotatedString {
@@ -196,10 +198,11 @@ fun HyperlinkText(
             addStyle(
                 style = SpanStyle(
                     color = Color(0xFF1E88E5),
-                    textDecoration = TextDecoration.Underline
+                    textDecoration = TextDecoration.Underline,
+                    fontSize = fontSize
                 ),
                 start = startIndex,
-                end = endIndex
+                end = endIndex,
             )
 
             addStringAnnotation(
