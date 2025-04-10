@@ -23,6 +23,7 @@ class WebService : Service() {
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action
+            Log.d("kano_ZTE_LOG", "WebService 收到 Intent")
             if (action == UI_INTENT) {
                 val shouldStart = intent.getBooleanExtra("status", false)
                 if (shouldStart) {
@@ -39,9 +40,10 @@ class WebService : Service() {
         super.onCreate()
         startForegroundNotification()
         // 注册广播接收器
-        registerReceiver(statusReceiver, IntentFilter(UI_INTENT), RECEIVER_NOT_EXPORTED)
-        startForeground(1, createNotification())
+        registerReceiver(statusReceiver, IntentFilter(UI_INTENT), Context.RECEIVER_EXPORTED)
+        startForeground(114514, createNotification())
         startWebServer()
+        Log.d("kano_ZTE_LOG", "WebService Init Success!")
     }
 
     private fun startWebServer() {

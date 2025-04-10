@@ -1,6 +1,7 @@
 package com.minikano.f50_sms
 
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -8,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -61,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
         // 注册广播
         registerReceiver(serverStatusReceiver, IntentFilter(SERVER_INTENT),
-            RECEIVER_NOT_EXPORTED
+            Context.RECEIVER_EXPORTED
         )
 
         setContent {
@@ -87,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     gatewayIp,
                     onStopServer = {
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", false))
+                        Log.d("kano_ZTE_LOG", "user touched stop btn")
                     }
                 )
             } else {
@@ -97,6 +100,7 @@ class MainActivity : ComponentActivity() {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
+                        Log.d("kano_ZTE_LOG", "user touched start btn")
                     }
                 )
             }
@@ -105,8 +109,12 @@ class MainActivity : ComponentActivity() {
 
     private val serverStatusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val isRunning = intent?.getBooleanExtra("status", false) ?: false
-            serverStatusLiveData.postValue(isRunning)
+            val action = intent?.action
+            if (action == SERVER_INTENT) {
+                val isRunning = intent.getBooleanExtra("status", false) ?: false
+                Log.d("kano_ZTE_LOG", "isServerRunning is $isRunning")
+                serverStatusLiveData.postValue(isRunning)
+            }
         }
     }
 
