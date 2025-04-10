@@ -37,7 +37,6 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
 
-    private var webServer: WebServer? = null
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
@@ -109,6 +108,16 @@ class MainActivity : ComponentActivity() {
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                         Log.d("kano_ZTE_LOG", "user touched start btn")
+                        //网络adb
+                        //adb setprop service.adb.tcp.port 5555
+                        Thread {
+                            try {
+                                var result =
+                                    ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555") // 你可以替换成其他命令
+                                result += "\n" + ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555") // 你可以替换成其他命令
+                                Log.d("kano_ZTE_LOG", "网络adb调试： $result")
+                            }catch(e:Exception) {}
+                        }.start()
                     }
                 )
             }
