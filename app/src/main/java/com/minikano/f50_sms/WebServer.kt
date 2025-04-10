@@ -1,3 +1,5 @@
+package com.minikano.f50_sms
+
 import fi.iki.elonen.NanoHTTPD
 import android.content.Context
 import android.util.Log
@@ -8,10 +10,16 @@ import java.net.URL
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
+    private val staticRoot: File = File(context.filesDir, "www") // 静态文件目录
 
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri ?: "/"
+
+        // 静态文件逻辑：不以 /api 开头的路径，都尝试当作静态资源处理
+        if (!uri.startsWith("/api")) {
+            return serveStaticFile(uri)
+        }
 
         // 获取查询参数
         val queryString = session?.queryParameterString
@@ -104,6 +112,24 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             response
         } catch (e: Exception) {
             newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Proxy error: ${e.message}")
+        }
+    }
+
+    // 静态文件处理逻辑
+    private fun serveStaticFile(uri: String): Response {
+        val path = if (uri == "/") "/index.html" else uri
+        val file = File(staticRoot, path.removePrefix("/"))
+
+        return if (!file.exists() || file.isDirectory) {
+            newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "404 Not Found")
+        } else {
+            try {
+                val mime = getMimeTypeForFile(file.name)
+                val fis = FileInputStream(file)
+                newChunkedResponse(Response.Status.OK, mime, fis)
+            } catch (e: Exception) {
+                newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Static file error: ${e.message}")
+            }
         }
     }
 
