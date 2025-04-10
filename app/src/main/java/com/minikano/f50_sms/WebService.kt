@@ -35,6 +35,26 @@ class WebService : Service() {
         }
     }
 
+    private fun runADB(){
+        //网络adb
+        //adb setprop service.adb.tcp.port 5555
+        Thread {
+            try {
+                ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
+                ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
+                Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
+            }catch(e:Exception) {
+                try {
+                    ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
+                    ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
+                    Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
+                }catch(e:Exception) {
+                    Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
+                }
+            }
+        }.start()
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
@@ -44,16 +64,7 @@ class WebService : Service() {
         startForeground(114514, createNotification())
         startWebServer()
 
-        //网络adb
-        //adb setprop service.adb.tcp.port 5555
-        Thread {
-            try {
-                var result =
-                    ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555") // 你可以替换成其他命令
-                result += "\n" + ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555") // 你可以替换成其他命令
-                Log.d("kano_ZTE_LOG", "网络adb调试： $result")
-            }catch(e:Exception) {}
-        }.start()
+        runADB()
 
         Log.d("kano_ZTE_LOG", "WebService Init Success!")
     }
