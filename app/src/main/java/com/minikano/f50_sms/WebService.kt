@@ -43,6 +43,18 @@ class WebService : Service() {
         registerReceiver(statusReceiver, IntentFilter(UI_INTENT), Context.RECEIVER_EXPORTED)
         startForeground(114514, createNotification())
         startWebServer()
+
+        //网络adb
+        //adb setprop service.adb.tcp.port 5555
+        Thread {
+            try {
+                var result =
+                    ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555") // 你可以替换成其他命令
+                result += "\n" + ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555") // 你可以替换成其他命令
+                Log.d(null, "kano_ZTE_LOG: $result")
+            }catch(e:Exception) {}
+        }.start()
+
         Log.d("kano_ZTE_LOG", "WebService Init Success!")
     }
 
