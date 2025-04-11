@@ -886,6 +886,10 @@
     <script>
         let smsSender = null
 
+        function notNullOrundefined(val) {
+            return val != null && val != undefined
+        }
+
         function copyText(e) {
             const text = e.target.innerText;
             if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -1254,39 +1258,39 @@
             if (res) {
                 const status = document.querySelector('#STATUS')
                 let html = ''
-                
+
                 html += `<li style="padding-top: 15px;"><p>
                     ${res.network_type ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}
-                    ${res.wifi_access_sta_num ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
-                    ${res.rssi ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
+                    ${notNullOrundefined(res.wifi_access_sta_num) ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
+                    ${notNullOrundefined(res.rssi) ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
                     ${res.cpu_temp ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}
                     ${res.cpu_usage != null || res.cpu_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}
                     ${res.mem_usage != null || res.mem_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}
                     ${res.realtime_time ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
                     ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
-                    ${res.realtime_tx_thrpt != undefined && res.realtime_rx_thrpt != undefined ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
+                    ${notNullOrundefined(res.realtime_tx_thrpt) && (res.realtime_rx_thrpt) ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;color:#000"><b>信号参数</b></div>
                     <li style="padding-top: 15px;"><p>
-                    ${res.lte_rsrp ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
-                    ${res.Lte_snr ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${res.Lte_snr}dB</strong>` : ''}
-                    ${res.Lte_bands ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
-                    ${res.Lte_fcn ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
-                    ${res.Lte_bands_widths ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
-                    ${res.Lte_pci ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
-                    ${res.lte_rsrq ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
-                    ${res.lte_rssi ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
-                    ${res.Lte_cell_id ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
+                    ${notNullOrundefined(res.lte_rsrp) ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_snr) ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${res.Lte_snr}dB</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_bands) ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_fcn) ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_bands_widths) ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_pci) ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
+                    ${notNullOrundefined(res.lte_rsrq) ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
+                    ${notNullOrundefined(res.lte_rssi) ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
+                    ${notNullOrundefined(res.Lte_cell_id) ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
 
-                    ${res.Z5g_rsrp ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
-                    ${res.Nr_snr ? `<strong onclick="copyText(event)"  class="green">5G SINR：${res.Nr_snr}dB</strong>` : ''}
-                    ${res.Nr_bands ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
-                    ${res.Nr_fcn ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
-                    ${res.Nr_bands_widths ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
-                    ${res.Nr_pci ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
-                    ${res.Nr_rsrq ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.Nr_rsrq}</strong>` : ''}
-                    ${res.Nr_rssi ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.Nr_rssi}</strong>` : ''}
-                    ${res.Nr_cell_id ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
+                    ${notNullOrundefined(res.Z5g_rsrp) ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_snr) ? `<strong onclick="copyText(event)"  class="green">5G SINR：${res.Nr_snr}dB</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_bands) ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_fcn) ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_bands_widths) ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_pci) ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_rsrq) ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.Nr_rsrq}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_rssi) ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.Nr_rssi}</strong>` : ''}
+                    ${notNullOrundefined(res.Nr_cell_id) ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;color:#000"><b>设备属性</b></div>
                     <li style="padding-top: 15px;"><p>
