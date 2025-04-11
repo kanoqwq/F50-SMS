@@ -1269,7 +1269,7 @@
                     ${res.mem_usage != null || res.mem_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}
                     ${res.realtime_time ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
                     ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
-                    ${notNullOrundefined(res.realtime_tx_thrpt) && (res.realtime_rx_thrpt) ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
+                    ${notNullOrundefined(res.realtime_tx_thrpt) && notNullOrundefined(res.realtime_rx_thrpt) ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;color:#000"><b>信号参数</b></div>
                     <li style="padding-top: 15px;"><p>
