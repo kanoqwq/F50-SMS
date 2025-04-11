@@ -833,7 +833,21 @@
                     cpu_t = temp
                 } catch {/*没有，不处理*/ }
 
-                return { ...await res.json(), cpu_temp: cpu_t }
+                //获取CPU使用，整合（如果有）
+                let cpu_u = null
+                try {
+                    const { cpu } = await (await fetch('/api/cpu')).json()
+                    cpu_u = cpu
+                } catch {/*没有，不处理*/ }
+
+                //获取内存使用，整合（如果有）
+                let mem_u = null
+                try {
+                    const { mem } = await (await fetch('/api/mem')).json()
+                    mem_u = mem
+                } catch {/*没有，不处理*/ }
+
+                return { ...await res.json(), cpu_temp: cpu_t, cpu_usage: cpu_u, mem_usage: mem_u }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.warn('请求超时');
@@ -1246,6 +1260,8 @@
                     ${res.wifi_access_sta_num ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
                     ${res.rssi ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
                     ${res.cpu_temp ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}
+                    ${res.cpu_usage != null || res.cpu_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}
+                    ${res.mem_usage != null || res.mem_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}
                     ${res.realtime_time ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
                     ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
                     ${res.realtime_tx_thrpt != undefined && res.realtime_rx_thrpt != undefined ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}

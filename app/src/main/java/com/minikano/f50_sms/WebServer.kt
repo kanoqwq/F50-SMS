@@ -38,6 +38,62 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
         }
 
+        //cpu使用率
+        if (method == "GET" && uri == "/cpu") {
+            return try {
+                val stat1 = ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat1没有数据")
+                val (total1, idle1) = parseCpuStat(stat1) ?:  throw Exception("parseCpuStat执行失败")
+                val stat2 = ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat2没有数据")
+                val (total2, idle2) = parseCpuStat(stat2) ?: throw Exception("parseCpuStat执行失败")
+                val totalDiff = total2 - total1
+                val idleDiff = idle2 - idle1
+                val usage = if (totalDiff > 0) (totalDiff - idleDiff).toFloat() / totalDiff else 0f
+
+                Log.d("kano_ZTE_LOG", "CPU 使用率：%.2f%%".format(usage * 100))
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"cpu":${usage * 100}}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取内存信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取内存信息失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //内存使用率
+        if (method == "GET" && uri == "/mem") {
+            return try {
+                val info = ShellKano.runShellCommand("cat /proc/meminfo") ?: throw Exception("没有info")
+                val usage = parseMeminfo(info)
+                Log.d("kano_ZTE_LOG", "内存使用率：%.2f%%".format(usage * 100))
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"mem":${usage * 100}}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取内存信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取内存信息失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
         // 静态文件逻辑
         if (!session?.uri.orEmpty().startsWith("/api")) {
             return serveStaticFile(session?.uri ?: "/")
@@ -155,7 +211,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     }
 
     // 解析 URL 编码的请求体
-    fun parseUrlEncoded(data: String): Map<String, String> {
+    private fun parseUrlEncoded(data: String): Map<String, String> {
         val params = mutableMapOf<String, String>()
         val pairs = data.split("&")
 
@@ -169,5 +225,45 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         }
 
         return params
+    }
+
+    //获取内存信息
+    private fun parseMeminfo(meminfo: String): Float {
+        val memMap = mutableMapOf<String, Long>()
+
+        meminfo.lines().forEach { line ->
+            val parts = line.split(Regex("\\s+"))
+            if (parts.size >= 2) {
+                val key = parts[0].removeSuffix(":")
+                val value = parts[1].toLongOrNull() ?: return@forEach
+                memMap[key] = value
+            }
+        }
+
+        val total = memMap["MemTotal"] ?: return 0f
+        val free = memMap["MemFree"] ?: 0
+        val cached = memMap["Cached"] ?: 0
+        val buffers = memMap["Buffers"] ?: 0
+
+        val used = total - free - cached - buffers
+        return used.toFloat() / total
+    }
+
+    private fun parseCpuStat(raw: String): Pair<Long, Long>? {
+        val line = raw.lines().firstOrNull { it.startsWith("cpu ") } ?: return null
+        val parts = line.trim().split(Regex("\\s+"))
+        if (parts.size < 8) return null
+
+        val user = parts[1].toLongOrNull() ?: return null
+        val nice = parts[2].toLongOrNull() ?: return null
+        val system = parts[3].toLongOrNull() ?: return null
+        val idle = parts[4].toLongOrNull() ?: return null
+        val iowait = parts[5].toLongOrNull() ?: 0
+        val irq = parts[6].toLongOrNull() ?: 0
+        val softirq = parts[7].toLongOrNull() ?: 0
+
+        val total = user + nice + system + idle + iowait + irq + softirq
+        val idleAll = idle + iowait
+        return Pair(total, idleAll)
     }
 }
