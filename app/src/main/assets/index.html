@@ -963,6 +963,7 @@
         function createToast(text, color, delay = 3000) {
             const toastEl = document.createElement('div')
             toastEl.style.position = 'fixed'
+            toastEl.style.zIndex = '114514'
             toastEl.style.padding = '10px'
             toastEl.style.top = '20px'
             toastEl.style.right = '50%'
@@ -1733,6 +1734,8 @@
                 })).json()
 
                 if (res.result == 'success') {
+                    pciEl.value = ''
+                    earfcnEl.value = ''
                     createToast('设置小区成功！', 'green')
                 } else {
                     throw '设置小区失败'
