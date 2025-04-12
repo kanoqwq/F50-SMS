@@ -1,11 +1,20 @@
 package com.minikano.f50_sms
 
-import fi.iki.elonen.NanoHTTPD
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import android.os.Build
+import android.os.Environment
+import android.os.StatFs
 import android.util.Log
+import fi.iki.elonen.NanoHTTPD
+import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
+
 
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
@@ -13,7 +22,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
-
         //cpu温度
         if (method == "GET" && uri == "/temp") {
             return try {
@@ -58,11 +66,11 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
             } catch (e: Exception) {
-                Log.d("kano_ZTE_LOG", "获取内存信息出错： ${e.message}")
+                Log.d("kano_ZTE_LOG", "获取cpu使用率出错： ${e.message}")
                 val response = newFixedLengthResponse(
                     Response.Status.INTERNAL_ERROR,
                     "application/json",
-                    """{"error":"获取内存信息失败"}"""
+                    """{"error":"获取cpu使用率出错"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -88,6 +96,46 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Response.Status.INTERNAL_ERROR,
                     "application/json",
                     """{"error":"获取内存信息失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //型号与电量
+        if (method == "GET" && uri == "/battery_and_model") {
+            return try {
+                val model = Build.MODEL // 设备型号
+                val batteryLevel: Int = getBatteryPercentage()// 充电状态
+
+                //内部存储
+                val internalStorage: File = context_app.filesDir 
+                val statFs = StatFs(internalStorage.absolutePath)
+                val totalSize = formatSize(statFs.blockSizeLong * statFs.blockCountLong)
+                val availableSize =formatSize(statFs.blockSizeLong * statFs.availableBlocksLong)
+                //外部存储
+                val externalStorage = Environment.getExternalStorageDirectory()
+                val statFs_ex = StatFs(externalStorage.absolutePath)
+                val totalSize_ex = formatSize(statFs_ex.blockSizeLong * statFs_ex.blockCountLong)
+                val availableSize_ex = formatSize(statFs_ex.blockSizeLong * statFs_ex.availableBlocksLong)
+
+                Log.d("kano_ZTE_LOG","内部存储：$availableSize/$totalSize")
+                Log.d("kano_ZTE_LOG","外部存储：$availableSize_ex/$totalSize_ex")
+                Log.d("kano_ZTE_LOG", "型号与电量：$model $batteryLevel")
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"model":"$model","battery":"$batteryLevel"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取型号与电量信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取型号与电量信息出错"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -196,6 +244,18 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     // 静态文件处理逻辑
     // 添加一个变量保存 context 的 assets
     private val assetManager = context.assets
+    private val context_app = context
+
+    //获取电池电量
+    private fun getBatteryPercentage(): Int {
+        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        val batteryStatus = context_app.registerReceiver(null, filter) ?: return -1
+
+        val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+
+        return ((level / scale.toFloat()) * 100).toInt()
+    }
 
     private fun serveStaticFile(uri: String): Response {
         val path = if (uri == "/") "index.html" else uri.removePrefix("/")
@@ -265,5 +325,14 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         val total = user + nice + system + idle + iowait + irq + softirq
         val idleAll = idle + iowait
         return Pair(total, idleAll)
+    }
+
+    fun formatSize(size: Long): String {
+        val kb = size / 1024f
+        val mb = kb / 1024f
+        val gb = mb / 1024f
+        return if (gb >= 1) String.format(Locale.US,"%.2f GB", gb)
+        else if (mb >= 1) String.format(Locale.US,"%.2f MB", mb)
+        else String.format(Locale.US,"%.2f KB", kb)
     }
 }

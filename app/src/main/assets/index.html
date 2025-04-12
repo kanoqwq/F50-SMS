@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>F50-SMS</title>
+    <title>ZTE-UFI-TOOLS-WEB</title>
     <style>
         :root {
             --dark-text-color: #ddd;
@@ -284,7 +284,7 @@
 
 
         .select {
-            color: var(--dark-text-color);
+            color: #00ff17;
             background-color: #87ceeb70;
             outline: none;
             padding: 8px;
@@ -340,6 +340,17 @@
             margin: 4px;
             font-size: 14px;
         }
+
+        #dictionaryModal {
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #dictionaryModal .content label {
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 
@@ -368,17 +379,28 @@
                         <option value="Only_LTE">仅4G</option>
                         <option value="Only_WCDMA">仅3G</option>
                     </select>
+                    <select class="select" id="USB_TYPE" onchange="changeUSBNetwork(event)">
+                        <option value="0">USB上网:自动</option>
+                        <option value="1">RNDIS</option>
+                        <option value="2">CDC-ECM</option>
+                    </select>
+                    <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
+                        <option value="">WIFI切换</option>
+                        <option value="0">关闭</option>
+                        <option value="chip1">2.4Ghz</option>
+                        <option value="chip2">5Ghz</option>
+                    </select>
                 </div>
-            </div>
-            <div>
-
             </div>
         </div>
         <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
-            <div class="title" style="margin: 6px 0 ;"><strong>基本状态</strong></div>
+            <div class="title" style="margin: 6px 0 ;">
+                <strong>基本状态</strong>
+                <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
+            </div>
             <ul class="deviceList" id="STATUS">
-                <li>
-                    <strong onclick="copyText(event)" class="green">蜂窝状态：111</strong>
+                <li style="padding-top: 15px;">
+                    <strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong>
                 </li>
             </ul>
         </div>
@@ -593,6 +615,65 @@
                     <button onclick="sendSMS()">发送</button>
                     <button onclick="closeModal('#smsList')">关闭</button>
                 </div>
+            </div>
+        </div>
+        <div id="dictionaryModal" class="modal" style="display: none;">
+            <div class="title">状态显示/隐藏</div>
+            <p style="font-size: 12px;"><i>注：设备不支持/为空的状态无论是否勾选也不会显示</i></p>
+            <div class="content" id="DIC_LIST" style="
+                overflow-y: scroll;
+                max-height:400px;
+                padding-top: 15px;
+                margin-bottom: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: start;
+                ">
+                <!-- 在这里管理字段显示 -->
+                <label><input type="checkbox" data-name="network_type">蜂窝状态</label>
+                <label><input type="checkbox" data-name="wifi_access_sta_num">设备数</label>
+                <label><input type="checkbox" data-name="battery">剩余电量</label>
+                <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label>
+                <label><input type="checkbox" data-name="cpu_temp">CPU温度</label>
+                <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label>
+                <label><input type="checkbox" data-name="mem_usage">内存使用率</label>
+                <label><input type="checkbox" data-name="realtime_time">连接时长</label>
+                <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
+                <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
+
+                <label><input type="checkbox" data-name="Z5g_rsrp">5G接收功率</label>
+                <label><input type="checkbox" data-name="Nr_snr">5G SINR</label>
+                <label><input type="checkbox" data-name="Nr_bands">5G 注册频段</label>
+                <label><input type="checkbox" data-name="Nr_fcn">5G 频点</label>
+                <label><input type="checkbox" data-name="Nr_bands_widths">5G 频宽</label>
+                <label><input type="checkbox" data-name="Nr_pci">5G PCI</label>
+                <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label>
+                <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label>
+                <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label>
+
+                <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label>
+                <label><input type="checkbox" data-name="Lte_snr">4G SINR</label>
+                <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label>
+                <label><input type="checkbox" data-name="Lte_fcn">4G 频点</label>
+                <label><input type="checkbox" data-name="Lte_bands_widths">4G 频宽</label>
+                <label><input type="checkbox" data-name="Lte_pci">4G PCI</label>
+                <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label>
+                <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label>
+                <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label>
+
+                <label><input type="checkbox" data-name="model">设备型号</label>
+                <label><input type="checkbox" data-name="cr_version">版本号</label>
+                <label><input type="checkbox" data-name="iccid">ICCID</label>
+                <label><input type="checkbox" data-name="imei">IMEI</label>
+                <label><input type="checkbox" data-name="imsi">IMSI</label>
+                <label><input type="checkbox" data-name="ipv6_wan_ipaddr">IPV6地址</label>
+                <label><input type="checkbox" data-name="lan_ipaddr">本地网关</label>
+                <label><input type="checkbox" data-name="mac_address">MAC地址</label>
+                <label><input type="checkbox" data-name="msisdn">手机号</label>
+            </div>
+            <div class="btn" style="text-align: right;">
+                <button onclick="resetShowList(event)">重置(全选)</button>
+                <button onclick="closeModal('#dictionaryModal')">关闭</button>
             </div>
         </div>
     </div>
@@ -823,7 +904,16 @@
                     mem_u = mem
                 } catch {/*没有，不处理*/ }
 
-                return { ...await res.json(), cpu_temp: cpu_t, cpu_usage: cpu_u, mem_usage: mem_u }
+                //获取设备型号与电量，整合（如果有）
+                let battery = null
+                let model = null
+                try {
+                    const res = await (await fetch('/api/battery_and_model')).json()
+                    battery = res.battery
+                    model = res.model
+                } catch {/*没有，不处理*/ }
+
+                return { ...await res.json(), cpu_temp: cpu_t, cpu_usage: cpu_u, mem_usage: mem_u, battery, model }
             } catch (error) {
                 if (error.name === 'AbortError') {
                     console.warn('请求超时');
@@ -861,9 +951,42 @@
     </script>
     <script>
         let smsSender = null
+        let statusShowList = localStorage.getItem('statusShowList') ? JSON.parse(localStorage.getItem('statusShowList')) : null
 
-        function notNullOrundefined(val) {
-            return val != null && val != undefined
+        //初始化statusShowList为全选
+        if (!statusShowList) {
+            const dicList = document.querySelectorAll('#DIC_LIST input')
+            const list = []
+            for (let item of dicList) {
+                if (!item) continue
+                const name = item.getAttribute('data-name')
+                item.checked = true
+                list.push(name)
+            }
+            statusShowList = list
+            localStorage.setItem('statusShowList', JSON.stringify(list))
+        } else {
+            const dicList = document.querySelectorAll('#DIC_LIST input')
+            for (let item of dicList) {
+                if (!item) continue
+                const name = item.getAttribute('data-name')
+                if (statusShowList.includes(name)) {
+                    item.checked = true
+                } else {
+                    item.checked = false
+                }
+            }
+        }
+
+        function notNullOrundefinedOrIsShow(obj, dicName) {
+            let isNumber = typeof obj[dicName] === 'number'
+            if (isNumber) {
+                //如果是数字类型，直接返回
+                return statusShowList.includes(dicName)
+            }
+            let isReadable = obj[dicName] != null && obj[dicName] != undefined && obj[dicName] != ''
+            //这里需要遍历一下是否显示的字段
+            return isReadable && statusShowList.includes(dicName)
         }
 
         function copyText(e) {
@@ -1235,50 +1358,51 @@
             if (res) {
                 const status = document.querySelector('#STATUS')
                 let html = ''
-
                 html += `<li style="padding-top: 15px;"><p>
-                    ${res.network_type ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}
-                    ${notNullOrundefined(res.wifi_access_sta_num) ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
-                    ${notNullOrundefined(res.rssi) ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
-                    ${res.cpu_temp ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}
-                    ${res.cpu_usage != null || res.cpu_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}
-                    ${res.mem_usage != null || res.mem_usage != undefined ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}
-                    ${res.realtime_time ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
-                    ${(res.monthly_tx_bytes && res.monthly_rx_bytes) ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
-                    ${notNullOrundefined(res.realtime_tx_thrpt) && notNullOrundefined(res.realtime_rx_thrpt) ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'network_type') ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'wifi_access_sta_num') ? `<strong onclick="copyText(event)"  class="blue">设备数：${res.wifi_access_sta_num}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'battery') ? `<strong onclick="copyText(event)"  class="green">剩余电量：${res.battery} %</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'rssi') ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(res.rssi)}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'cpu_temp') ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'realtime_tx_thrpt') || notNullOrundefinedOrIsShow(res, 'realtime_rx_thrpt') ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;"><b>信号参数</b></div>
                     <li style="padding-top: 15px;"><p>
-                    ${notNullOrundefined(res.lte_rsrp) ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_snr) ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${res.Lte_snr}dB</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_bands) ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_fcn) ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_bands_widths) ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_pci) ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
-                    ${notNullOrundefined(res.lte_rsrq) ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
-                    ${notNullOrundefined(res.lte_rssi) ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
-                    ${notNullOrundefined(res.Lte_cell_id) ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${res.lte_rsrp}dBm</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${res.Lte_snr}dB</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_bands') ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_bands_widths') ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}
 
-                    ${notNullOrundefined(res.Z5g_rsrp) ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_snr) ? `<strong onclick="copyText(event)"  class="green">5G SINR：${res.Nr_snr}dB</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_bands) ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_fcn) ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_bands_widths) ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_pci) ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_rsrq) ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.Nr_rsrq}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_rssi) ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.Nr_rssi}</strong>` : ''}
-                    ${notNullOrundefined(res.Nr_cell_id) ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${res.Z5g_rsrp}dBm</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${res.Nr_snr}dB</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_bands') ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_bands_widths') ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.nr_rsrq}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}
                     </p></li>
                     <div class="title" style="margin: 6px 0;"><b>设备属性</b></div>
                     <li style="padding-top: 15px;"><p>
-                    ${res.iccid ? `<strong onclick="copyText(event)"  class="blue">ICCID：${res.iccid}</strong>` : ''}
-                    ${res.imei ? `<strong onclick="copyText(event)"  class="blue">IMEI：${res.imei}</strong>` : ''}
-                    ${res.imsi ? `<strong onclick="copyText(event)"  class="blue">IMSI：${res.imsi}</strong>` : ''}
-                    ${res.ipv6_wan_ipaddr ? `<strong onclick="copyText(event)"  class="blue">IPV6地址：${res.ipv6_wan_ipaddr}</strong>` : ''}
-                    ${res.lan_ipaddr ? `<strong onclick="copyText(event)"  class="blue">本地网关：${res.lan_ipaddr}</strong>` : ''}
-                    ${res.mac_address ? `<strong onclick="copyText(event)"  class="blue">MAC地址：${res.mac_address}</strong>` : ''}
-                    ${res.msisdn ? `<strong onclick="copyText(event)"  class="blue">手机号：${res.msisdn}</strong>` : ''}
-                    ${res.cr_version ? `<strong onclick="copyText(event)"  class="blue">版本号：${res.cr_version}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'model') ? `<strong onclick="copyText(event)"  class="blue">设备型号：${res.model}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'cr_version') ? `<strong onclick="copyText(event)"  class="blue">版本号：${res.cr_version}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'iccid') ? `<strong onclick="copyText(event)"  class="blue">ICCID：${res.iccid}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'imei') ? `<strong onclick="copyText(event)"  class="blue">IMEI：${res.imei}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'imsi') ? `<strong onclick="copyText(event)"  class="blue">IMSI：${res.imsi}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'ipv6_wan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">IPV6地址：${res.ipv6_wan_ipaddr}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'lan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">本地网关：${res.lan_ipaddr}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'mac_address') ? `<strong onclick="copyText(event)"  class="blue">MAC地址：${res.mac_address}</strong>` : ''}
+                    ${notNullOrundefinedOrIsShow(res, 'msisdn') ? `<strong onclick="copyText(event)"  class="blue">手机号：${res.msisdn}</strong>` : ''}
                     </p></li>
                    `
                 status && (status.innerHTML = html)
@@ -1436,7 +1560,7 @@
                     out()
                     return null
                 }
-                res = await (await postData(cookie, {
+                let res = await (await postData(cookie, {
                     goformId: 'SET_BEARER_PREFERENCE',
                     BearerPreference: value.trim()
                 })).json()
@@ -1451,6 +1575,120 @@
             }
         }
 
+        let initUSBNetworkType = async () => {
+            const selectEl = document.querySelector('#USB_TYPE')
+            if (!initRequestData() || !selectEl) {
+                selectEl.style.backgroundColor = '#80808073'
+                selectEl.disabled = true
+                return null
+            }
+            selectEl.style.backgroundColor = ''
+            selectEl.disabled = false
+            let res = await getData(new URLSearchParams({
+                cmd: 'usb_network_protocal'
+            }))
+            if (!selectEl || !res || res.usb_network_protocal == null || res.usb_network_protocal == undefined) {
+                return
+            }
+            [...selectEl.children].forEach((item) => {
+                if (item.value == res.usb_network_protocal) {
+                    item.selected = true
+                }
+            })
+        }
+        initUSBNetworkType()
+
+        let changeUSBNetwork = async (e) => {
+            const value = e.target.value.trim()
+            if (!initRequestData() || !value) {
+                return null
+            }
+            createToast('更改中，请稍后', '#BF723F')
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res = await (await postData(cookie, {
+                    goformId: 'SET_USB_NETWORK_PROTOCAL',
+                    usb_network_protocal: value.trim()
+                })).json()
+                if (res.result == 'success') {
+                    createToast('操作成功，请重启设备生效！', 'green')
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+                await initUSBNetworkType()
+            } catch (e) {
+                createToast(e.message)
+            }
+        }
+
+        //WiFi开关切换_INIT
+        // let initWIFISwitch = async () => {
+        //     const selectEl = document.querySelector('#WIFI_SWITCH')
+        //     if (!initRequestData() || !selectEl) {
+        //         selectEl.style.backgroundColor = '#80808073'
+        //         selectEl.disabled = true
+        //         return null
+        //     }
+        //     selectEl.style.backgroundColor = ''
+        //     selectEl.disabled = false
+        //     let res = await getData(new URLSearchParams({
+        //         cmd: 'net_select'
+        //     }))
+        //     if (!selectEl || !res || res.net_select == null || res.net_select == undefined) {
+        //         return
+        //     }
+        //     [...selectEl.children].forEach((item) => {
+        //         if (item.value == res.net_select) {
+        //             item.selected = true
+        //         }
+        //     })
+        // }
+        // initWIFISwitch()
+
+        //WiFi开关切换
+        let changeWIFISwitch = async (e) => {
+            const value = e.target.value.trim()
+            if (!initRequestData() || !value) {
+                return null
+            }
+            createToast('更改中，请稍后', '#BF723F')
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res = null
+                if (value == "0" || value == 0) {
+                    res = await (await postData(cookie, {
+                        goformId: 'switchWiFiModule',
+                        SwitchOption: 0
+                    })).json()
+                } else if (value == 'chip1' || value == 'chip2') {
+                    res = await (await postData(cookie, {
+                        goformId: 'switchWiFiChip',
+                        ChipEnum: value,
+                        GuestEnable: 0
+                    })).json()
+                } else {
+                    return
+                }
+                if (res.result == 'success') {
+                    createToast('操作成功！', 'green')
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+                // await initWIFISwitch()
+            } catch (e) {
+                createToast(e.message)
+            }
+        }
 
         let initSMBStatus = async () => {
             const el = document.querySelector('#SMB')
@@ -1649,8 +1887,8 @@
                         return `
                     <tr>
                         <td>${rat == '12' ? '4G' : '5G'}</td>
-                        <td>${earfcn}</td>
                         <td>${pci}</td>
+                        <td>${earfcn}</td>
                     </tr>
                 `
                     }).join('')
@@ -1787,7 +2025,7 @@
                 }
             }
             rebootBtnCount++
-            timer = setTimeout(() => {
+            rebootTimer = setTimeout(() => {
                 rebootBtnCount = 1
                 target.innerHTML = '重启设备'
             }, 3000);
@@ -1804,6 +2042,51 @@
             target.onclick = rebootDevice
         }
         rebootDeviceBtnInit()
+
+        //字段显示隐藏
+        document.querySelector("#DICTIONARY").onclick = (e) => {
+            showModal('#dictionaryModal')
+        }
+
+        document.querySelector('#DIC_LIST')?.addEventListener('click', (e) => {
+            let target = e.target
+            e.stopPropagation()
+            e.stopImmediatePropagation()
+            if (target.id == 'DIC_LIST') {
+                return
+            }
+            let inputEl = null
+            if (target.tagName == 'label' || target.tagName == 'LABEL') {
+                return
+            } else {
+                inputEl = target
+            }
+            let id = inputEl.getAttribute('data-name')
+            if (inputEl.checked) {
+                statusShowList.push(id)
+            } else {
+                statusShowList = statusShowList.filter(item => item != id)
+            }
+            //保存
+            localStorage.setItem('statusShowList', JSON.stringify(statusShowList))
+        }, false)
+
+        let resetShowListBtnCount = 1
+        let resetShowListTimer = null
+        let resetShowList = (e) => {
+            const target = e.target
+            resetShowListTimer && clearTimeout(resetShowListTimer)
+            if (resetShowListBtnCount == 1) target.innerHTML = "确定重置？"
+            if (resetShowListBtnCount >= 2) {
+                localStorage.removeItem('statusShowList');
+                location.reload()
+            }
+            resetShowListBtnCount++
+            resetShowListTimer = setTimeout(() => {
+                resetShowListBtnCount = 1
+                target.innerHTML = '重置(全选)'
+            }, 3000);
+        }
     </script>
 </body>
 
