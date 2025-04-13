@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.minikano.f50_sms"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
-        versionName = "2.2.0"
+        versionName = "2.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

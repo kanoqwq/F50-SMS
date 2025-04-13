@@ -1,11 +1,13 @@
 package com.minikano.f50_sms
 
+import android.app.usage.NetworkStats
+import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.ConnectivityManager
 import android.os.BatteryManager
 import android.os.Build
-import android.os.Environment
 import android.os.StatFs
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
@@ -13,6 +15,7 @@ import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Calendar
 import java.util.Locale
 
 
@@ -25,12 +28,13 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         //cpu温度
         if (method == "GET" && uri == "/temp") {
             return try {
-                val temp = ShellKano.runShellCommand("cat /sys/class/thermal/thermal_zone1/temp")
+                val temp = ShellKano.executeShellFromAssetsSubfolder(context_app,"shell/temp.sh")
+                val temp1 =  ShellKano.runShellCommand("cat /sys/class/thermal/thermal_zone1/temp")
                 Log.d("kano_ZTE_LOG", "获取CPU温度成功: $temp")
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"temp":$temp}"""
+                    """{"temp":${temp?:temp1}}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -108,25 +112,55 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 val model = Build.MODEL // 设备型号
                 val batteryLevel: Int = getBatteryPercentage()// 充电状态
 
-                //内部存储
-                val internalStorage: File = context_app.filesDir 
-                val statFs = StatFs(internalStorage.absolutePath)
-                val totalSize = formatSize(statFs.blockSizeLong * statFs.blockCountLong)
-                val availableSize =formatSize(statFs.blockSizeLong * statFs.availableBlocksLong)
-                //外部存储
-                val externalStorage = Environment.getExternalStorageDirectory()
-                val statFs_ex = StatFs(externalStorage.absolutePath)
-                val totalSize_ex = formatSize(statFs_ex.blockSizeLong * statFs_ex.blockCountLong)
-                val availableSize_ex = formatSize(statFs_ex.blockSizeLong * statFs_ex.availableBlocksLong)
-
-                Log.d("kano_ZTE_LOG","内部存储：$availableSize/$totalSize")
-                Log.d("kano_ZTE_LOG","外部存储：$availableSize_ex/$totalSize_ex")
                 Log.d("kano_ZTE_LOG", "型号与电量：$model $batteryLevel")
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
                     """{"model":"$model","battery":"$batteryLevel"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取型号与电量信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取型号与电量信息出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        if (method == "GET" && uri == "/storage_and_dailyData") {
+            return try {
+                //内部存储
+                val internalStorage: File = context_app.filesDir
+                val statFs = StatFs(internalStorage.absolutePath)
+                val totalSize = formatSize(statFs.blockSizeLong * statFs.blockCountLong)
+                val availableSize =formatSize(statFs.blockSizeLong * statFs.availableBlocksLong)
+
+                val dailyData = formatSize(getTodayDataUsage(context_app))
+
+//                val storages = context_app.getExternalFilesDirs(null)
+//                for (file in storages) {
+//                    if (file != null) {
+//                        Log.d("kano_ZTE_LOG", "路径: ${file.absolutePath}")
+//                    }
+//                }
+
+                //外部存储
+                val ex_storage_info = getRemovableStorageInfo(context_app)
+
+                Log.d("kano_ZTE_LOG","日用流量：$dailyData")
+                Log.d("kano_ZTE_LOG","内部存储：$availableSize/$totalSize")
+                Log.d("kano_ZTE_LOG","外部存储：${formatSize(ex_storage_info?.availableBytes?:0)}/${formatSize(ex_storage_info?.totalBytes?:0)}")
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"daily_data":"$dailyData","internal_available_storage":"$availableSize","internal_total_storage":"$totalSize","external_total_storage":"${formatSize(ex_storage_info?.totalBytes?:0)}","external_available_storage":"${formatSize(ex_storage_info?.availableBytes?:0)}"}""".trimIndent()
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -335,4 +369,106 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         else if (mb >= 1) String.format(Locale.US,"%.2f MB", mb)
         else String.format(Locale.US,"%.2f KB", kb)
     }
+
+    fun getTodayDataUsage(
+        context: Context,
+        isMobile: Boolean = true // true 表示移动流量，false 表示 WiFi
+    ): Long {
+        val networkStatsManager =
+            context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
+
+        val uid = android.os.Process.myUid()
+        val startTime = getStartOfDayMillis()
+        val endTime = System.currentTimeMillis()
+
+        val networkType = if (isMobile)
+            ConnectivityManager.TYPE_MOBILE
+        else
+            ConnectivityManager.TYPE_WIFI
+
+        var totalBytes = 0L
+
+        try {
+            val summary = networkStatsManager.querySummary(
+                ConnectivityManager.TYPE_MOBILE,
+                null,
+                startTime,
+                endTime
+            )
+            val bucket = NetworkStats.Bucket()
+            summary.getNextBucket(bucket)
+            totalBytes = bucket.rxBytes + bucket.txBytes
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return totalBytes
+    }
+
+    private fun getStartOfDayMillis(): Long {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    data class MyStorageInfo(
+        val path: String,
+        val totalBytes: Long,
+        val availableBytes: Long
+    )
+
+    fun getRemovableStorageInfo(context: Context): MyStorageInfo? {
+        val dirs = context.getExternalFilesDirs(null)
+        for (file in dirs) {
+            if (file != null) {
+                val path = file.absolutePath
+
+                // 判断不是内置路径
+                if (!path.contains("/storage/emulated/0")) {
+                    val statFs = StatFs(path)
+                    val total = statFs.blockSizeLong * statFs.blockCountLong
+                    val available = statFs.blockSizeLong * statFs.availableBlocksLong
+
+                    return MyStorageInfo(
+                        path = path,
+                        totalBytes = total,
+                        availableBytes = available
+                    )
+                }
+            }
+        }
+        return null
+    }
+
+    //超级低能代码，不建议使用
+    fun getMaxTemperature(): Int? {
+        val temperatures = mutableListOf<Int>()
+
+        // 遍历 zone0 到 zone30
+        for (i in 0..25) {
+            val zone = "/sys/class/thermal/thermal_zone$i/temp"
+            val temp = ShellKano.runShellCommand("cat $zone")
+
+            if (!temp.isNullOrEmpty()) {
+                try {
+                    temperatures.add(temp.toInt())  // 添加有效的温度值到列表
+                } catch (e: NumberFormatException) {
+                    // 如果温度值无法解析为整数，可以忽略该值
+                    continue
+                }
+            }
+        }
+
+        // 如果没有有效的温度值，返回 null
+        if (temperatures.isEmpty()) {
+            return null
+        }
+
+        // 对温度值排序并取最大值
+        return temperatures.sortedDescending().first()
+    }
+
 }
