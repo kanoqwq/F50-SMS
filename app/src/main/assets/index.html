@@ -351,6 +351,21 @@
         #dictionaryModal .content label {
             margin-bottom: 4px;
         }
+
+        .mask {
+            content: '';
+            box-sizing: border-box;
+            position: fixed;
+            z-index: 1;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            opacity: 1;
+            transition: all .3s;
+            box-shadow: 0 0 10px 0 #00000076;
+        }
     </style>
 </head>
 
@@ -385,10 +400,9 @@
                         <option value="2">CDC-ECM</option>
                     </select>
                     <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
-                        <option value="">WIFI切换</option>
-                        <option value="0">关闭</option>
-                        <option value="chip1">2.4Ghz</option>
-                        <option value="chip2">5Ghz</option>
+                        <option value="0">WIFI:关闭</option>
+                        <option value="chip1">WIFI:2.4G</option>
+                        <option value="chip2">WIFI:5G</option>
                     </select>
                 </div>
             </div>
@@ -589,19 +603,23 @@
                     style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
             </div>
         </div>
-        <div class="modal" id="tokenModal" style="display: none;">
-            <div class="title">请输入密码</div>
-            <div class="content" style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
-                <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
-                    style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
-                <input id="tokenInput" placeholder="管理密码" type="password" value=""
-                    style="margin:0 4px;margin-bottom: 20px;height: 30px;">
-            </div>
-            <div class="btn" style="text-align: right;">
-                <button onclick="onTokenConfirm()">确认</button>
-                <button onclick="closeModal('#tokenModal')">取消</button>
+        <div class="mask" id="tokenModal" style="display: none;">
+            <div class="modal" >
+                <div class="title">请输入密码</div>
+                <div class="content"
+                    style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
+                    <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
+                        style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
+                    <input id="tokenInput" placeholder="管理密码" type="password" value=""
+                        style="margin:0 4px;margin-bottom: 20px;height: 30px;">
+                </div>
+                <div class="btn" style="text-align: right;">
+                    <button onclick="onTokenConfirm()">确认</button>
+                    <button onclick="closeModal('#tokenModal')">取消</button>
+                </div>
             </div>
         </div>
+
         <div class="modal" id="smsList" style="display: none;">
             <div class="title" style="margin-bottom: 6px;">短信列表</div>
             <div class="action" style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
@@ -1731,17 +1749,21 @@
 
             selectEl.style.backgroundColor = ''
             selectEl.disabled = false
-            // let res = await getData(new URLSearchParams({
-            //     cmd: 'net_select'
-            // }))
-            // if (!selectEl || !res || res.net_select == null || res.net_select == undefined) {
-            //     return
-            // }
-            // [...selectEl.children].forEach((item) => {
-            //     if (item.value == res.net_select) {
-            //         item.selected = true
-            //     }
-            // })
+            let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
+                cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
+            }))
+
+            if (WiFiModuleSwitch) {
+                if (ResponseList?.length) {
+                    ResponseList.forEach(item => {
+                        if (item.AccessPointSwitchStatus == '1') {
+                            selectEl.value = item.ChipIndex == "0" ? 'chip1' : 'chip2'
+                        }
+                    })
+                }
+            } else {
+                selectEl.value = 0
+            }
         }
         initWIFISwitch()
 
@@ -1776,11 +1798,11 @@
                     return
                 }
                 if (res.result == 'success') {
-                    createToast('操作成功！', 'green')
+                    createToast('操作成功，请重新连接WiFi！', 'green')
                 } else {
                     createToast('操作失败！', 'red')
                 }
-                // await initWIFISwitch()
+                await initWIFISwitch()
             } catch (e) {
                 createToast(e.message)
             }
