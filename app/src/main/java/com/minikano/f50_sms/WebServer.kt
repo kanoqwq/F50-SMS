@@ -143,13 +143,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                 val dailyData = formatSize(getTodayDataUsage(context_app))
 
-//                val storages = context_app.getExternalFilesDirs(null)
-//                for (file in storages) {
-//                    if (file != null) {
-//                        Log.d("kano_ZTE_LOG", "路径: ${file.absolutePath}")
-//                    }
-//                }
-
                 //外部存储
                 val ex_storage_info = getRemovableStorageInfo(context_app)
 

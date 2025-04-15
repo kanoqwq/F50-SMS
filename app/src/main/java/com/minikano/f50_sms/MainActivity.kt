@@ -114,6 +114,7 @@ class MainActivity : ComponentActivity() {
                     versionName = versionName ?: "未知" ,
                     onStopServer = {
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", false))
+                        serverStatusLiveData.postValue(false)
                         Log.d("kano_ZTE_LOG", "user touched stop btn")
                     }
                 )
@@ -126,6 +127,7 @@ class MainActivity : ComponentActivity() {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
+                        serverStatusLiveData.postValue(true)
                         Log.d("kano_ZTE_LOG", "user touched start btn")
                         runADB()
                     }
