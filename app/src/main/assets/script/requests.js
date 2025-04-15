@@ -292,3 +292,16 @@ function fetchWithTimeout(url = '', options = {}, timeout = 10000) {
             clearTimeout(tid)
         })
 }
+
+//查流量使用情况
+async function getDataUsage() {
+    try {
+        const res = await getData(new URLSearchParams({
+            cmd: 'data_volume_limit_switch,data_volume_limit_unit,data_volume_limit_size,data_volume_alert_percent,monthly_tx_bytes,monthly_rx_bytes,monthly_time,wan_auto_clear_flow_data_switch,traffic_clear_date,',
+            multi_data: 1
+        }))
+        return res
+    } catch {
+        return null
+    }
+}

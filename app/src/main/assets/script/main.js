@@ -83,7 +83,7 @@ function kano_parseSignalBar(val, min = -125, max = -81, step1 = -90, step2 = -1
     const progress = document.createElement('span')
     const text = document.createElement('span')
 
-    text.innerHTML =  Number(val)
+    text.innerHTML = Number(val)
     bar.className = 'signal_bar'
     text.className = 'text'
     progress.className = 'signal_bar_progress'
@@ -118,9 +118,9 @@ function kano_formatTime(seconds) {
     }
 }
 function formatBytes(bytes) {
-    if (bytes === 0) return '0 Byte';
+    if (bytes === 0) return '0 B';
 
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
 }
@@ -179,12 +179,15 @@ function createToast(text, color, delay = 3000) {
         }, 200);
     }, delay);
 }
+
+let modalTimer = null
 function closeModal(txt, time = 300) {
     if (txt == '#smsList') smsSender && smsSender()
     let el = document.querySelector(txt)
     if (!el) return
     el.style.opacity = 0
-    setTimeout(() => {
+    modalTimer && clearTimeout(modalTimer)
+    modalTimer = setTimeout(() => {
         el.style.display = 'none'
     }, time)
 }
@@ -421,7 +424,7 @@ let handleSmsRender = async () => {
         if (!res) {
             out()
         }
-        list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center;height:100vh;">没有短信</h2></li >`
+        list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center;">没有短信</h2></li >`
     }
 }
 
@@ -471,7 +474,7 @@ let handlerStatusRender = async (flag = false) => {
             cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
             mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
             realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
-            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${Number((res.monthly_tx_bytes + res.monthly_rx_bytes) / 1024 / 1024 / 1024).toFixed(2)} GB</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + res.data_volume_limit_size.split('_')[0] + ' GB' : ''}</strong>` : ''}`,
+            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes(res.data_volume_limit_size.split('_')[0] * res.data_volume_limit_size.split('_')[1] * Math.pow(1024, 2)) : ''}</strong>` : ''}`,
             daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${res.daily_data}</strong>` : ''}`,
             internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)"  class="blue">内部存储：${res.internal_available_storage} / ${res.internal_total_storage}</strong>` : ''}`,
             external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)"  class="blue">SD卡：${res.external_available_storage} / ${res.external_total_storage}</strong>` : ''}`,
@@ -1248,3 +1251,197 @@ document.querySelector('#REFRESH').onclick = (e) => {
         StopStatusRenderTimer && StopStatusRenderTimer()
     }
 }
+
+//流量管理逻辑
+document.querySelector("#DataManagement").onclick = async () => {
+    if (!initRequestData()) {
+        createToast('请登录！', 'red')
+        out()
+        return null
+    }
+    // 查流量使用情况
+    const res = await getDataUsage()
+    console.log(res)
+    if (!res) {
+        createToast('获取流量使用情况失败', 'red')
+        return null
+    }
+    // 预填充表单
+    const form = document.querySelector('#DataManagementForm')
+    if (!form) return null
+    let data_volume_limit_switch = form.querySelector('input[name="data_volume_limit_switch"]')
+    let wan_auto_clear_flow_data_switch = form.querySelector('input[name="wan_auto_clear_flow_data_switch"]')
+    let data_volume_limit_unit = form.querySelector('input[name="data_volume_limit_unit"]')
+    let traffic_clear_date = form.querySelector('input[name="traffic_clear_date"]')
+    let data_volume_alert_percent = form.querySelector('input[name="data_volume_alert_percent"]')
+    let data_volume_limit_size = form.querySelector('input[name="data_volume_limit_size"]')
+    let data_volume_limit_type = form.querySelector('select[name="data_volume_limit_type"]')
+    let data_volume_used_size = form.querySelector('input[name="data_volume_used_size"]')
+    let data_volume_used_type = form.querySelector('select[name="data_volume_used_type"]')
+    // (12094630728720/1024/1024)/1048576
+    let used_size_type = 1
+    const used_size = (() => {
+        const total_bytes = ((Number(res.monthly_rx_bytes) + Number(res.monthly_tx_bytes))) / Math.pow(1024, 2)
+        console.log('total——byte', total_bytes);
+
+        if (total_bytes < 1024) {
+            return total_bytes.toFixed(2)
+        } else if (total_bytes >= 1024 && total_bytes < Math.pow(1024, 2)) {
+            used_size_type = 1024
+            return (total_bytes / 1024).toFixed(2)
+        } else {
+            used_size_type = Math.pow(1024, 2)
+            return (total_bytes / Math.pow(1024, 2)).toFixed(2)
+        }
+    })()
+
+    data_volume_limit_switch && (data_volume_limit_switch.checked = res.data_volume_limit_switch.toString() == '1')
+    wan_auto_clear_flow_data_switch && (wan_auto_clear_flow_data_switch.checked = res.wan_auto_clear_flow_data_switch.toString() == 'on')
+    data_volume_limit_unit && (data_volume_limit_unit.checked = res.data_volume_limit_unit.toString() == 'data')
+    traffic_clear_date && (traffic_clear_date.value = res.traffic_clear_date.toString())
+    data_volume_alert_percent && (data_volume_alert_percent.value = res.data_volume_alert_percent.toString())
+    data_volume_limit_size && (data_volume_limit_size.value = res.data_volume_limit_size?.split('_')[0].toString())
+    data_volume_limit_type && (() => {
+        const val = Number(res.data_volume_limit_size?.split('_')[1])
+        const option = data_volume_limit_type.querySelector(`option[data-value="${val}"]`)
+        option && (option.selected = true)
+    })()
+    data_volume_used_size && (data_volume_used_size.value = used_size.toString())
+    data_volume_used_type && (() => {
+        const option = data_volume_used_type.querySelector(`option[data-value="${used_size_type.toFixed(0)}"]`)
+        option && (option.selected = true)
+    })()
+    showModal('#DataManagementModal')
+}
+
+//流量管理表单提交
+let handleDataManagementFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        const cookie = await login()
+        if (!cookie) {
+            createToast('登录失败，请检查密码', 'red')
+            closeModal('#DataManagementModal')
+            setTimeout(() => {
+                out()
+            }, 310);
+            return null
+        }
+
+        let form_data = {
+            "data_volume_limit_switch": "0",
+            "wan_auto_clear_flow_data_switch": "off",
+            "data_volume_limit_unit": "data",
+            "traffic_clear_date": "0",
+            "data_volume_alert_percent": "0",
+            "data_volume_limit_size": "0",
+            "data_volume_limit_type": "1", //MB GB TB
+            "data_volume_used_size": "0",
+            "data_volume_used_type": "1", //MB GB TB
+            // 时间
+            "notify_deviceui_enable": "0",
+        }
+
+        const form = e.target; // 获取表单
+        const formData = new FormData(form);
+
+        for (const [key, value] of formData.entries()) {
+            switch (key) {
+                case 'data_volume_limit_switch':
+                    form_data[key] = value.trim() == 'on' ? '1' : '0'
+                    break;
+                case 'wan_auto_clear_flow_data_switch':
+                    form_data[key] = value.trim() == 'on' ? 'on' : '0'
+                    break;
+                case 'data_volume_limit_unit':
+                    form_data[key] = value.trim() == 'on' ? 'data' : 'time'
+                    break;
+                case 'traffic_clear_date':
+                    if (isNaN(Number(value.trim()))) {
+                        createToast('清零日期必须为数字', 'red')
+                        return
+                    }
+                    if (Number(value.trim()) < 0 || Number(value.trim()) > 31) {
+                        createToast('清零日期必须在0-31之间', 'red')
+                        return
+                    }
+                    form_data[key] = value.trim()
+                    break;
+                case 'data_volume_alert_percent':
+                    if (isNaN(Number(value.trim()))) {
+                        createToast('提醒阈值必须为数字', 'red')
+                        return
+                    }
+                    if (Number(value.trim()) < 0 || Number(value.trim()) > 100) {
+                        createToast('提醒阈值必须在0-100之间', 'red')
+                        return
+                    }
+                    form_data[key] = value.trim()
+                    break;
+                case 'data_volume_limit_size':
+                    if (isNaN(Number(value.trim()))) {
+                        createToast('流量套餐必须为数字', 'red')
+                        return
+                    }
+                    if (Number(value.trim()) <= 0) {
+                        createToast('流量套餐必须大于0', 'red')
+                        return
+                    }
+                    form_data[key] = value.trim()
+                    break;
+                case 'data_volume_limit_type':
+                    form_data[key] = '_' + value.trim()
+                    break;
+                case 'data_volume_used_size':
+                    if (isNaN(Number(value.trim()))) {
+                        createToast('已用流量必须为数字', 'red')
+                        return
+                    }
+                    if (Number(value.trim()) <= 0) {
+                        createToast('已用流量必须大于0', 'red')
+                        return
+                    }
+                    form_data[key] = value.trim()
+                    break;
+                case 'data_volume_used_type':
+                    form_data[key] = value.trim()
+                    break;
+            }
+        }
+        form_data['data_volume_limit_size'] = form_data['data_volume_limit_size'] + form_data['data_volume_limit_type']
+        const used_data = Number(form_data.data_volume_used_size) * Number(form_data['data_volume_used_type']) * Math.pow(1024, 2)
+        const clear_form_data = {
+            data_volume_limit_switch: form_data['data_volume_limit_switch'],
+            wan_auto_clear_flow_data_switch: 'on',
+            traffic_clear_date: '1',
+            notify_deviceui_enable: '0'
+        }
+        delete form_data['data_volume_limit_type']
+        //发请求
+        try {
+            const tempData = form_data['data_volume_limit_switch'] == '0' ? clear_form_data : form_data
+            const res = await (await postData(cookie, {
+                goformId: 'DATA_LIMIT_SETTING',
+                ...tempData
+            })).json()
+
+            const res1 = await (await postData(cookie, {
+                goformId: 'FLOW_CALIBRATION_MANUAL',
+                calibration_way: form_data.data_volume_limit_unit,
+                time: 0,
+                data: used_data.toFixed(0)
+            })).json()
+
+            if (res.result == 'success' && res1.result == 'success') {
+                createToast('设置成功!', 'green')
+                closeModal('#DataManagementModal')
+            } else {
+                throw '设置失败！请检查网络'
+            }
+        } catch (e) {
+            createToast(e.message, 'red')
+        }
+    } catch {
+        // createToast('网络出错，请检查网络', 'red')
+    }
+};

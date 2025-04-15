@@ -24,6 +24,14 @@ ul {
     padding: 0;
 }
 
+a {
+    color: pink;
+}
+
+.h100{
+    height: 100%;
+}
+
 .container {
     overflow: auto;
     display: flex;
@@ -104,7 +112,7 @@ ul {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 10px;
-    color: #666;
+    color: var(--dark-text-color);
     font-size: 14px;
 }
 
@@ -359,7 +367,7 @@ input {
 }
 
 .signal_bar {
-    display:inline-block;
+    display: inline-block;
     overflow: hidden;
     position: relative;
     padding: 8px;
@@ -386,4 +394,21 @@ input {
     font-size: 12px;
     transform: translate(-50%, -50%);
     color: white;
+}
+
+#DataManagementModal content{
+    display: flex;
+    flex-direction: column;
+}
+
+#DataManagementModal form .item {
+    margin: 8px 0;
+    width: 100%;
+    font-size: 14px;
+}
+#DataManagementModal form .item input {
+    width: auto;
+    justify-self: start;
+    box-sizing: border-box;
+    padding: 4px;
 }

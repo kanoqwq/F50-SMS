@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ZTE-UFI-TOOLS-WEB</title>
     <link rel="stylesheet" href="/style/style.css">
 </head>
@@ -14,6 +14,7 @@
         <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
             <strong>ZTE-UFI管理工具</strong>
         </div>
+        <!-- 操作按钮 -->
         <div class="actions" style="flex-shrink: 0;text-align: start;align-self: flex-start">
             <div style="margin-bottom: 10px;">
                 <div>
@@ -22,6 +23,7 @@
                 </div>
                 <div>
                     <button id="SMS" class="btn">短信收发</button>
+                    <button id="DataManagement" class="btn">流量管理</button>
                     <button id="ADB" class="btn">开启ADB调试</button>
                     <button id="PERF" class="btn">开启性能模式</button>
                     <button id="LIGHT" class="btn">开启指示灯</button>
@@ -47,6 +49,7 @@
                 </div>
             </div>
         </div>
+        <!-- 状态 -->
         <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
             <div class="title" style="margin: 6px 0 ;">
                 <strong>基本状态</strong>
@@ -59,6 +62,7 @@
                 </li>
             </ul>
         </div>
+        <!-- 锁频锁小区 -->
         <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;">
             <div class="title" style="margin: 6px 0 ;"><strong>锁频/锁小区</strong></div>
             <div style="margin:10px 0;">
@@ -243,15 +247,16 @@
                     style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
             </div>
         </div>
+        <!-- 登录模态框 -->
         <div class="mask" id="tokenModal" style="display: none;">
-            <div class="modal" >
+            <div class="modal">
                 <div class="title">请输入密码</div>
                 <div class="content"
                     style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
                     <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
                         style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
                     <input id="tokenInput" placeholder="管理密码" type="password" value=""
-                        style="margin:0 4px;margin-bottom: 20px;height: 30px;">
+                        style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
                 </div>
                 <div class="btn" style="text-align: right;">
                     <button onclick="onTokenConfirm()">确认</button>
@@ -259,8 +264,8 @@
                 </div>
             </div>
         </div>
-
-        <div class="modal" id="smsList" style="display: none;">
+        <!-- 短信模态框 -->
+        <div class="modal h100" id="smsList" style="display: none;">
             <div class="title" style="margin-bottom: 6px;">短信列表</div>
             <div class="action" style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
                 <span>收件人：</span>
@@ -278,6 +283,7 @@
                 </div>
             </div>
         </div>
+        <!-- 状态管理模态框 -->
         <div id="dictionaryModal" class="modal" style="display: none;">
             <div class="title">状态显示/隐藏</div>
             <p style="font-size: 12px;"><i>注：设备不支持/为空的状态无论是否勾选也不会显示</i></p>
@@ -339,6 +345,80 @@
             <div class="btn" style="text-align: right;">
                 <button onclick="resetShowList(event)">重置(全选)</button>
                 <button onclick="closeModal('#dictionaryModal')">关闭</button>
+            </div>
+        </div>
+        <!-- 流量管理模态框 -->
+        <div class="mask" id="DataManagementModal" style="display: none">
+            <div class="modal">
+                <div class="title">流量管理</div>
+                <form onsubmit="handleDataManagementFormSubmit(event)" id="DataManagementForm">
+                    <div class="content" id="DATA_MANAGE_LIST" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                        <div class="item">
+                            <label>启用流量管理？<input checked type="checkbox" name="data_volume_limit_switch"></label>
+                        </div>
+                        <div class="item">
+                            <label>流量清零？<input checked type="checkbox" name="wan_auto_clear_flow_data_switch"></label>
+                        </div>
+                        <div class="item" style="display: flex;">
+                            <span style="font-size: 14px;">套餐形式：</span>
+                            <label for="for_data" style="display: flex;align-items: center;">
+                                <span style="margin-right: 6px;">流量 </span><input id="for_data" style="margin: 0;"
+                                    type="radio" checked name="data_volume_limit_unit">
+                            </label>
+                            <!-- <label for="for_time">
+                                时间 <input id="for_time" type="radio" name="data_volume_limit_unit">
+                            </label> -->
+                        </div>
+                        <div class="item">
+                            <label style="
+                                display: flex;
+                                align-items: center;
+                            ">清零日期：<input style="flex: 1;width: 100%;" name="traffic_clear_date" value="1"
+                                    type="number" max="31" min="1" maxlength="2" placeholder="清零日期(1-31)"></label>
+                        </div>
+                        <div class="item">
+                            <label style="
+                                display: flex;
+                                align-items: center;
+                            ">提醒阈值：<input style="flex: 1;width: 100%;" name="data_volume_alert_percent" value="80"
+                                    type="number" maxlength="3" min="0" max="100" placeholder="提醒阈值(0-100%)"></label>
+                        </div>
+                        <div class="item">
+                            <div style="display: flex;align-items: center">
+                                <span>流量套餐：</span>
+                                <input style="flex:1;height: 100%;width: 100%;" type="text"
+                                    name="data_volume_limit_size" value="100" placeholder="流量套餐">
+                                <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
+                                    name="data_volume_limit_type">
+                                    <option data-value="1" value="1">MB</option>
+                                    <option data-value="1024" value="1024">GB</option>
+                                    <option data-value="1048576" value="1048576">TB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div style="display: flex;align-items: center;">
+                                <span>已用流量：</span>
+                                <input style="flex:1;height: 100%;width: 100%;" type="text" name="data_volume_used_size"
+                                    placeholder="已用流量" value="114">
+                                <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
+                                    name="data_volume_used_type">
+                                    <option data-value="1" value="1">MB</option>
+                                    <option data-value="1024" value="1024">GB</option>
+                                    <option data-value="1048576" value="1048576">TB</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn" style="text-align: right;">
+                        <button type="submit">提交</button>
+                        <button type="button" onclick="closeModal('#DataManagementModal')">关闭</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
