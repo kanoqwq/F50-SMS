@@ -26,6 +26,15 @@ if (!statusShowList) {
     }
 }
 
+const isNullOrUndefiend = (obj) => {
+    let isNumber = typeof obj === 'number'
+    if (isNumber) {
+        //如果是数字类型，直接返回
+        return true
+    }
+    return obj != undefined || obj != null
+}
+
 function notNullOrundefinedOrIsShow(obj, dicName, flag = false) {
     let isNumber = typeof obj[dicName] === 'number'
     if (isNumber) {
@@ -474,7 +483,11 @@ let handlerStatusRender = async (flag = false) => {
             cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
             mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
             realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
-            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${res.data_volume_limit_size ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes(res.data_volume_limit_size.split('_')[0] * res.data_volume_limit_size.split('_')[1] * Math.pow(1024, 2)) : ''}</strong>` : ''}`,
+            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
+                const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
+                if (!limit_size) return ''
+                return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
+            })()) : ''}</strong>` : ''}`,
             daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${res.daily_data}</strong>` : ''}`,
             internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)"  class="blue">内部存储：${res.internal_available_storage} / ${res.internal_total_storage}</strong>` : ''}`,
             external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)"  class="blue">SD卡：${res.external_available_storage} / ${res.external_total_storage}</strong>` : ''}`,
@@ -1252,6 +1265,21 @@ document.querySelector('#REFRESH').onclick = (e) => {
     }
 }
 
+let form_data2 = {
+    "monthly_tx_bytes": 36600290,
+    "monthly_rx_bytes": 442308298,
+    "monthly_time": 5739,
+    "flux_monthly_rx_bytes": 442308298,
+    "flux_monthly_tx_bytes": 36600290,
+    "flux_monthly_time": 5739,
+    "flux_auto_clear_flow_data_switch": "on",
+    "flux_data_volume_limit_unit": "data",
+    "flux_data_volume_limit_size": "",
+    "flux_clear_date": "1",
+    "flux_data_volume_alert_percent": "0",
+    "flux_data_volume_limit_switch": 0
+}
+
 //流量管理逻辑
 document.querySelector("#DataManagement").onclick = async () => {
     if (!initRequestData()) {
@@ -1260,12 +1288,25 @@ document.querySelector("#DataManagement").onclick = async () => {
         return null
     }
     // 查流量使用情况
-    const res = await getDataUsage()
+    let res = await getDataUsage()
     console.log(res)
     if (!res) {
         createToast('获取流量使用情况失败', 'red')
         return null
     }
+
+
+
+    res = {
+        ...res,
+        "wan_auto_clear_flow_data_switch": isNullOrUndefiend(res.wan_auto_clear_flow_data_switch) ? res.wan_auto_clear_flow_data_switch : res.flux_auto_clear_flow_data_switch,
+        "data_volume_limit_unit": isNullOrUndefiend(res.data_volume_limit_unit) ? res.data_volume_limit_unit : res.flux_data_volume_limit_unit,
+        "data_volume_limit_size": isNullOrUndefiend(res.data_volume_limit_size) ? res.data_volume_limit_size : res.flux_data_volume_limit_size,
+        "traffic_clear_date": isNullOrUndefiend(res.traffic_clear_date) ? res.traffic_clear_date : res.flux_clear_date,
+        "data_volume_alert_percent": isNullOrUndefiend(res.data_volume_alert_percent) ? res.data_volume_alert_percent : res.flux_data_volume_alert_percent,
+        "data_volume_limit_switch": isNullOrUndefiend(res.data_volume_limit_switch) ? res.data_volume_limit_switch : res.flux_data_volume_limit_switch,
+    }
+
     // 预填充表单
     const form = document.querySelector('#DataManagementForm')
     if (!form) return null
@@ -1278,6 +1319,7 @@ document.querySelector("#DataManagement").onclick = async () => {
     let data_volume_limit_type = form.querySelector('select[name="data_volume_limit_type"]')
     let data_volume_used_size = form.querySelector('input[name="data_volume_used_size"]')
     let data_volume_used_type = form.querySelector('select[name="data_volume_used_type"]')
+
     // (12094630728720/1024/1024)/1048576
     let used_size_type = 1
     const used_size = (() => {
@@ -1349,12 +1391,15 @@ let handleDataManagementFormSubmit = async (e) => {
             switch (key) {
                 case 'data_volume_limit_switch':
                     form_data[key] = value.trim() == 'on' ? '1' : '0'
+                    form_data['flux_data_volume_limit_switch'] = value.trim() == 'on' ? '1' : '0'
                     break;
                 case 'wan_auto_clear_flow_data_switch':
                     form_data[key] = value.trim() == 'on' ? 'on' : '0'
+                    form_data['flux_auto_clear_flow_data_switch'] = value.trim() == 'on' ? 'on' : '0'
                     break;
                 case 'data_volume_limit_unit':
                     form_data[key] = value.trim() == 'on' ? 'data' : 'time'
+                    form_data['flux_data_volume_limit_unit'] = value.trim() == 'on' ? 'data' : 'time'
                     break;
                 case 'traffic_clear_date':
                     if (isNaN(Number(value.trim()))) {
@@ -1366,6 +1411,7 @@ let handleDataManagementFormSubmit = async (e) => {
                         return
                     }
                     form_data[key] = value.trim()
+                    form_data['flux_clear_date'] = value.trim()
                     break;
                 case 'data_volume_alert_percent':
                     if (isNaN(Number(value.trim()))) {
@@ -1377,6 +1423,7 @@ let handleDataManagementFormSubmit = async (e) => {
                         return
                     }
                     form_data[key] = value.trim()
+                    form_data['flux_data_volume_alert_percent'] = value.trim()
                     break;
                 case 'data_volume_limit_size':
                     if (isNaN(Number(value.trim()))) {
@@ -1388,9 +1435,11 @@ let handleDataManagementFormSubmit = async (e) => {
                         return
                     }
                     form_data[key] = value.trim()
+                    form_data['flux_data_volume_limit_size'] = value.trim()
                     break;
                 case 'data_volume_limit_type':
                     form_data[key] = '_' + value.trim()
+                    form_data['flux_data_volume_limit_type'] = '_' + value.trim()
                     break;
                 case 'data_volume_used_size':
                     if (isNaN(Number(value.trim()))) {
@@ -1409,12 +1458,17 @@ let handleDataManagementFormSubmit = async (e) => {
             }
         }
         form_data['data_volume_limit_size'] = form_data['data_volume_limit_size'] + form_data['data_volume_limit_type']
+        form_data['flux_data_volume_limit_size'] = form_data['data_volume_limit_size']
         const used_data = Number(form_data.data_volume_used_size) * Number(form_data['data_volume_used_type']) * Math.pow(1024, 2)
         const clear_form_data = {
             data_volume_limit_switch: form_data['data_volume_limit_switch'],
             wan_auto_clear_flow_data_switch: 'on',
             traffic_clear_date: '1',
-            notify_deviceui_enable: '0'
+            notify_deviceui_enable: '0',
+            flux_data_volume_limit_switch: form_data['data_volume_limit_switch'],
+            flux_auto_clear_flow_data_switch: 'on',
+            flux_clear_date: '1',
+            flux_notify_deviceui_enable: '0'
         }
         delete form_data['data_volume_limit_type']
         //发请求

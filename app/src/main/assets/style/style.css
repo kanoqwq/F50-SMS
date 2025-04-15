@@ -28,7 +28,7 @@ a {
     color: pink;
 }
 
-.h100{
+.h100 {
     height: 100%;
 }
 
@@ -396,7 +396,7 @@ input {
     color: white;
 }
 
-#DataManagementModal content{
+#DataManagementModal content {
     display: flex;
     flex-direction: column;
 }
@@ -406,9 +406,15 @@ input {
     width: 100%;
     font-size: 14px;
 }
+
 #DataManagementModal form .item input {
     width: auto;
     justify-self: start;
     box-sizing: border-box;
     padding: 4px;
+}
+
+#DIC_LIST .content label {
+    display: flex;
+    align-items: center;
 }

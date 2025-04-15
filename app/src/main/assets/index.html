@@ -224,13 +224,13 @@
 
                         </tbody>
                     </table>
-                    <div style="padding: 8px;margin-top: 10px;">
+                    <div style="display: flex;align-items: center; padding: 8px;margin-top: 10px;">
                         <strong>网络选择：</strong>
-                        <label style="margin-right: 20px;"><span>4G </span>
-                            <input type="radio" name="RAT" value="12" />
+                        <label style="display: flex;align-items: center;margin-right: 20px;"><span>4G </span>
+                            <input style="margin: 0 0 0 8px;" type="radio" name="RAT" value="12" />
                         </label>
-                        <label><span>5G </span>
-                            <input checked type="radio" name="RAT" value="16" />
+                        <label style="display: flex;align-items: center;"><span>5G </span>
+                            <input style="margin: 0 0 0 8px;" checked type="radio" name="RAT" value="16" />
                         </label>
                     </div>
                     <div style="margin: 10px;">
@@ -358,10 +358,12 @@
                         width: 66vw;
                         max-width: 400px;">
                         <div class="item">
-                            <label>启用流量管理？<input checked type="checkbox" name="data_volume_limit_switch"></label>
+                            <label style="display: flex;align-items: center;">启用流量管理？<input checked type="checkbox"
+                                    name="data_volume_limit_switch"></label>
                         </div>
                         <div class="item">
-                            <label>流量清零？<input checked type="checkbox" name="wan_auto_clear_flow_data_switch"></label>
+                            <label style="display: flex;align-items: center;">流量清零？<input checked type="checkbox"
+                                    name="wan_auto_clear_flow_data_switch"></label>
                         </div>
                         <div class="item" style="display: flex;">
                             <span style="font-size: 14px;">套餐形式：</span>
