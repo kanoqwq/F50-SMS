@@ -1263,7 +1263,7 @@ let resetShowList = (e) => {
     if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
     if (resetShowListBtnCount >= 2) {
         localStorage.removeItem('statusShowList');
-        KANO_INTERFACE?.exit ? KANO_INTERFACE.exit() : location.reload()
+        window?.KANO_INTERFACE?.exit ? window.KANO_INTERFACE.exit() : location.reload()
     }
     resetShowListBtnCount++
     resetShowListTimer = setTimeout(() => {
