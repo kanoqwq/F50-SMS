@@ -1680,3 +1680,7 @@ let handleShowPassword = (e) => {
         WIFI_PASSWORD.setAttribute('type', target.checked ? "text" : "password")
     }
 }
+
+document.querySelector('#tokenInput').onclick = () => {
+    onTokenConfirm()
+}
