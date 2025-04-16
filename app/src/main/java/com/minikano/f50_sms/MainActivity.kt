@@ -1,6 +1,5 @@
 package com.minikano.f50_sms
 
-import WebServer
 import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
@@ -12,7 +11,6 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.core.util.TypedValueCompat.dpToPx
 import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
@@ -61,7 +59,7 @@ class MainActivity : ComponentActivity() {
         // 启动 Web 服务器
         startWebServer(gatewayIp)
         // 加载本地 HTML 页面
-        webView.loadUrl("file:///android_asset/index.html")
+        webView.loadUrl("http://localhost:8090")
     }
 
     private fun isValidIPv4(ip: String): Boolean {

@@ -1,17 +1,24 @@
-import fi.iki.elonen.NanoHTTPD
+package com.minikano.f50_sms
+
 import android.content.Context
 import android.util.Log
+import fi.iki.elonen.NanoHTTPD
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
+
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
-
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
-        val uri = session?.uri ?: "/"
+        val uri = session?.uri?.removePrefix("/api") ?: "/"
+
+        // 静态文件逻辑
+        if (!session?.uri.orEmpty().startsWith("/api")) {
+            return serveStaticFile(session?.uri ?: "/")
+        }
 
         // 获取查询参数
         val queryString = session?.queryParameterString
@@ -30,7 +37,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             return response
         }
 
-        Log.d("kanokano", fullUrl)
+        Log.d("kano_ZTE_LOG", fullUrl)
 
         // 构造目标 URL
         return try {
@@ -58,12 +65,12 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                     // 将请求体转换为字符串
                     val requestBodyStr = String(requestBody, Charsets.UTF_8)
-                    Log.d("kanokano", "Request Length: ${requestBodyStr.length}")
-                    Log.d("kanokano", "Request Body: $requestBodyStr")
+                    Log.d("kano_ZTE_LOG", "Request Length: ${requestBodyStr.length}")
+                    Log.d("kano_ZTE_LOG", "Request Body: $requestBodyStr")
 
                     // 解析 URL 编码格式的请求体
                     val params = parseUrlEncoded(requestBodyStr)
-                    Log.d("kanokano", "Parsed Body: $params")
+                    Log.d("kano_ZTE_LOG", "Parsed Body: $params")
 
                     // 发送请求体到目标服务器
                     conn.doOutput = true
@@ -107,8 +114,24 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         }
     }
 
+    // 静态文件处理逻辑
+    // 添加一个变量保存 context 的 assets
+    private val assetManager = context.assets
+
+    private fun serveStaticFile(uri: String): Response {
+        val path = if (uri == "/") "index.html" else uri.removePrefix("/")
+
+        return try {
+            val inputStream = assetManager.open(path)
+            val mime = getMimeTypeForFile(path)
+            newChunkedResponse(Response.Status.OK, mime, inputStream)
+        } catch (e: Exception) {
+            newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "404 Not Found: ${e.message}")
+        }
+    }
+
     // 解析 URL 编码的请求体
-    fun parseUrlEncoded(data: String): Map<String, String> {
+    private fun parseUrlEncoded(data: String): Map<String, String> {
         val params = mutableMapOf<String, String>()
         val pairs = data.split("&")
 
@@ -123,4 +146,5 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
         return params
     }
+
 }
