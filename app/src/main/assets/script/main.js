@@ -150,6 +150,20 @@ function decodeBase64(base64String) {
     return new TextDecoder('utf-8').decode(bytes)
 }
 
+function encodeBase64(plainText) {
+    // 将字符串转为 Uint8Array（二进制形式）
+    const bytes = new TextEncoder().encode(plainText)
+
+    // 把二进制转换为字符串（每个字节对应一个字符）
+    let binaryString = ''
+    for (let i = 0; i < bytes.length; i++) {
+        binaryString += String.fromCharCode(bytes[i])
+    }
+
+    // 使用 btoa() 编码为 Base64
+    return window.btoa(binaryString)
+}
+
 function createToast(text, color, delay = 3000) {
     const toastEl = document.createElement('div')
     toastEl.style.position = 'fixed'
@@ -469,8 +483,8 @@ let handlerStatusRender = async (flag = false) => {
             ${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<span>EARFCN: ${res.Nr_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<span>&nbsp;PCI: ${res.Nr_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<span>RSRQ: ${res.nr_rsrq}</span>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRP:&nbsp; ${kano_parseSignalBar(res.Z5g_rsrp)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;">SINR:&nbsp; ${kano_parseSignalBar(res.Nr_snr, -11, 31, 13, 5)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRP:</span>${kano_parseSignalBar(res.Z5g_rsrp)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -11, 31, 13, 5)}</div>` : ''}
             `
         }
 
@@ -488,10 +502,10 @@ let handlerStatusRender = async (flag = false) => {
                 if (!limit_size) return ''
                 return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
             })()) : ''}</strong>` : ''}`,
-            daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${res.daily_data}</strong>` : ''}`,
-            internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)"  class="blue">内部存储：${res.internal_available_storage} / ${res.internal_total_storage}</strong>` : ''}`,
-            external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)"  class="blue">SD卡：${res.external_available_storage} / ${res.external_total_storage}</strong>` : ''}`,
-            realtime_rx_thrpt: `${notNullOrundefinedOrIsShow(res, 'realtime_tx_thrpt') || notNullOrundefinedOrIsShow(res, 'realtime_rx_thrpt') ? `<strong onclick="copyText(event)"  class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}`,
+            daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${formatBytes(res.daily_data)}</strong>` : ''}`,
+            internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)" class="blue">内部存储：${formatBytes(res.internal_used_storage)} 已用 / ${formatBytes(res.internal_total_storage)} 总容量</strong>` : ''}`,
+            external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)" class="blue">SD卡：${formatBytes(res.external_used_storage)} 已用 / ${formatBytes(res.external_total_storage)} 总容量</strong>` : ''}`,
+            realtime_rx_thrpt: `${notNullOrundefinedOrIsShow(res, 'realtime_tx_thrpt') || notNullOrundefinedOrIsShow(res, 'realtime_rx_thrpt') ? `<strong onclick="copyText(event)" class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}`,
         }
         let statusHtml_net = {
             lte_rsrp: `${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${kano_parseSignalBar(res.lte_rsrp)}</strong>` : ''}`,
@@ -564,6 +578,7 @@ StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
 let handlerADBStatus = async () => {
     const btn = document.querySelector('#ADB')
     if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
         btn.style.backgroundColor = '#80808073'
         return null
     }
@@ -592,7 +607,7 @@ let handlerADBStatus = async () => {
                 createToast('操作失败！', 'red')
             }
         } catch (e) {
-            createToast(e.message)
+            // createToast(e.message)
         }
     }
     btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
@@ -605,6 +620,7 @@ handlerADBStatus()
 let handlerPerformaceStatus = async () => {
     const btn = document.querySelector('#PERF')
     if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
         btn.style.backgroundColor = '#80808073'
         return null
     }
@@ -635,7 +651,7 @@ let handlerPerformaceStatus = async () => {
                 createToast('操作失败！', 'red')
             }
         } catch (e) {
-            createToast(e.message)
+            // createToast(e.message)
         }
     }
 }
@@ -728,7 +744,7 @@ const changeNetwork = async (e) => {
         }
         await initNetworktype()
     } catch (e) {
-        createToast(e.message)
+        // createToast(e.message)
     }
 }
 
@@ -779,7 +795,7 @@ let changeUSBNetwork = async (e) => {
         }
         await initUSBNetworkType()
     } catch (e) {
-        createToast(e.message)
+        // createToast(e.message)
     }
 }
 
@@ -844,18 +860,20 @@ let changeWIFISwitch = async (e) => {
         }
         if (res.result == 'success') {
             createToast('操作成功，请重新连接WiFi！', 'green')
+            closeModal("#WIFIManagementModal")
         } else {
             createToast('操作失败！', 'red')
         }
         await initWIFISwitch()
     } catch (e) {
-        createToast(e.message)
+        // createToast(e.message)
     }
 }
 
 let initSMBStatus = async () => {
     const el = document.querySelector('#SMB')
     if (!initRequestData() || !el) {
+        el.onclick = () => createToast('请登录', 'red')
         el.style.backgroundColor = '#80808073'
         return null
     }
@@ -885,7 +903,7 @@ let initSMBStatus = async () => {
             }
             await initSMBStatus()
         } catch (e) {
-            createToast(e.message)
+            // createToast(e.message)
         }
     }
     el.innerHTML = res.samba_switch == '1' ? '关闭SMB' : '开启SMB'
@@ -896,6 +914,7 @@ initSMBStatus()
 let initLightStatus = async () => {
     const el = document.querySelector('#LIGHT')
     if (!initRequestData() || !el) {
+        el.onclick = () => createToast('请登录', 'red')
         el.style.backgroundColor = '#80808073'
         return null
     }
@@ -1060,8 +1079,10 @@ let initCellInfo = async () => {
         // createToast(e.message)
     }
 }
+
+let cellInfoRequestTimer = null
 initCellInfo()
-requestInterval(() => initCellInfo(), 1500)
+cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
 
 let onSelectCellRow = (pci, earfcn) => {
     let pci_t = document.querySelector('#PCI')
@@ -1197,8 +1218,8 @@ let rebootDevice = async (e) => {
 rebootDeviceBtnInit = () => {
     let target = document.querySelector('#REBOOT')
     if (!initRequestData()) {
+        target.onclick = () => createToast('请登录', 'red')
         target.style.backgroundColor = '#80808073'
-        target.onclick = null
         return null
     }
     target.style.backgroundColor = ''
@@ -1257,27 +1278,14 @@ document.querySelector('#REFRESH').onclick = (e) => {
     if (e.target.innerHTML == '开始刷新') {
         e.target.innerHTML = '停止刷新'
         createToast('已开始刷新', 'green')
+        cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
         StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
     } else {
         e.target.innerHTML = '开始刷新'
         createToast('已停止刷新', 'green')
         StopStatusRenderTimer && StopStatusRenderTimer()
+        cellInfoRequestTimer && cellInfoRequestTimer()
     }
-}
-
-let form_data2 = {
-    "monthly_tx_bytes": 36600290,
-    "monthly_rx_bytes": 442308298,
-    "monthly_time": 5739,
-    "flux_monthly_rx_bytes": 442308298,
-    "flux_monthly_tx_bytes": 36600290,
-    "flux_monthly_time": 5739,
-    "flux_auto_clear_flow_data_switch": "on",
-    "flux_data_volume_limit_unit": "data",
-    "flux_data_volume_limit_size": "",
-    "flux_clear_date": "1",
-    "flux_data_volume_alert_percent": "0",
-    "flux_data_volume_limit_switch": 0
 }
 
 //流量管理逻辑
@@ -1495,7 +1503,180 @@ let handleDataManagementFormSubmit = async (e) => {
         } catch (e) {
             createToast(e.message, 'red')
         }
-    } catch {
-        // createToast('网络出错，请检查网络', 'red')
+    } catch (e) {
+        createToast(e.message, 'red')
     }
 };
+
+
+//WIFI管理逻辑
+let initWIFIManagementForm = async () => {
+    try {
+        let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
+            cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
+        }))
+
+        const WIFIManagementForm = document.querySelector('#WIFIManagementForm')
+        if (!WIFIManagementForm) return
+
+        if (WiFiModuleSwitch == "1" && ResponseList?.length) {
+            for (let index in ResponseList) {
+                if (ResponseList[index].AccessPointSwitchStatus == '1') {
+                    let item = ResponseList[index]
+                    let apEl = WIFIManagementForm.querySelector('input[name="AccessPointIndex"]')
+                    let chipEl = WIFIManagementForm.querySelector('input[name="ChipIndex"]')
+                    let ApMaxStationNumberEl = WIFIManagementForm.querySelector('input[name="ApMaxStationNumber"]')
+                    let PasswordEl = WIFIManagementForm.querySelector('input[name="Password"]')
+                    let ApBroadcastDisabledEl = WIFIManagementForm.querySelector('input[name="ApBroadcastDisabled"]')
+                    let SSIDEl = WIFIManagementForm.querySelector('input[name="SSID"]')
+                    let QRCodeImg = document.querySelector("#QRCodeImg")
+                    let AuthModeEl = WIFIManagementForm.querySelector('select[name="AuthMode"]')
+                    apEl && (apEl.value = item.AccessPointIndex)
+                    chipEl && (chipEl.value = item.ChipIndex)
+                    ApMaxStationNumberEl && (ApMaxStationNumberEl.value = item.ApMaxStationNumber)
+                    PasswordEl && (PasswordEl.value = decodeBase64(item.Password))
+                    ApBroadcastDisabledEl && (ApBroadcastDisabledEl.checked = item.ApBroadcastDisabled.toString() == '0')
+                    SSIDEl && (SSIDEl.value = item.SSID)
+                    // 二维码
+                    QRCodeImg.src = '/api' + item.QrImageUrl
+                    const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
+                    AuthModeEl.value = item.AuthMode
+                    AuthModeEl.selected = item.AuthMode
+                    if (AuthModeEl && WIFI_FORM_SHOWABLE) {
+                        const option = AuthModeEl.querySelector(`option[data-value="${item.AuthMode}"]`)
+                        option && (option.selected = "selected")
+                        if (item.AuthMode == "OPEN") {
+                            WIFI_FORM_SHOWABLE.style.display = 'none'
+                        } else {
+                            WIFI_FORM_SHOWABLE.style.display = ''
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+    catch (e) {
+        console.error(e.message)
+        // createToast(e.message)
+    }
+}
+
+document.querySelector("#WIFIManagement").onclick = async () => {
+    if (!initRequestData()) {
+        createToast('请登录！', 'red')
+        out()
+        return null
+    }
+    await initWIFIManagementForm()
+    showModal("#WIFIManagementModal")
+}
+
+let handleWIFIManagementFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        const cookie = await login()
+        if (!cookie) {
+            createToast('登录失败，请检查密码', 'red')
+            closeModal('#WIFIManagementModal')
+            setTimeout(() => {
+                out()
+            }, 310);
+            return null
+        }
+
+        const form = e.target; // 获取表单
+        const formData = new FormData(form);
+
+        let data = {
+            SSID: '',
+            AuthMode: '',
+            EncrypType: '',
+            Password: '',
+            ApMaxStationNumber: '',
+            ApBroadcastDisabled: 1,
+            ApIsolate: 0,
+            ChipIndex: 0,
+            AccessPointIndex: 0
+        }
+
+        for (const [key, value] of formData.entries()) {
+            switch (key) {
+                case 'SSID':
+                    value.trim() && (data[key] = value.trim())
+                    break;
+                case 'AuthMode':
+                    value == 'OPEN' ? data['EncrypType'] = "NONE" : data['EncrypType'] = "CCMP"
+                    value.trim() && (data[key] = value.trim())
+                    break;
+                case 'ApBroadcastDisabled':
+                    data[key] = value == 'on' ? 0 : 1
+                    break;
+                case 'Password':
+                    // if(!value.trim()) createToast('请输入密码！')
+                    value.trim() && (data[key] = encodeBase64(value.trim()))
+                    break;
+                case 'ApIsolate':
+                case 'ApMaxStationNumber':
+                case 'AccessPointIndex':
+                case 'ChipIndex':
+                    !isNaN(Number(value.trim())) && (data[key] = Number(value.trim()))
+                    break;
+            }
+        }
+
+        if (data.AuthMode == 'OPEN' || data.EncrypType == "NONE") {
+            delete data.Password
+        } else {
+            if (data.Password.length == 0) {
+                return createToast('请输入密码', 'red')
+            }
+            if (data.Password.length < 8) {
+                return createToast('密码至少8位数', 'red')
+            }
+            if (data.ApMaxStationNumber.length <= 0) {
+                return createToast('最大接入必须大于0', 'red')
+            }
+        }
+
+        const res = await (await postData(cookie, {
+            goformId: 'setAccessPointInfo',
+            ...data
+        })).json()
+
+        if (res.result == 'success') {
+            createToast('设置成功! 请重新连接WIFI！', 'green')
+            closeModal('#WIFIManagementModal')
+        } else {
+            throw '设置失败！请检查网络'
+        }
+    }
+    catch (e) {
+        console.error(e.message)
+        // createToast(e.message)
+    }
+
+}
+
+let handleWifiEncodeChange = (event) => {
+    const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
+    const target = event.target
+    if (target) {
+        console.log(target.value);
+        if (WIFI_FORM_SHOWABLE) {
+            if (target.value == "OPEN") {
+                WIFI_FORM_SHOWABLE.style.display = 'none'
+            } else {
+                WIFI_FORM_SHOWABLE.style.display = ''
+            }
+        }
+    }
+}
+
+let handleShowPassword = (e) => {
+    const target = e.target
+    const WIFI_PASSWORD = document.querySelector('#WIFI_PASSWORD')
+    if (target && WIFI_PASSWORD) {
+        WIFI_PASSWORD.setAttribute('type', target.checked ? "text" : "password")
+    }
+}

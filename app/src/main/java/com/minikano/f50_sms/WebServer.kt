@@ -138,22 +138,27 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 //内部存储
                 val internalStorage: File = context_app.filesDir
                 val statFs = StatFs(internalStorage.absolutePath)
-                val totalSize = formatSize(statFs.blockSizeLong * statFs.blockCountLong)
-                val availableSize =formatSize(statFs.blockSizeLong * statFs.availableBlocksLong)
+                val totalSize = (statFs.blockSizeLong * statFs.blockCountLong)
+                val availableSize =(statFs.blockSizeLong * statFs.availableBlocksLong)
+                val usedSize = totalSize - availableSize
 
-                val dailyData = formatSize(getTodayDataUsage(context_app))
+                val dailyData = (getTodayDataUsage(context_app))
 
                 //外部存储
                 val ex_storage_info = getRemovableStorageInfo(context_app)
+                var ex_storage_total_size = ex_storage_info?.totalBytes?:0
+                var ex_storage_avalible_size = ex_storage_info?.availableBytes?:0
+                var ex_storage_used_size = ex_storage_total_size - ex_storage_avalible_size
+
 
                 Log.d("kano_ZTE_LOG","日用流量：$dailyData")
-                Log.d("kano_ZTE_LOG","内部存储：$availableSize/$totalSize")
-                Log.d("kano_ZTE_LOG","外部存储：${formatSize(ex_storage_info?.availableBytes?:0)}/${formatSize(ex_storage_info?.totalBytes?:0)}")
+                Log.d("kano_ZTE_LOG","内部存储：$usedSize/$totalSize")
+                Log.d("kano_ZTE_LOG","外部存储：${(ex_storage_info?.availableBytes?:0)}/${(ex_storage_info?.totalBytes?:0)}")
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"daily_data":"$dailyData","internal_available_storage":"$availableSize","internal_total_storage":"$totalSize","external_total_storage":"${formatSize(ex_storage_info?.totalBytes?:0)}","external_available_storage":"${formatSize(ex_storage_info?.availableBytes?:0)}"}""".trimIndent()
+                    """{"daily_data":$dailyData,"internal_available_storage":$availableSize,"internal_used_storage":$usedSize,"internal_total_storage":$totalSize,"external_total_storage":${(ex_storage_info?.totalBytes?:0)},"external_used_storage":$ex_storage_used_size,"external_available_storage":${(ex_storage_info?.availableBytes?:0)}}""".trimIndent()
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response

@@ -396,18 +396,21 @@ input {
     color: white;
 }
 
-#DataManagementModal content {
+#DataManagementModal content,
+#WIFIManagementModal content {
     display: flex;
     flex-direction: column;
 }
 
-#DataManagementModal form .item {
+#DataManagementModal form .item,
+#WIFIManagementModal form .item {
     margin: 8px 0;
     width: 100%;
     font-size: 14px;
 }
 
-#DataManagementModal form .item input {
+#DataManagementModal form .item input,
+#WIFIManagementModal form .item input {
     width: auto;
     justify-self: start;
     box-sizing: border-box;
@@ -417,4 +420,17 @@ input {
 #DIC_LIST .content label {
     display: flex;
     align-items: center;
+}
+
+.dash-border-round {
+    overflow: auto;
+    border: 2px dashed #00ffdd0f;
+    border-radius: 10px;
+    padding: 0 4px;
+    margin-bottom: 6px;
+}
+
+#WIFIManagementModal .label-name{
+    display: inline-block;
+    width: 76px;
 }

@@ -233,8 +233,10 @@ const getUFIData = async () => {
         //获取storage_and_dailyData，整合（如果有）
         let daily_data = null
         let internal_available_storage = null
+        let internal_used_storage = null
         let internal_total_storage = null
         let external_available_storage = null
+        let external_used_storage = null
         let external_total_storage = null
         try {
             const res = await (await fetch('/api/storage_and_dailyData')).json()
@@ -243,6 +245,8 @@ const getUFIData = async () => {
             internal_total_storage = res.internal_total_storage
             external_available_storage = res.external_available_storage
             external_total_storage = res.external_total_storage
+            internal_used_storage = res.internal_used_storage
+            external_used_storage = res.external_used_storage
         } catch {/*没有，不处理*/ }
 
         return {
@@ -256,7 +260,9 @@ const getUFIData = async () => {
             internal_available_storage,
             internal_total_storage,
             external_available_storage,
-            external_total_storage,
+            external_total_storage, 
+            internal_used_storage,
+            external_used_storage
         }
     } catch (error) {
         if (error.name === 'AbortError') {

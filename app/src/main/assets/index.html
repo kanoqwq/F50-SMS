@@ -19,15 +19,16 @@
             <div style="margin-bottom: 10px;">
                 <div>
                     <button id="CLEAR" class="btn">登录/退出登录</button>
-                    <button id="REBOOT" class="btn">重启设备</button>
+                    <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
                 </div>
                 <div>
                     <button id="SMS" class="btn">短信收发</button>
                     <button id="DataManagement" class="btn">流量管理</button>
-                    <button id="ADB" class="btn">开启ADB调试</button>
-                    <button id="PERF" class="btn">开启性能模式</button>
-                    <button id="LIGHT" class="btn">开启指示灯</button>
-                    <button id="SMB" class="btn">开启SMB</button>
+                    <button id="WIFIManagement" class="btn">WIFI设置</button>
+                    <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启ADB调试</button>
+                    <button id="PERF" class="btn" onclick="createToast('请登录','red')">开启性能模式</button>
+                    <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
+                    <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB</button>
                     <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
                         <option value="WL_AND_5G">5G/4G/3G</option>
                         <option value="LTE_AND_5G">5G NSA</option>
@@ -40,11 +41,6 @@
                         <option value="0">USB上网:自动</option>
                         <option value="1">RNDIS</option>
                         <option value="2">CDC-ECM</option>
-                    </select>
-                    <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
-                        <option value="0">WIFI:关闭</option>
-                        <option value="chip1">WIFI:2.4G</option>
-                        <option value="chip2">WIFI:5G</option>
                     </select>
                 </div>
             </div>
@@ -80,105 +76,105 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="1" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="1"></td>
                                 <td>B1</td>
                                 <td>2100</td>
                                 <td>FDD-LTE</td>
                                 <td>联通/电信</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="3" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="3"></td>
                                 <td>B3</td>
                                 <td>1800</td>
                                 <td>FDD-LTE</td>
                                 <td>三大运营商</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="5" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="5"></td>
                                 <td>B5</td>
                                 <td>850</td>
                                 <td>FDD-LTE</td>
                                 <td>电信</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="8" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="8"></td>
                                 <td>B8</td>
                                 <td>900</td>
                                 <td>FDD-LTE</td>
                                 <td>移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="34" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="34"></td>
                                 <td>B34</td>
                                 <td>2000</td>
                                 <td>TD-LTE</td>
                                 <td>移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="38" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="38"></td>
                                 <td>B38</td>
                                 <td>2600</td>
                                 <td>TD-LTE</td>
                                 <td>移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="39" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="39"></td>
                                 <td>B39</td>
                                 <td>1900</td>
                                 <td>TD-LTE</td>
                                 <td>移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="40" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="40"></td>
                                 <td>B40</td>
                                 <td>2300</td>
                                 <td>TD-LTE</td>
                                 <td>联通/电信</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="41" id=""></td>
+                                <td><input type="checkbox" data-type="4G" data-band="41"></td>
                                 <td>B41</td>
                                 <td>2500–2690</td>
                                 <td>TD-LTE</td>
                                 <td>三大运营商</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="1" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="1"></td>
                                 <td>N1</td>
                                 <td>1920–1980 / 2110–2170</td>
                                 <td>FDD</td>
                                 <td>联通/电信</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="5" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="5"></td>
                                 <td>N5</td>
                                 <td>824–849 / 869–894</td>
                                 <td>FDD</td>
                                 <td>中国电信</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="8" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="8"></td>
                                 <td>N8</td>
                                 <td>880–915 / 925–960</td>
                                 <td>FDD</td>
                                 <td>中国移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="28" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="28"></td>
                                 <td>N28</td>
                                 <td>703–748 / 758–803</td>
                                 <td>FDD</td>
                                 <td>中国广电</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="41" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="41"></td>
                                 <td>N41</td>
                                 <td>2515–2675</td>
                                 <td>TDD</td>
                                 <td>中国移动</td>
                             </tr>
                             <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="78" id=""></td>
+                                <td><input type="checkbox" data-type="5G" data-band="78"></td>
                                 <td>N78</td>
                                 <td>3300–3600</td>
                                 <td>TDD</td>
@@ -419,6 +415,101 @@
                     <div class="btn" style="text-align: right;">
                         <button type="submit">提交</button>
                         <button type="button" onclick="closeModal('#DataManagementModal')">关闭</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- WIFI设置模态框 -->
+        <div class="mask" id="WIFIManagementModal" style="display: none">
+            <div class="modal">
+                <div class="title" style="margin-bottom: 4px;">WIFI设置</div>
+                <form onsubmit="handleWIFIManagementFormSubmit(event)" id="WIFIManagementForm">
+                    <div class="content" id="DATA_MANAGE_LIST" style="
+                        overflow-y: scroll;
+                        padding: 10px;
+                        width: 66vw;
+                        max-width: 400px;">
+                        <input style="display: none;" type="text" name="AccessPointIndex" value="0">
+                        <input style="display: none;" type="text" name="ApIsolate" value="0">
+                        <input style="display: none;" type="text" name="ChipIndex" value="0">
+                        <div class="dash-border-round"
+                            style="padding-top: 6px;padding-bottom: 6px;display: flex;justify-content: space-between;align-items: center;">
+                            <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
+                                <option value="0">WIFI:关闭</option>
+                                <option value="chip1">WIFI:2.4G</option>
+                                <option value="chip2">WIFI:5G</option>
+                            </select>
+                            <span style="display: inline; font-size: 10px; text-align: right;">此选项即时更改无需确认。</span>
+                        </div>
+                        <div class="dash-border-round">
+                            <div class="item">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            "><span class="label-name">SSID：</span><input style="flex: 1;width: 100%;" name="SSID"
+                                        value="1" type="text" placeholder="请输入SSID"></label>
+                            </div>
+                            <div class="item">
+                                <label style="display: flex;align-items: center;"><span
+                                        class="label-name">广播SSID：</span><input checked type="checkbox"
+                                        name="ApBroadcastDisabled"></label>
+                            </div>
+                        </div>
+                        <div class="dash-border-round">
+                            <div class="item">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">
+                                    <span class="label-name">安全模式：</span>
+                                    <select class="select" id="WIFI_ENC_MODE" onchange="handleWifiEncodeChange(event)"
+                                        style="width: 100%;flex: 1;padding: 4px; margin-left: 6px;text-align: left;"
+                                        value="OPEN" name="AuthMode">
+                                        <option data-value="OPEN" value="OPEN">OPEN</option>
+                                        <option data-value="WPA2PSK" value="WPA2PSK">WPA2(AES)-PSK</option>
+                                        <option data-value="WPA3PSK" value="WPA3PSK">WPA3-PSK</option>
+                                        <option data-value="WPA2PSKWPA3PSK" value="WPA2PSKWPA3PSK">WPA2-PSK/WPA3-PSK
+                                        </option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="WIFI_FORM_SHOWABLE">
+                            <div class="dash-border-round">
+                                <div class="item">
+                                    <label style="
+                                display: flex;
+                                align-items: center;
+                            "><span class="label-name">密码：</span><input id="WIFI_PASSWORD" style="flex: 1;width: 100%;"
+                                            name="Password" value="" type="password" placeholder="密码最短为8位"></label>
+                                </div>
+                                <div class="item">
+                                    <label onclick="handleShowPassword(event)"
+                                        style="display: flex;align-items: center;"><span
+                                            class="label-name">显示密码：</span><input type="checkbox"></label>
+                                </div>
+                            </div>
+                            <div class="dash-border-round">
+                                <div class="item">
+                                    <label style="
+                                display: flex;
+                                align-items: center;
+                            "><span class="label-name">最大接入：</span><input style="flex: 1;width: 100%;"
+                                            name="ApMaxStationNumber" value="10" type="number" min="1" maxlength="8"
+                                            placeholder="客户端最大接入"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dash-border-round" style="text-align: center;">
+                            <div>二维码</div>
+                            <div style="text-align: center">
+                                <img id="QRCodeImg" style="border-radius: 20px;" src="" alt="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn" style="text-align: right;margin-top: 6px;">
+                        <button type="submit">提交</button>
+                        <button type="button" onclick="closeModal('#WIFIManagementModal')">关闭</button>
                     </div>
                 </form>
             </div>
