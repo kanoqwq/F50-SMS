@@ -193,7 +193,7 @@ const getUFIData = async () => {
 
         const cmd = 'network_signalbar,network_rssi,cr_version,iccid,imei,imsi,ipv6_wan_ipaddr,lan_ipaddr,mac_address,msisdn,network_information,Lte_ca_status,rssi,Z5g_rsrp,lte_rsrp,wifi_access_sta_num,loginfo,data_volume_alert_percent,data_volume_limit_size,realtime_rx_thrpt,realtime_tx_thrpt,realtime_time,monthly_tx_bytes,monthly_rx_bytes,monthly_time,network_type,network_provider,ppp_status';
 
-        const res = await fetch(`/api${KANO_baseURL}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=${cmd}&${params.toString()}`, {
+        const res = await fetch(`${KANO_baseURL}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=${cmd}&${params.toString()}`, {
             headers: {
                 ...common_headers
             },
@@ -203,21 +203,21 @@ const getUFIData = async () => {
         //获取CPU温度，整合（如果有）
         let cpu_t = null
         try {
-            const { temp } = await (await fetch('/api/temp')).json()
+            const { temp } = await (await fetch('/temp')).json()
             cpu_t = temp
         } catch {/*没有，不处理*/ }
 
         //获取CPU使用，整合（如果有）
         let cpu_u = null
         try {
-            const { cpu } = await (await fetch('/api/cpu')).json()
+            const { cpu } = await (await fetch('/cpu')).json()
             cpu_u = cpu
         } catch {/*没有，不处理*/ }
 
         //获取内存使用，整合（如果有）
         let mem_u = null
         try {
-            const { mem } = await (await fetch('/api/mem')).json()
+            const { mem } = await (await fetch('/mem')).json()
             mem_u = mem
         } catch {/*没有，不处理*/ }
 
@@ -225,7 +225,7 @@ const getUFIData = async () => {
         let battery = null
         let model = null
         try {
-            const res = await (await fetch('/api/battery_and_model')).json()
+            const res = await (await fetch('/battery_and_model')).json()
             battery = res.battery
             model = res.model
         } catch {/*没有，不处理*/ }
@@ -239,7 +239,7 @@ const getUFIData = async () => {
         let external_used_storage = null
         let external_total_storage = null
         try {
-            const res = await (await fetch('/api/storage_and_dailyData')).json()
+            const res = await (await fetch('/storage_and_dailyData')).json()
             daily_data = res.daily_data
             internal_available_storage = res.internal_available_storage
             internal_total_storage = res.internal_total_storage
