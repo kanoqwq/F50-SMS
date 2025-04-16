@@ -2,7 +2,7 @@ function SHA256(e) { function t(e, t) { var n = (65535 & e) + (65535 & t); retur
 function gsmEncode(text) { function encodeText(text) { let encoded = []; for (let i = 0; i < text.length; i++) { const char = text[i]; const codePoint = char.codePointAt(0); if (codePoint <= 0xFFFF) { encoded.push((codePoint >> 8) & 0xFF); encoded.push(codePoint & 0xFF) } else { const highSurrogate = 0xD800 + ((codePoint - 0x10000) >> 10); const lowSurrogate = 0xDC00 + ((codePoint - 0x10000) & 0x3FF); encoded.push((highSurrogate >> 8) & 0xFF); encoded.push(highSurrogate & 0xFF); encoded.push((lowSurrogate >> 8) & 0xFF); encoded.push(lowSurrogate & 0xFF) } } return encoded } function toHexString(byteArray) { return byteArray.map(byte => byte.toString(16).padStart(2, '0')).join('') } const encodedBytes = encodeText(text); return toHexString(encodedBytes) }
 
 //注意，如果是在f50本机内发起请求，请将请求端口更改为8080
-let KANO_baseURL = 'http://localhost:8090'
+let KANO_baseURL = 'http://localhost:8090/api'
 let KANO_PASSWORD = null
 
 //登录
