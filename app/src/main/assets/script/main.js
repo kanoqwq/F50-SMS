@@ -1681,6 +1681,8 @@ let handleShowPassword = (e) => {
     }
 }
 
-document.querySelector('#tokenInput').onclick = () => {
-    onTokenConfirm()
-}
+document.querySelector('#tokenInput').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        onTokenConfirm()
+    }
+});
