@@ -1260,7 +1260,7 @@ let resetShowListTimer = null
 let resetShowList = (e) => {
     const target = e.target
     resetShowListTimer && clearTimeout(resetShowListTimer)
-    if (resetShowListBtnCount == 1) target.innerHTML = "确定重置？"
+    if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
     if (resetShowListBtnCount >= 2) {
         localStorage.removeItem('statusShowList');
         location.reload()
