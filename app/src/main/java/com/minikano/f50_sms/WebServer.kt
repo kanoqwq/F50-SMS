@@ -111,13 +111,16 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             return try {
                 val model = Build.MODEL // 设备型号
                 val batteryLevel: Int = getBatteryPercentage()// 充电状态
+                val packageManager = context_app.packageManager
+                val packageName = context_app.packageName
+                val versionName = packageManager.getPackageInfo(packageName, 0).versionName
 
                 Log.d("kano_ZTE_LOG", "型号与电量：$model $batteryLevel")
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"model":"$model","battery":"$batteryLevel"}"""
+                    """{"app_ver":"$versionName","model":"$model","battery":"$batteryLevel"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
