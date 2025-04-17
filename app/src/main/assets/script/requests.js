@@ -232,7 +232,7 @@ const getUFIData = async () => {
         } catch {/*没有，不处理*/ }
 
         //U30Air电池兼容写法
-        battery = battery_res?.battery_value ? battery_res.battery_value : battery_res.battery_vol_percent ? battery_res.battery_vol_percent : battery
+        battery = battery_res?.battery_value ? battery_res.battery_value : battery_res?.battery_vol_percent ? battery_res.battery_vol_percent : battery
 
         //获取storage_and_dailyData，整合（如果有）
         let daily_data = null
