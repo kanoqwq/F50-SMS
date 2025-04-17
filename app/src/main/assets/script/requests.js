@@ -248,14 +248,14 @@ const getUFIData = async () => {
             internal_used_storage = res.internal_used_storage
             external_used_storage = res.external_used_storage
         } catch {/*没有，不处理*/ }
-
+        const resData = await res.json()
         return {
-            ...await res.json(),
+            ...resData,
             cpu_temp: cpu_t,
             cpu_usage: cpu_u,
             mem_usage: mem_u,
             //U30Air电池兼容写法
-            battery: res?.battery_value ? res.battery_value : res?.battery_vol_percent ? res.battery_vol_percent : battery,
+            battery: resData?.battery_value ? resData.battery_value : resData?.battery_vol_percent ? resData.battery_vol_percent : battery,
             model,
             daily_data,
             internal_available_storage,
