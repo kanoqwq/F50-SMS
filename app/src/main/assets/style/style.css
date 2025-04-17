@@ -323,7 +323,7 @@ input {
 
 .nice-table th,
 .nice-table td {
-    padding: 7px 8px;
+    padding: 7px 0px;
     text-align: center;
     color: var(--dark-text-color);
 }
