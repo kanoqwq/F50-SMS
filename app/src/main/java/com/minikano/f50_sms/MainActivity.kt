@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        webView.addJavascriptInterface(JSInterface(), "KANO_INTERFACE")
+//        webView.addJavascriptInterface(JSInterface(), "KANO_INTERFACE")
         showLoadingDialog()
         // 异步处理 IP 获取
         Thread {
