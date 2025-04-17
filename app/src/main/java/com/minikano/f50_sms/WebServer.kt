@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.StatFs
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
+import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -22,6 +23,8 @@ import java.util.Locale
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
+    private val targetServerIP = gatewayIp  // 目标服务器地址
+    private val PREFS_NAME = "kano_ZTE_store"
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
@@ -100,6 +103,94 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Response.Status.INTERNAL_ERROR,
                     "application/json",
                     """{"error":"获取内存信息失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //自启无线adb
+        if (method == "GET" && uri == "/adb_wifi_setting") {
+            return try {
+                val sharedPrefs = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                val ADB_IP_ENABLED = sharedPrefs.getString("ADB_IP_ENABLED", "false")
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"enabled":$ADB_IP_ENABLED}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取网络adb信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取网络adb信息失败"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+        if (method == "POST" && uri == "/adb_wifi_setting") {
+            return try {
+                val map = HashMap<String, String>()
+                session?.parseBody(map)  // 必须调用 parseBody 才能安全读 inputStream
+
+                val body = map["postData"] ?: throw Exception("postData is null")
+                val json = JSONObject(body)
+
+                val enabled = json.optBoolean("enabled", false)
+                val password = json.optString("password", "")
+
+                Log.d("kano_ZTE_LOG", "接收到ADB_WIFI配置：enabled=$enabled, password=$password")
+
+                val sharedPrefs = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+                val host = targetServerIP.substringBefore(":")
+
+                //保存
+                if(enabled == true){
+                    sharedPrefs.edit()
+                        .putString("ADB_IP", host)
+                        .putString("ADMIN_PWD",password)
+                        .putString("ADB_IP_ENABLED","true")
+                        .apply()
+                }else{
+                    sharedPrefs.edit().remove("ADB_IP").remove("ADMIN_PWD")
+                        .putString("ADB_IP_ENABLED","false")
+                        .apply()
+                }
+
+                Log.d("kano_ZTE_LOG", "保存结果：ADB_IP:${
+                    sharedPrefs.getString("ADB_IP", "")
+                } ADMIN_PWD:${
+                    sharedPrefs.getString("ADMIN_PWD", "")
+                }")
+
+//                val adb_wifi = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+//                    context_app,
+//                    "shell/adbPort",
+//                    "-ip", host,
+//                    "-pwd", password,
+//                    "-port", "5555"
+//                )
+//
+//                Log.d("kano_ZTE_LOG", "ADB_WIFI执行结果：$adb_wifi")
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"result":"success","enabled":"$enabled"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "解析ADB_WIFI POST 请求出错：${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"参数解析失败"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -362,30 +453,14 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         return Pair(total, idleAll)
     }
 
-    fun formatSize(size: Long): String {
-        val kb = size / 1024f
-        val mb = kb / 1024f
-        val gb = mb / 1024f
-        return if (gb >= 1) String.format(Locale.US,"%.2f GB", gb)
-        else if (mb >= 1) String.format(Locale.US,"%.2f MB", mb)
-        else String.format(Locale.US,"%.2f KB", kb)
-    }
-
     fun getTodayDataUsage(
         context: Context,
-        isMobile: Boolean = true // true 表示移动流量，false 表示 WiFi
     ): Long {
         val networkStatsManager =
             context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
-        val uid = android.os.Process.myUid()
         val startTime = getStartOfDayMillis()
         val endTime = System.currentTimeMillis()
-
-        val networkType = if (isMobile)
-            ConnectivityManager.TYPE_MOBILE
-        else
-            ConnectivityManager.TYPE_WIFI
 
         var totalBytes = 0L
 

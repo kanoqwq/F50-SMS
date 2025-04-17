@@ -600,6 +600,22 @@ let handlerADBStatus = async () => {
                 goformId: 'USB_PORT_SETTING',
                 usb_port_switch: res.usb_port_switch == '1' ? '0' : '1'
             })).json()
+
+            // try {
+            //     let res2 = await (await fetch('/api/adb_wifi_setting', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify({
+            //             enabled: res.usb_port_switch == '1' ? false : true,
+            //             password: KANO_PASSWORD
+            //         })
+            //     })).json()
+            //     if (res2?.result != 'success') throw '网络adb设置没有执行成功'
+            // } catch (e) {
+            //     console.error("网络adb设置失败", e.message);
+            // }
             if (res1.result == 'success') {
                 createToast('操作成功！', 'green')
                 await handlerADBStatus()
@@ -607,7 +623,7 @@ let handlerADBStatus = async () => {
                 createToast('操作失败！', 'red')
             }
         } catch (e) {
-            // createToast(e.message)
+            console.error(e.message)
         }
     }
     btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
@@ -615,6 +631,59 @@ let handlerADBStatus = async () => {
 
 }
 handlerADBStatus()
+
+//检查usb网络调试状态
+let handlerADBNetworkStatus = async () => {
+    const btn = document.querySelector('#ADB_NET')
+    if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
+        btn.style.backgroundColor = '#80808073'
+        return null
+    }
+
+    let res = await (await fetch('/api/adb_wifi_setting', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })).json()
+
+    btn.onclick = async () => {
+        try {
+            if (!initRequestData()) {
+                return null
+            }
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            let res1 = await (await fetch('/api/adb_wifi_setting', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: res.enabled == "true" || res.enabled == true  ? false : true,
+                    password: KANO_PASSWORD
+                })
+            })).json()
+            if (res1.result == 'success') {
+                createToast('操作成功！重启生效', 'green')
+                await handlerADBNetworkStatus()
+            } else {
+                createToast('操作失败！', 'red')
+            }
+        } catch (e) {
+            console.error(e.message)
+        }
+    }
+    btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
+    btn.style.backgroundColor = res.enabled == "true" || res.enabled == true ? '#018AD8' : ''
+
+}
+handlerADBNetworkStatus()
 
 //检查性能模式状态
 let handlerPerformaceStatus = async () => {

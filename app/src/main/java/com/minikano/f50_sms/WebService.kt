@@ -20,6 +20,7 @@ class WebService : Service() {
     private val port = 2333
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
+    private val PREFS_NAME = "kano_ZTE_store"
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -52,6 +53,43 @@ class WebService : Service() {
                 }catch(e:Exception) {
                     Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
                 }
+            }
+
+            try{
+                val sharedPrefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+                val ADB_IP_ENABLED = sharedPrefs.getString("ADB_IP_ENABLED", "") ?: null
+
+                if(ADB_IP_ENABLED == "true") {
+
+                    val ADB_IP =
+                        sharedPrefs.getString("ADB_IP", "") ?: throw Exception("没有ADMIN_IP")
+                    val ADMIN_PWD =
+                        sharedPrefs.getString("ADMIN_PWD", "") ?: throw Exception("没有ADMIN_IP")
+
+                    Log.d(
+                        "kano_ZTE_LOG", "读取网络ADB所需配置：ADB_IP:${
+                            ADB_IP
+                        } ADMIN_PWD:${
+                            ADMIN_PWD
+                        }"
+                    )
+
+                    val adb_wifi = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+                        applicationContext,
+
+                        "shell/adbPort",
+                        "-ip", ADB_IP,
+                        "-pwd", ADMIN_PWD,
+                        "-port", "5555"
+                    )
+                    Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行结果：$adb_wifi")
+                }else{
+                    Log.d("kano_ZTE_LOG", "不需要自启动ADB_WIFI")
+                }
+            }catch (e:Exception){
+                Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行错误：${e.message}")
+                e.printStackTrace()
             }
         }.start()
     }
