@@ -83,9 +83,9 @@ function copyText(e) {
 function kano_parseSignalBar(val, min = -125, max = -81, green_low = -90, yellow_low = -100) {
     let strength = Number(val)
     strength = strength > max ? max : strength
-    strength = strength < min ? min : strength 
+    strength = strength < min ? min : strength
     const bar = document.createElement('span')
-    const strengths = Array.from({ length: Math.abs((min - max)) + 1 }, (_, i) => min + i); 
+    const strengths = Array.from({ length: Math.abs((min - max)) + 1 }, (_, i) => min + i);
     const index = strengths.findIndex(i => i >= strength) // 找到对应的索引
     const percent = (index / strengths.length) * 100 // 计算百分比
     const progress = document.createElement('span')
@@ -479,12 +479,12 @@ let handlerStatusRender = async (flag = false) => {
             ${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<span>&nbsp;PCI: ${res.Lte_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRP:&nbsp; ${kano_parseSignalBar(res.lte_rsrp)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<div style="display: flex;align-items: center;">SINR:&nbsp; ${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;">RSRQ:&nbsp; ${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;">RSRQ:&nbsp; ${kano_parseSignalBar(res.lte_rsrq, -20, -3, -9, -12)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<span>频率: ${res.Nr_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<span>&nbsp;PCI: ${res.Nr_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRP:</span>${kano_parseSignalBar(res.Z5g_rsrp)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</div>` : ''}
             `
         }
 
@@ -514,7 +514,7 @@ let handlerStatusRender = async (flag = false) => {
             Lte_fcn: `${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<strong onclick="copyText(event)"  class="green">4G 频率：${res.Lte_fcn}</strong>` : ''}`,
             Lte_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Lte_bands_widths') ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}`,
             Lte_pci: `${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}`,
-            lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</strong>` : ''}`,
+            lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
             lte_rssi: `${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}`,
             Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}`,
             Z5g_rsrp: `${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${kano_parseSignalBar(res.Z5g_rsrp)}</strong>` : ''}`,
@@ -523,7 +523,7 @@ let handlerStatusRender = async (flag = false) => {
             Nr_fcn: `${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<strong onclick="copyText(event)"  class="blue">5G 频率：${res.Nr_fcn}</strong>` : ''}`,
             Nr_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Nr_bands_widths') ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}`,
             Nr_pci: `${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}`,
-            nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</strong>` : ''}`,
+            nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
             nr_rssi: `${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}`,
             Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}`,
         }
@@ -1057,7 +1057,7 @@ let initCellInfo = async () => {
                         <td>${earfcn}</td>
                         <td>${pci}</td>
                         <td>${kano_parseSignalBar(rsrp)}</td>
-                        <td>${kano_parseSignalBar(rsrq,-20,-3,-9,-12)}</td>
+                        <td>${kano_parseSignalBar(rsrq, -20, -3, -9, -12)}</td>
                         <td>${kano_parseSignalBar(sinr, -10, 30, 13, 0)}</td>
                     </tr>
                 `
@@ -1264,7 +1264,7 @@ let resetShowList = (e) => {
     if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
     if (resetShowListBtnCount >= 2) {
         localStorage.removeItem('statusShowList');
-        window?.KANO_INTERFACE?.exit ? window.KANO_INTERFACE.exit() : location.reload()
+        location.reload()
     }
     resetShowListBtnCount++
     resetShowListTimer = setTimeout(() => {
@@ -1713,11 +1713,11 @@ let initClientManagementModal = async () => {
         const BLACK_CLIENT_LIST = document.querySelector('#BLACK_CLIENT_LIST')
 
         //渲染设备列表
-        let conn_client_html = '<p>暂无设备</p>'
-        let black_list_html = '<p>暂无设备</p>'
+        let conn_client_html = ''
+        let black_list_html = ''
 
         if (station_list && station_list.length) {
-            conn_client_html = station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            conn_client_html += station_list.map(({ hostname, ip_addr, mac_addr }) => (`
             <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
                 class="card-item">
                 <div style="margin-right: 10px;">
@@ -1744,7 +1744,7 @@ let initClientManagementModal = async () => {
             </div>`)).join('')
         }
         if (lan_station_list && lan_station_list.length) {
-            conn_client_html = lan_station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            conn_client_html += lan_station_list.map(({ hostname, ip_addr, mac_addr }) => (`
             <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
                 class="card-item">
                 <div style="margin-right: 10px;">
@@ -1770,9 +1770,8 @@ let initClientManagementModal = async () => {
                 </div>
             </div>`)).join('')
         }
-
         if (blackMacList.length && blackNameList.length) {
-            black_list_html = blackMacList.map((item, index) => {
+            black_list_html += blackMacList.map((item, index) => {
                 if (item) {
                     let params = `'${blackMacList.filter(i => item != i).join(';')}'` + ","
                         + `'${blackMacList.filter(i => blackNameList[index] != i).join(';')}'` + ","
@@ -1797,9 +1796,11 @@ let initClientManagementModal = async () => {
                 }
             }).join('')
         }
+
+        if (conn_client_html == '') conn_client_html = '<p>暂无设备</p>'
+        if (black_list_html == '') black_list_html = '<p>暂无设备</p>'
         CONN_CLIENT_LIST && (CONN_CLIENT_LIST.innerHTML = conn_client_html)
         BLACK_CLIENT_LIST && (BLACK_CLIENT_LIST.innerHTML = black_list_html)
-        console.log(station_list, lan_station_list);
     } catch (e) {
         console.error(e);
         createToast('获取数据失败，请检查网络连接', 'red')
@@ -1886,3 +1887,13 @@ let handlerCecullarStatus = async () => {
     btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018AD8'
 }
 handlerCecullarStatus()
+
+// title
+const loadTitle = async () => {
+    try {
+        let ver = window?.KANO_INTERFACE_API?.getVersion ? window.KANO_INTERFACE_API.getVersion() :''
+        document.querySelector('#TITLE').innerHTML = "ZTE-UFI-TOOLS-WEB Ver: " + ver
+        document.querySelector('#MAIN_TITLE').innerHTML = "ZTE-UFI管理工具 Ver: " + ver
+    } catch {/*没有，不处理*/ }
+}
+loadTitle()
