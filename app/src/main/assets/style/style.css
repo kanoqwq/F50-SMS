@@ -63,7 +63,8 @@ a {
     margin-bottom: 10px;
 }
 
-.deviceList li p {
+.deviceList li p,
+.deviceList li .row {
     display: flex;
     flex-wrap: wrap;
     overflow: auto;
@@ -73,7 +74,8 @@ a {
     border-radius: 10px;
 }
 
-.deviceList strong {
+.deviceList strong,
+.deviceList .card-item {
     display: flex;
     align-items: center;
     flex-shrink: 0;
@@ -89,10 +91,20 @@ a {
 }
 
 .deviceList strong:hover,
-.deviceList strong:active {
+.deviceList strong:active,
+.deviceList .card-item:hover,
+.deviceList .card-item:active {
     border: 1px solid var(--dark-tag-color-active);
     box-shadow: 0 0 10px var(--dark-tag-color-active);
     transform: scale(1.01);
+}
+
+.card-item {
+    display: block;
+}
+
+.row{
+    padding-top: 0 !important;
 }
 
 .title {
@@ -431,7 +443,7 @@ input {
     margin-bottom: 6px;
 }
 
-#WIFIManagementModal .label-name{
+#WIFIManagementModal .label-name {
     display: inline-block;
     width: 76px;
 }

@@ -214,13 +214,13 @@ function closeModal(txt, time = 300) {
         el.style.display = 'none'
     }, time)
 }
-function showModal(txt, time = 300) {
+function showModal(txt, time = 300, opacity = '1') {
     let el = document.querySelector(txt)
     if (!el) return
     el.style.opacity = 0
     el.style.display = ''
     setTimeout(() => {
-        el.style.opacity = 1
+        el.style.opacity = opacity
     }, 10)
 }
 
@@ -259,6 +259,7 @@ const onTokenConfirm = debounce(async () => {
         initUSBNetworkType()
         initWIFISwitch()
         rebootDeviceBtnInit()
+        handlerCecullarStatus()
     }
     catch {
         createToast('登录失败，请检查网络！', 'red')
@@ -596,11 +597,11 @@ let handlerADBStatus = async () => {
                 out()
                 return null
             }
-            res = await (await postData(cookie, {
+            let res1 = await (await postData(cookie, {
                 goformId: 'USB_PORT_SETTING',
                 usb_port_switch: res.usb_port_switch == '1' ? '0' : '1'
             })).json()
-            if (res.result == 'success') {
+            if (res1.result == 'success') {
                 createToast('操作成功！', 'green')
                 await handlerADBStatus()
             } else {
@@ -640,11 +641,11 @@ let handlerPerformaceStatus = async () => {
                 out()
                 return null
             }
-            res = await (await postData(cookie, {
+            let res1 = await (await postData(cookie, {
                 goformId: 'PERFORMANCE_MODE_SETTING',
                 performance_mode: res.performance_mode == '1' ? '0' : '1'
             })).json()
-            if (res.result == 'success') {
+            if (res1.result == 'success') {
                 createToast('操作成功，重启生效！', 'green')
                 await handlerPerformaceStatus()
             } else {
@@ -686,6 +687,7 @@ clearBtn.onclick = () => {
     rebootDeviceBtnInit()
     initUSBNetworkType()
     initWIFISwitch()
+    handlerCecullarStatus()
     //退出登录请求
     try {
         login().then(cookie => {
@@ -892,11 +894,11 @@ let initSMBStatus = async () => {
                 out()
                 return null
             }
-            res = await (await postData(cookie, {
+            let res1 = await (await postData(cookie, {
                 goformId: 'SAMBA_SETTING',
                 samba_switch: res.samba_switch == '1' ? '0' : '1'
             })).json()
-            if (res.result == 'success') {
+            if (res1.result == 'success') {
                 createToast('操作成功！', 'green')
             } else {
                 createToast('操作失败！', 'red')
@@ -933,11 +935,11 @@ let initLightStatus = async () => {
                 out()
                 return null
             }
-            res = await (await postData(cookie, {
+            let res1 = await (await postData(cookie, {
                 goformId: 'INDICATOR_LIGHT_SETTING',
                 indicator_light_switch: res.indicator_light_switch == '1' ? '0' : '1'
             })).json()
-            if (res.result == 'success') {
+            if (res1.result == 'success') {
                 createToast('操作成功！', 'green')
             } else {
                 createToast('操作失败！', 'red')
@@ -1229,7 +1231,7 @@ rebootDeviceBtnInit()
 
 //字段显示隐藏
 document.querySelector("#DICTIONARY").onclick = (e) => {
-    showModal('#dictionaryModal')
+    showModal('#dictionaryModal', 300, '.7')
 }
 
 document.querySelector('#DIC_LIST')?.addEventListener('click', (e) => {
@@ -1263,8 +1265,7 @@ let resetShowList = (e) => {
     if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
     if (resetShowListBtnCount >= 2) {
         localStorage.removeItem('statusShowList');
-        location.reload()
-        
+        window?.KANO_INTERFACE?.exit ? window.KANO_INTERFACE.exit() : location.reload()
     }
     resetShowListBtnCount++
     resetShowListTimer = setTimeout(() => {
@@ -1687,3 +1688,202 @@ document.querySelector('#tokenInput').addEventListener('keydown', (event) => {
         onTokenConfirm()
     }
 });
+
+//无线设备管理
+
+document.querySelector('#ClientManagement').onclick = async () => {
+    if (!initRequestData()) {
+        createToast('请登录！', 'red')
+        out()
+        return null
+    }
+    await initClientManagementModal()
+    showModal('#ClientManagementModal')
+}
+
+let initClientManagementModal = async () => {
+    try {
+        // 获取连接设备
+        const { station_list, lan_station_list, BlackMacList, BlackNameList, AclMode } = await getData(new URLSearchParams({
+            cmd: 'station_list,lan_station_list,queryDeviceAccessControlList'
+        }))
+        const blackMacList = BlackMacList ? BlackMacList.split(';') : []
+        const blackNameList = BlackNameList ? BlackNameList.split(';') : []
+
+        const CONN_CLIENT_LIST = document.querySelector('#CONN_CLIENT_LIST')
+        const BLACK_CLIENT_LIST = document.querySelector('#BLACK_CLIENT_LIST')
+
+        //渲染设备列表
+        let conn_client_html = '<p>暂无设备</p>'
+        let black_list_html = '<p>暂无设备</p>'
+
+        if (station_list && station_list.length) {
+            conn_client_html = station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
+                class="card-item">
+                <div style="margin-right: 10px;">
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">主机名称：</span>
+                        <span onclick="copyText(event)">${hostname}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">MAC地址：</span>
+                        <span onclick="copyText(event)">${mac_addr}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">IP地址：</span>
+                        <span onclick="copyText(event)">${ip_addr}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">接入类型：</span>
+                        <span>无线</span>
+                    </p>
+                </div>
+                <div style="flex:1;text-align: right;">
+                    <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList('${[mac_addr, ...blackMacList].join(';')}','${[hostname, ...blackNameList].join(';')}','${AclMode}')">🚫 拉黑</button>
+                </div>
+            </div>`)).join('')
+        }
+        if (lan_station_list && lan_station_list.length) {
+            conn_client_html = lan_station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
+                class="card-item">
+                <div style="margin-right: 10px;">
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">主机名称：</span>
+                        <span onclick="copyText(event)">${hostname}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">MAC地址：</span>
+                        <span onclick="copyText(event)">${mac_addr}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">IP地址：</span>
+                        <span onclick="copyText(event)">${ip_addr}</span>
+                    </p>
+                    <p style="display: flex;justify-content: space-between;">
+                        <span style="justify-self: start;">接入类型：</span>
+                        <span>有线</span>
+                    </p>
+                </div>
+                <div style="flex:1;text-align: right;">
+                    <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList('${[mac_addr, ...blackMacList].join(';')}','${[hostname, ...blackNameList].join(';')}','${AclMode}')">🚫 拉黑</button>
+                </div>
+            </div>`)).join('')
+        }
+
+        if (blackMacList.length && blackNameList.length) {
+            black_list_html = blackMacList.map((item, index) => {
+                if (item) {
+                    let params = `'${blackMacList.filter(i => item != i).join(';')}'` + ","
+                        + `'${blackMacList.filter(i => blackNameList[index] != i).join(';')}'` + ","
+                        + `'${AclMode}'`
+                    return `
+                    <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
+                        class="card-item">
+                        <div style="margin-right: 10px;">
+                            <p style="display: flex;justify-content: space-between;">
+                                <span style="justify-self: start;">主机名称：</span>
+                                <span onclick="copyText(event)">${blackNameList[index] ? blackNameList[index] : '未知'}</span>
+                            </p>
+                            <p style="display: flex;justify-content: space-between;">
+                                <span style="justify-self: start;">MAC地址：</span>
+                                <span onclick="copyText(event)">${item}</span>
+                            </p>
+                        </div>
+                        <div style="flex:1;text-align: right;">
+                            <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList(${params})">✅ 解封</button>
+                        </div>
+                    </div>`
+                }
+            }).join('')
+        }
+        CONN_CLIENT_LIST && (CONN_CLIENT_LIST.innerHTML = conn_client_html)
+        BLACK_CLIENT_LIST && (BLACK_CLIENT_LIST.innerHTML = black_list_html)
+        console.log(station_list, lan_station_list);
+    } catch (e) {
+        console.error(e);
+        createToast('获取数据失败，请检查网络连接', 'red')
+    }
+}
+
+
+let setOrRemoveDeviceFromBlackList = async (BlackMacList, BlackNameList, AclMode) => {
+    try {
+        const cookie = await login()
+        if (!cookie) {
+            createToast('登录失败，请检查密码', 'red')
+            closeModal('#ClientManagementModal')
+            setTimeout(() => {
+                out()
+            }, 310);
+            return null
+        }
+        const res = await postData(cookie, {
+            goformId: "setDeviceAccessControlList",
+            AclMode: AclMode.trim(),
+            WhiteMacList: "",
+            BlackMacList: BlackMacList.trim(),
+            WhiteNameList: "",
+            BlackNameList: BlackNameList.trim()
+        })
+        const { result } = await res.json()
+        if (result && result == 'success') {
+            createToast('设置成功', 'green')
+        } else {
+            createToast('设置失败', 'red')
+        }
+        await initClientManagementModal()
+    }
+    catch (e) {
+        console.error(e);
+        createToast('请求数据失败，请检查网络连接', 'red')
+    }
+}
+
+let closeClientManager = () => {
+    closeModal('#ClientManagementModal')
+}
+
+//开关蜂窝数据
+let handlerCecullarStatus = async () => {
+    const btn = document.querySelector('#CECULLAR')
+    if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
+        btn.style.backgroundColor = '#80808073'
+        return null
+    }
+    let res = await getData(new URLSearchParams({
+        cmd: 'ppp_status'
+    }))
+    btn.onclick = async () => {
+        try {
+            if (!initRequestData()) {
+                return null
+            }
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            btn.innerHTML = '正在更改...'
+            let res1 = await (await postData(cookie, {
+                goformId: res.ppp_status == 'ppp_disconnected' ? 'CONNECT_NETWORK' : 'DISCONNECT_NETWORK',
+            })).json()
+            if (res1.result == 'success') {
+                setTimeout(async () => {
+                    await handlerCecullarStatus()
+                    createToast('操作成功！', 'green')
+                }, 2000);
+            } else {
+                createToast('操作失败！', 'red')
+            }
+        } catch (e) {
+            // createToast(e.message)
+        }
+    }
+    btn.innerHTML = res.ppp_status == 'ppp_disconnected' ? '开启蜂窝数据' : '关闭蜂窝数据'
+    btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018AD8'
+}
+handlerCecullarStatus()

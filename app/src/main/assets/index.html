@@ -24,8 +24,10 @@
                 <div>
                     <button id="SMS" class="btn">短信收发</button>
                     <button id="DataManagement" class="btn">流量管理</button>
+                    <button id="ClientManagement" class="btn">连接设备管理</button>
                     <button id="WIFIManagement" class="btn">WIFI设置</button>
-                    <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启ADB调试</button>
+                    <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
+                    <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
                     <button id="PERF" class="btn" onclick="createToast('请登录','red')">开启性能模式</button>
                     <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
                     <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB</button>
@@ -296,16 +298,16 @@
                 <div class="title" style="margin: 10px 0;">基本状态</div>
                 <label><input type="checkbox" data-name="network_type">蜂窝状态</label>
                 <label><input type="checkbox" data-name="wifi_access_sta_num">WIFI设备数</label>
-                <!-- <label><input type="checkbox" data-name="battery">剩余电量</label> -->
+                <label><input type="checkbox" data-name="battery">剩余电量</label>
                 <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label>
-                <!-- <label><input type="checkbox" data-name="cpu_temp">CPU温度</label> -->
-                <!-- <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label> -->
-                <!-- <label><input type="checkbox" data-name="mem_usage">内存使用率</label> -->
+                <label><input type="checkbox" data-name="cpu_temp">CPU温度</label>
+                <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label>
+                <label><input type="checkbox" data-name="mem_usage">内存使用率</label>
                 <label><input type="checkbox" data-name="realtime_time">连接时长</label>
                 <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
-                <!-- <label><input type="checkbox" data-name="daily_data">当日流量</label> -->
-                <!-- <label><input type="checkbox" data-name="internal_available_storage">内置存储</label> -->
-                <!-- <label><input type="checkbox" data-name="external_available_storage">SD卡</label> -->
+                <label><input type="checkbox" data-name="daily_data">当日流量</label>
+                <label><input type="checkbox" data-name="internal_available_storage">内置存储</label>
+                <label><input type="checkbox" data-name="external_available_storage">SD卡</label>
                 <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
 
                 <div class="title" style="margin: 10px 0;">信号参数</div>
@@ -328,7 +330,7 @@
                 <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label>
                 <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label>
                 <div class="title" style="margin: 10px 0;">设备属性</div>
-                <!-- <label><input type="checkbox" data-name="model">设备型号</label> -->
+                <label><input type="checkbox" data-name="model">设备型号</label>
                 <label><input type="checkbox" data-name="cr_version">版本号</label>
                 <label><input type="checkbox" data-name="iccid">ICCID</label>
                 <label><input type="checkbox" data-name="imei">IMEI</label>
@@ -512,6 +514,124 @@
                         <button type="button" onclick="closeModal('#WIFIManagementModal')">关闭</button>
                     </div>
                 </form>
+            </div>
+        </div>
+        <!-- 连接设备管理模态框 -->
+        <div class="mask" id="ClientManagementModal" style="display: none">
+            <div class="modal" style="width: 90%;max-width: 600px; display: flex;flex-direction: column;">
+                <div class="title" style="margin-bottom: 4px;">连接设备管理</div>
+                <ul class="deviceList" style="flex: 1; overflow-y: auto;">
+                    <p style="display: flex;justify-content: space-between;">接入设备 <button style="margin-right: 10px;" class="btn" onclick="initClientManagementModal()">刷新</button></p>
+                    <li id="CONN_CLIENT_LIST" style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
+                        <div style="display: block;width: 100%;">
+                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
+                                class="card-item">
+                                <div style="margin-right: 10px;">
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">主机名称：</span>
+                                        <span>MiniKano-3~fsdak</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">MAC地址：</span>
+                                        <span>b4:fa:48:de:ac:1a</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">IP地址：</span>
+                                        <span>192.168.0.154</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">接入类型：</span>
+                                        <span>无线</span>
+                                    </p>
+                                </div>
+                                <div style="flex:1;text-align: right;">
+                                    <button class="btn" style="padding: 20px 4px;">🚫 拉黑</button>
+                                </div>
+                            </div>
+                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
+                                class="card-item">
+                                <div style="margin-right: 10px;">
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">主机名称：</span>
+                                        <span>MiniKano-3~fsdak</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">MAC地址：</span>
+                                        <span>b4:fa:48:de:ac:1a</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">IP地址：</span>
+                                        <span>192.168.0.154</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">接入类型：</span>
+                                        <span>无线</span>
+                                    </p>
+                                </div>
+                                <div style="flex:1;text-align: right;">
+                                    <button class="btn" style="padding: 20px 4px;">🚫 拉黑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <p>黑名单</p>
+                    <li id="BLACK_CLIENT_LIST" style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
+                        <div style="display: block;width: 100%;">
+                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
+                                class="card-item">
+                                <div style="margin-right: 10px;">
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">主机名称：</span>
+                                        <span>MiniKano-3~fsdak</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">MAC地址：</span>
+                                        <span>b4:fa:48:de:ac:1a</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">IP地址：</span>
+                                        <span>192.168.0.154</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">接入类型：</span>
+                                        <span>无线</span>
+                                    </p>
+                                </div>
+                                <div style="flex:1;text-align: right;">
+                                    <button class="btn" style="padding: 20px 4px;">✅ 解封</button>
+                                </div>
+                            </div>
+                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
+                                class="card-item">
+                                <div style="margin-right: 10px;">
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">主机名称：</span>
+                                        <span>MiniKano-3~fsdak</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">MAC地址：</span>
+                                        <span>b4:fa:48:de:ac:1a</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">IP地址：</span>
+                                        <span>192.168.0.154</span>
+                                    </p>
+                                    <p style="display: flex;justify-content: space-between;">
+                                        <span style="justify-self: start;">接入类型：</span>
+                                        <span>无线</span>
+                                    </p>
+                                </div>
+                                <div style="flex:1;text-align: right;">
+                                    <button class="btn" style="padding: 20px 4px;">✅ 解封</button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="btn" style="text-align: right;margin-top: 6px;">
+                    <!-- <button type="submit">提交</button> -->
+                    <button type="button" onclick="closeClientManager()">关闭</button>
+                </div>
             </div>
         </div>
     </div>
