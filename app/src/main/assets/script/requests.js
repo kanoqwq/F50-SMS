@@ -224,14 +224,15 @@ const getUFIData = async () => {
         //获取设备型号与电量，整合（如果有）
         let battery = null
         let model = null
+        let battery_res = null
         try {
-            const res = await (await fetch('/battery_and_model')).json()
-            battery = res.battery
-            model = res.model
+            battery_res = await (await fetch('/api/battery_and_model')).json()
+            battery = battery_res.battery
+            model = battery_res.model
         } catch {/*没有，不处理*/ }
 
         //U30Air电池兼容写法
-        battery = res.battery_value ? res.battery_value : res.battery_vol_percent ? res.battery_vol_percent : battery
+        battery = battery_res?.battery_value ? battery_res.battery_value : battery_res.battery_vol_percent ? battery_res.battery_vol_percent : battery
 
         //获取storage_and_dailyData，整合（如果有）
         let daily_data = null
