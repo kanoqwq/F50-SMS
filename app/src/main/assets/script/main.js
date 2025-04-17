@@ -80,13 +80,12 @@ function copyText(e) {
 }
 
 //按照信号dbm强度绘制信号强度栏(-113到-51)
-function kano_parseSignalBar(val, min = -125, max = -81, step1 = -90, step2 = -100) {
+function kano_parseSignalBar(val, min = -125, max = -81, green_low = -90, yellow_low = -100) {
     let strength = Number(val)
-    strength = strength > max ? max : strength // 信号强度不能大于-51
-    strength = strength < min ? min : strength // 信号强度不能小于-113
-    //信号强度范围-113到-51
+    strength = strength > max ? max : strength
+    strength = strength < min ? min : strength 
     const bar = document.createElement('span')
-    const strengths = Array.from({ length: Math.abs((min - max)) + 1 }, (_, i) => min + i); // -113 到 -51
+    const strengths = Array.from({ length: Math.abs((min - max)) + 1 }, (_, i) => min + i); 
     const index = strengths.findIndex(i => i >= strength) // 找到对应的索引
     const percent = (index / strengths.length) * 100 // 计算百分比
     const progress = document.createElement('span')
@@ -100,9 +99,9 @@ function kano_parseSignalBar(val, min = -125, max = -81, step1 = -90, step2 = -1
     progress.style.width = `${percent}%`
     progress.style.opacity = '.6'
 
-    if (strength >= step1) {
+    if (strength >= green_low) {
         progress.style.backgroundColor = 'green';
-    } else if (strength >= step2) {
+    } else if (strength >= yellow_low) {
         progress.style.backgroundColor = 'orange';
     } else {
         progress.style.backgroundColor = 'red';
@@ -478,14 +477,14 @@ let handlerStatusRender = async (flag = false) => {
             current_cell.innerHTML += `
             ${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<span>EARFCN: ${res.Lte_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<span>&nbsp;PCI: ${res.Lte_pci}</span>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<span>&nbsp;RSRQ: ${res.lte_rsrq}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRP:&nbsp; ${kano_parseSignalBar(res.lte_rsrp)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<div style="display: flex;align-items: center;">SINR:&nbsp; ${kano_parseSignalBar(res.Lte_snr, -11, 31, 13, 5)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<div style="display: flex;align-items: center;">SINR:&nbsp; ${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRQ:&nbsp; ${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<span>EARFCN: ${res.Nr_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<span>&nbsp;PCI: ${res.Nr_pci}</span>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<span>RSRQ: ${res.nr_rsrq}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRP:</span>${kano_parseSignalBar(res.Z5g_rsrp)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -11, 31, 13, 5)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</div>` : ''}
             `
         }
 
@@ -510,21 +509,21 @@ let handlerStatusRender = async (flag = false) => {
         }
         let statusHtml_net = {
             lte_rsrp: `${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${kano_parseSignalBar(res.lte_rsrp)}</strong>` : ''}`,
-            Lte_snr: `${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${kano_parseSignalBar(res.Lte_snr, -11, 31, 13, 5)}</strong>` : ''}`,
+            Lte_snr: `${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</strong>` : ''}`,
             Lte_bands: `${notNullOrundefinedOrIsShow(res, 'Lte_bands') ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}`,
             Lte_fcn: `${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<strong onclick="copyText(event)"  class="green">4G 频点：${res.Lte_fcn}</strong>` : ''}`,
             Lte_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Lte_bands_widths') ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}`,
             Lte_pci: `${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}`,
-            lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${res.lte_rsrq}</strong>` : ''}`,
+            lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</strong>` : ''}`,
             lte_rssi: `${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}`,
             Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}`,
             Z5g_rsrp: `${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${kano_parseSignalBar(res.Z5g_rsrp)}</strong>` : ''}`,
-            Nr_snr: `${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${kano_parseSignalBar(res.Nr_snr, -11, 31, 13, 5)}</strong>` : ''}`,
+            Nr_snr: `${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</strong>` : ''}`,
             Nr_bands: `${notNullOrundefinedOrIsShow(res, 'Nr_bands') ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}`,
             Nr_fcn: `${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<strong onclick="copyText(event)"  class="blue">5G 频点：${res.Nr_fcn}</strong>` : ''}`,
             Nr_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Nr_bands_widths') ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}`,
             Nr_pci: `${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}`,
-            nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${res.nr_rsrq}</strong>` : ''}`,
+            nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</strong>` : ''}`,
             nr_rssi: `${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}`,
             Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}`,
         }
@@ -1057,9 +1056,9 @@ let initCellInfo = async () => {
                         <td>${band}</td>
                         <td>${earfcn}</td>
                         <td>${pci}</td>
-                        <td>${rsrp}</td>
-                        <td>${rsrq}</td>
-                        <td>${sinr}</td>
+                        <td>${kano_parseSignalBar(rsrp)}</td>
+                        <td>${kano_parseSignalBar(rsrq,-20,-3,-9,-12)}</td>
+                        <td>${kano_parseSignalBar(sinr, -10, 30, 13, 0)}</td>
                     </tr>
                 `
             }).join('')
