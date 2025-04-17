@@ -479,12 +479,12 @@ let handlerStatusRender = async (flag = false) => {
             ${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<span>&nbsp;PCI: ${res.Lte_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRP:&nbsp; ${kano_parseSignalBar(res.lte_rsrp)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<div style="display: flex;align-items: center;">SINR:&nbsp; ${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRQ:&nbsp; ${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;">RSRQ:&nbsp; ${kano_parseSignalBar(res.lte_rsrq,-20,-3,-9,-12)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<span>频率: ${res.Nr_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<span>&nbsp;PCI: ${res.Nr_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRP:</span>${kano_parseSignalBar(res.Z5g_rsrp)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</div>` : ''}
-            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-bottom:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</div>` : ''}
+            ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq,-20,-3,-9,-12)}</div>` : ''}
             `
         }
 
