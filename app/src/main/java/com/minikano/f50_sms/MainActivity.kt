@@ -2,15 +2,25 @@ package com.minikano.f50_sms
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.util.Log
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import java.net.InetAddress
+import java.net.UnknownHostException
 import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
@@ -22,44 +32,107 @@ class MainActivity : ComponentActivity() {
         webView = WebView(this)
         setContentView(webView)
 
-        WebView.setWebContentsDebuggingEnabled(true) // 开启调试模式
+        WebView.setWebContentsDebuggingEnabled(true)
 
         webView.settings.apply {
-            javaScriptEnabled = true // 启用 JavaScript
-            domStorageEnabled = true // 启用 DOM 存储
-            allowFileAccess = true // 允许访问本地文件
-            allowContentAccess = true // 允许访问 WebView 内部内容
-            javaScriptCanOpenWindowsAutomatically = true // 允许 JS 打开新窗口
-            allowFileAccess = true  // 允许 file:// 访问本地文件
-            allowContentAccess = true // 允许访问内容 URI
-            allowFileAccessFromFileURLs = true // 允许 file:// 加载其他 file:// 资源
-            allowUniversalAccessFromFileURLs = true // 允许 file:// 访问 http/https 资源
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            javaScriptCanOpenWindowsAutomatically = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
         }
 
-        val jsContext = JSInterface()
-        webView.addJavascriptInterface(jsContext, "KANO_INTERFACE") // 绑定接口
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url ?: return false
+                val host = url.host ?: return false
 
-        val gatewayIp = IPManager.getWifiGatewayIp(this)
-        if (gatewayIp != null) {
-            Toast.makeText(this, "当前网关地址：$gatewayIp", Toast.LENGTH_SHORT).show()
-            start(gatewayIp)
-        } else {
-            showAddressInputDialog(this) { inputAddress ->
-                if(isValidIPv4(inputAddress)){
-                    start(inputAddress)
+                return if (host.contains("github.com")) {
+                    // 手动跳转外部浏览器
+                    val intent = Intent(Intent.ACTION_VIEW, url)
+                    view?.context?.startActivity(intent)
+                    true
                 } else {
-                    Toast.makeText(this, "输入必须是ip地址！", Toast.LENGTH_SHORT).show()
+                    // 所有其他链接都在 WebView 内打开
+                    view?.loadUrl(url.toString())
+                    true
                 }
             }
-            Toast.makeText(this, "未获取到网关地址", Toast.LENGTH_SHORT).show()
+        }
+
+        webView.addJavascriptInterface(JSInterface(), "KANO_INTERFACE")
+        showLoadingDialog()
+        // 异步处理 IP 获取
+        Thread {
+            var gatewayIp = IPManager.getWifiGatewayIp(this)
+            val ipAddr = resolveDomainToIpSync("ufi.ztedevice.com")
+
+            if (gatewayIp != null && ipAddr != null) {
+                if (ipAddr != gatewayIp) {
+                    gatewayIp = ipAddr
+                }
+
+                // 回到主线程更新 UI
+                runOnUiThread {
+                    Toast.makeText(this, "当前网关地址：$gatewayIp", Toast.LENGTH_SHORT).show()
+                    start(gatewayIp)
+                }
+            } else {
+                runOnUiThread {
+                    showAddressInputDialog(this) { inputAddress ->
+                        if (isValidIPv4(inputAddress)) {
+                            start(inputAddress)
+                        } else {
+                            Toast.makeText(this, "输入必须是ip地址！", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    Toast.makeText(this, "未获取到网关地址", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private lateinit var loadingDialog: AlertDialog
+
+    private fun showLoadingDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setCancelable(false) // 模态，不允许取消
+
+        val progressBar = ProgressBar(this)
+        val padding = 100
+        progressBar.setPadding(padding, padding, padding, padding)
+        builder.setView(progressBar)
+
+        loadingDialog = builder.create()
+        loadingDialog.show()
+    }
+
+    private fun dismissLoadingDialog() {
+        if (::loadingDialog.isInitialized && loadingDialog.isShowing) {
+            loadingDialog.dismiss()
+        }
+    }
+
+    fun resolveDomainToIpSync(domain: String): String? {
+        return try {
+            val inetAddress = InetAddress.getByName(domain)
+            inetAddress.hostAddress
+        } catch (e: UnknownHostException) {
+            e.printStackTrace()
+            null
         }
     }
 
     private fun start(gatewayIp: String){
         // 启动 Web 服务器
         startWebServer(gatewayIp)
-        // 加载本地 HTML 页面
-        webView.loadUrl("http://localhost:8090")
+        Handler(Looper.getMainLooper()).postDelayed({
+            // 加载本地 HTML 页面
+            webView.loadUrl("http://localhost:8090")
+            dismissLoadingDialog()
+        },500)
     }
 
     private fun isValidIPv4(ip: String): Boolean {

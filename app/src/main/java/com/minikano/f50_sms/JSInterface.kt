@@ -18,6 +18,6 @@ class JSInterface {
     }
     @JavascriptInterface
     fun exit(){
-        exitProcess(0)
+//        exitProcess(0)
     }
 }
