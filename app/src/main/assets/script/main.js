@@ -259,6 +259,8 @@ const onTokenConfirm = debounce(async () => {
         initWIFISwitch()
         rebootDeviceBtnInit()
         handlerCecullarStatus()
+        initScheduleRebootStatus()
+        initShutdownBtn()
     }
     catch {
         createToast('登录失败，请检查网络！', 'red')
@@ -687,6 +689,8 @@ clearBtn.onclick = () => {
     initUSBNetworkType()
     initWIFISwitch()
     handlerCecullarStatus()
+    initScheduleRebootStatus()
+    initShutdownBtn()
     //退出登录请求
     try {
         login().then(cookie => {
@@ -1891,9 +1895,175 @@ handlerCecullarStatus()
 // title
 const loadTitle = async () => {
     try {
-        let ver = window?.KANO_INTERFACE_API?.getVersion ? window.KANO_INTERFACE_API.getVersion() :''
+        let ver = window?.KANO_INTERFACE_API?.getVersion ? window.KANO_INTERFACE_API.getVersion() : ''
         document.querySelector('#TITLE').innerHTML = "ZTE-UFI-TOOLS-WEB Ver: " + ver
         document.querySelector('#MAIN_TITLE').innerHTML = "ZTE-UFI管理工具 Ver: " + ver
     } catch {/*没有，不处理*/ }
 }
 loadTitle()
+
+
+
+//设置背景图片
+document.querySelector('#BG_SETTING').onclick = () => {
+    showModal('#bgSettingModal')
+}
+
+let handleSubmitBg = () => {
+    const imgUrl = document.querySelector('#BG_INPUT')?.value
+    const bg_checked = document.querySelector('#isCheckedBG')?.checked
+    const BG = document.querySelector('#BG')
+    const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
+    if (!imgUrl == undefined || !BG || bg_checked == undefined || !BG_OVERLAY) return
+    if (!bg_checked) {
+        BG.style.backgroundImage = 'unset'
+        BG_OVERLAY.style.background = 'transparent'
+        localStorage.removeItem('backgroundUrl')
+    } else {
+        BG.style.backgroundImage = `url(${imgUrl})`
+        BG_OVERLAY.style.background = 'var(--dark-bgi-color)'
+        // 保存
+        localStorage.setItem('backgroundUrl', imgUrl)
+    }
+    createToast('保存成功~', 'green')
+    closeModal('#bgSettingModal')
+}
+
+//初始化背景图片
+(() => {
+    const BG = document.querySelector('#BG')
+    const imgUrl = localStorage.getItem('backgroundUrl')
+    const isCheckedBG = document.querySelector('#isCheckedBG')
+    const BG_INPUT = document.querySelector('#BG_INPUT')
+    if (!BG || !isCheckedBG || !BG_INPUT) return
+    isCheckedBG.checked = imgUrl ? true : false
+    BG_INPUT.value = imgUrl
+    if (!imgUrl) {
+        const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
+        BG_OVERLAY && (BG_OVERLAY.style.background = 'transparent')
+        return
+    }
+    BG.style.backgroundImage = `url(${imgUrl})`
+})()
+
+//定时重启模态框
+let initScheduleRebootStatus = async () => {
+    const btn = document.querySelector('#SCHEDULE_REBOOT')
+    const SCHEDULE_TIME = document.querySelector('#SCHEDULE_TIME')
+    const SCHEDULE_ENABLED = document.querySelector('#SCHEDULE_ENABLED')
+    if (!btn) return
+    if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
+        btn.style.backgroundColor = '#80808073'
+        return null
+    }
+
+    const { restart_schedule_switch, restart_time } = await getData(new URLSearchParams({
+        cmd: 'restart_schedule_switch,restart_time'
+    }))
+
+    SCHEDULE_ENABLED.checked = restart_schedule_switch == '1'
+    SCHEDULE_TIME.value = restart_time
+    btn.style.backgroundColor = restart_schedule_switch == '1' ? '#018AD8' : ''
+
+    btn.onclick = () => {
+        if (!initRequestData()) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        showModal('#scheduleRebootModal')
+    }
+}
+initScheduleRebootStatus()
+
+let handleScheduleRebootFormSubmit = async (e) => {
+    e.preventDefault()
+    const data = {
+        restart_schedule_switch: "0",
+        restart_time: '00:00'
+    }
+    const form = e.target; // 获取表单
+    const formData = new FormData(form);
+    let regx = /^([0-9]|1[0-9]|2[0-3]):([0-9]|[1-5][0-9])$/
+    for ([key, value] of formData.entries()) {
+        switch (key) {
+            case 'restart_time':
+                if (!regx.exec(value.trim()) || !value.trim()) return createToast('请输入正确的重启时间 (00:00-23:59)', 'red')
+                data.restart_time = value.trim()
+                break;
+            case 'restart_schedule_switch':
+                data.restart_schedule_switch = value == 'on' ? '1' : '0'
+        }
+    }
+    try {
+        const cookie = await login()
+        try {
+            const res = await (await postData(cookie, {
+                goformId: 'RESTART_SCHEDULE_SETTING',
+                restart_time: data.restart_time,
+                restart_schedule_switch: data.restart_schedule_switch
+            })).json()
+            if (res?.result == 'success') {
+                createToast('设置成功！', 'green')
+                closeModal('#scheduleRebootModal')
+            } else {
+                throw '设置失败'
+            }
+        } catch {
+            createToast('设置失败！', 'red')
+        }
+    } catch {
+        createToast('登录失败，请检查密码和网络连接', 'red')
+    }
+}
+
+// U30AIR用重启指令
+let initShutdownBtn = async () => {
+    const btn = document.querySelector('#SHUTDOWN')
+    if (!btn) return
+    if (!initRequestData()) {
+        btn.onclick = () => createToast('请登录', 'red')
+        btn.style.backgroundColor = '#80808073'
+        return null
+    }
+
+    const { battery_value, battery_vol_percent } = await getData(new URLSearchParams({
+        cmd: 'battery_value,battery_vol_percent'
+    }))
+
+    if (battery_value && battery_vol_percent && (battery_value != '' && battery_vol_percent != '')) {
+        // 显示按钮
+        btn.style.display = ''
+    } else {
+        //没电池的不显示此按钮
+        btn.style.display = 'none'
+    }
+
+    btn.onclick = async () => {
+        if (!initRequestData()) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        try {
+            const cookie = await login()
+            try {
+                const res = await (await postData(cookie, {
+                    goformId: 'SHUTDOWN_DEVICE'
+                })).json()
+
+                if (res?.result == 'success') {
+                    createToast('关机成功！', 'green')
+                } else {
+                    createToast('关机失败', 'red')
+                }
+            } catch {
+                createToast('关机失败', 'red')
+            }
+        } catch {
+            createToast('登录失败，请检查密码和网络连接', 'red')
+        }
+    }
+}
+initShutdownBtn()
