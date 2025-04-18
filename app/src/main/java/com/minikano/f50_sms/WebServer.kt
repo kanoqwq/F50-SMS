@@ -168,16 +168,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     sharedPrefs.getString("ADMIN_PWD", "")
                 }")
 
-//                val adb_wifi = ShellKano.executeShellFromAssetsSubfolderWithArgs(
-//                    context_app,
-//                    "shell/adbPort",
-//                    "-ip", host,
-//                    "-pwd", password,
-//                    "-port", "5555"
-//                )
-//
-//                Log.d("kano_ZTE_LOG", "ADB_WIFI执行结果：$adb_wifi")
-
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
@@ -221,6 +211,53 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Response.Status.INTERNAL_ERROR,
                     "application/json",
                     """{"error":"获取型号与电量信息出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        fun getStatusCode(urlStr: String): Int {
+            val url = URL(urlStr)
+            val connection = url.openConnection() as HttpURLConnection
+            return try {
+                connection.requestMethod = "GET"
+                connection.connect()
+                connection.responseCode // 返回状态码
+            } catch (e: Exception) {
+                e.printStackTrace()
+                -1 // 表示请求失败
+            } finally {
+                connection.disconnect()
+            }
+        }
+
+        //判断是否存在TTYD
+        if (method == "GET" && uri == "/hasTTYD") {
+            return try {
+                // 解析 query 参数
+                val rawParams = session?.parameters ?: throw Exception("缺少 port 参数")
+                val portParam = rawParams["port"] ?: throw Exception("qeury 缺少 port 参数")
+
+                val host = targetServerIP.substringBefore(":")
+
+                val code = getStatusCode("http://$host:${portParam[0]}")
+
+                Log.d("kano_ZTE_LOG", "TTYD获取ip+port信息： ${"$host:$portParam 返回code:$code"}")
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"code":"$code","ip":"$host:${portParam[0]}"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "获取TTYD信息出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"获取TTYD信息出错:${e.message}"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response

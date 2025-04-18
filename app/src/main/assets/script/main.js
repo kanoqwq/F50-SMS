@@ -2136,3 +2136,64 @@ let initShutdownBtn = async () => {
     }
 }
 initShutdownBtn()
+
+// 启用TTYD（如果有）
+let initTTYD = async () => {
+    const TTYD = document.querySelector('#TTYD')
+    if (!TTYD) return
+    const list = TTYD.querySelector('.deviceList')
+    if (!list) return
+    //fetch TTYD地址，如有，则显示
+    try {
+        const port = localStorage.getItem('ttyd_port')
+        if (!port) return
+        const TTYD_INPUT = document.querySelector('#TTYD_INPUT')
+        TTYD_INPUT && (TTYD_INPUT.value = port)
+        const res = await (await fetch("/api/hasTTYD?port=" + port, {
+            method: "get",
+        })).json()
+        if (res.code !== '200') {
+            TTYD.style.display = 'none'
+            list.innerHTML = ``
+            return
+        }
+        console.log('TTYD已找到，正在启用。。。')
+        TTYD.style.display = ''
+        list.innerHTML = `
+        <li style = "padding:10px">
+                    <iframe src="http://${res.ip}" style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
+        </li > `
+    } catch {
+        // console.log();
+    }
+}
+initTTYD()
+
+let click_count_ttyd = 1
+let ttyd_timer = null
+let enableTTYD = () => {
+    click_count_ttyd++
+    if (click_count_ttyd == 4) {
+        // 启用ttyd弹窗
+        showModal('#TTYDModal')
+    }
+    ttyd_timer && clearInterval(ttyd_timer)
+    ttyd_timer = setTimeout(() => {
+        click_count_ttyd = 1
+    }, 1999)
+}
+
+let handleTTYDFormSubmit = (e) => {
+    e.preventDefault()
+    const form = e.target
+    const formData = new FormData(form);
+    const ttyd_port = formData.get('ttyd_port')
+    if (!ttyd_port || ttyd_port.trim() == '') return createToast('请填写端口', 'red')
+    let ttydNumber = Number(ttyd_port.trim())
+    if (isNaN(ttydNumber) || ttydNumber <= 0 || ttydNumber > 65535) return createToast('请填写正确的端口', 'red')
+    // 保存ttyd port
+    localStorage.setItem('ttyd_port', ttyd_port)
+    createToast('保存成功', 'green')
+    closeModal('#TTYDModal')
+    initTTYD()
+}

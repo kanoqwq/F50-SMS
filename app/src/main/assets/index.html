@@ -12,7 +12,8 @@
 <body id="BG">
     <div class="bg" id="BG_OVERLAY">
         <div class="container">
-            <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
+            <div class="title" onclick="enableTTYD()"
+                style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
                 <strong id="MAIN_TITLE">ZTE-UFI管理工具</strong>
             </div>
             <!-- 操作按钮 -->
@@ -22,7 +23,8 @@
                         <button id="CLEAR" class="btn">登录/退出登录</button>
                         <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
                         <button id="SCHEDULE_REBOOT" class="btn" onclick="createToast('请登录','red')">定时重启</button>
-                        <button id="SHUTDOWN" style="display: none;" class="btn" onclick="createToast('请登录','red')">关机</button>
+                        <button id="SHUTDOWN" style="display: none;" class="btn"
+                            onclick="createToast('请登录','red')">关机</button>
                     </div>
                     <div>
                         <button id="BG_SETTING" class="btn" onclick="createToast('请登录','red')">设置背景</button>
@@ -63,6 +65,16 @@
                     <li style="padding-top: 15px;">
                         <strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong>
                     </li>
+                </ul>
+            </div>
+            <!-- TTYD -->
+            <div id="TTYD" style="display: none;width: 100%;">
+                <div class="title" style="margin: 6px 0 ;"><strong>TTYD</strong></div>
+                <ul class="deviceList">
+                    <!-- <li style="padding:10px">
+                        <iframe src="http://192.168.0.1:1145/"
+                            style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
+                    </li> -->
                 </ul>
             </div>
             <!-- 锁频锁小区 -->
@@ -567,14 +579,33 @@
                 <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
                     <form id="scheduleRebootForm" onsubmit="handleScheduleRebootFormSubmit(event)">
                         <div class="title" style="margin-bottom: 4px;">每日定时重启</div>
-                        <div style="text-align: left: ;;">
-                            <p><label>启用每日定时重启？<input id="SCHEDULE_ENABLED" type="checkbox" name="restart_schedule_switch"></label></p>
-                            <p>每日重启时间：<input id="SCHEDULE_TIME"  name="restart_time" placeholder="00:00" type="text" id="BG_INPUT"
-                                    style="width: 100%;max-width: 60px;padding: 6px 10px;margin: 4px 0;"></p>
+                        <div style="text-align: left;">
+                            <p><label>启用每日定时重启？<input id="SCHEDULE_ENABLED" type="checkbox"
+                                        name="restart_schedule_switch"></label></p>
+                            <p>每日重启时间：<input id="SCHEDULE_TIME" name="restart_time" placeholder="00:00" type="text"
+                                    id="BG_INPUT" style="width: 100%;max-width: 60px;padding: 6px 10px;margin: 4px 0;">
+                            </p>
                         </div>
                         <div class="btn" style="text-align: right;margin-top: 6px;">
                             <button type="submit">提交</button>
                             <button type="button" onclick="closeModal('#scheduleRebootModal')">关闭</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- TTYD模态框 -->
+            <div class="mask" id="TTYDModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
+                    <form id="TTYDForm" onsubmit="handleTTYDFormSubmit(event)">
+                        <div class="title" style="margin-bottom: 4px;">TTYD</div>
+                        <div style="text-align: left;">
+                            <p>TTYD端口号：<input name="ttyd_port" placeholder="1145" type="number" id="TTYD_INPUT"
+                                    style="width: 100%;max-width: 100px;padding: 6px 10px;margin: 4px 0;">
+                            </p>
+                        </div>
+                        <div class="btn" style="text-align: right;margin-top: 6px;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="closeModal('#TTYDModal')">关闭</button>
                         </div>
                     </form>
                 </div>

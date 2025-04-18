@@ -21,7 +21,6 @@ body {
     background-position: center;
     background-attachment: fixed;
     color: var(--dark-text-color)
-    
 }
 
 .bg {
@@ -121,6 +120,8 @@ a {
     margin-top: 0;
     padding-left: 10px;
     border-left: 6px solid skyblue;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .footer {
@@ -457,4 +458,9 @@ input {
 #WIFIManagementModal .label-name {
     display: inline-block;
     width: 76px;
+}
+
+#TTYDModal {
+    user-select: none;
+    -webkit-user-select: none;
 }
