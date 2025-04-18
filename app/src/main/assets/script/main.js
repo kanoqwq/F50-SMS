@@ -250,6 +250,7 @@ const onTokenConfirm = debounce(async () => {
 
         closeModal('#tokenModal')
         handlerADBStatus()
+        handlerADBNetworkStatus()
         handlerPerformaceStatus()
         initNetworktype()
         initSMBStatus()
@@ -749,6 +750,7 @@ clearBtn.onclick = () => {
     lastRequestSmsIds = null
     localStorage.removeItem('kano_sms_pwd')
     handlerADBStatus()
+    handlerADBNetworkStatus()
     handlerPerformaceStatus()
     initNetworktype()
     initSMBStatus()
