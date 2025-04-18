@@ -9,284 +9,289 @@
     <link rel="stylesheet" href="/style/style.css">
 </head>
 
-<body>
-    <div class="container">
-        <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
-            <strong id="MAIN_TITLE">ZTE-UFI管理工具</strong>
-        </div>
-        <!-- 操作按钮 -->
-        <div class="actions" style="flex-shrink: 0;text-align: start;align-self: flex-start">
-            <div style="margin-bottom: 10px;">
-                <div>
-                    <button id="CLEAR" class="btn">登录/退出登录</button>
-                    <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
-                </div>
-                <div>
-                    <button id="SMS" class="btn">短信收发</button>
-                    <button id="DataManagement" class="btn">流量管理</button>
-                    <button id="ClientManagement" class="btn">连接设备管理</button>
-                    <button id="WIFIManagement" class="btn">WIFI设置</button>
-                    <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
-                    <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
-                    <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
-                    <button id="PERF" class="btn" onclick="createToast('请登录','red')">开启性能模式</button>
-                    <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
-                    <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB</button>
-                    <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
-                        <option value="WL_AND_5G">5G/4G/3G</option>
-                        <option value="LTE_AND_5G">5G NSA</option>
-                        <option value="Only_5G">5G SA</option>
-                        <option value="WCDMA_AND_LTE">4G/3G</option>
-                        <option value="Only_LTE">仅4G</option>
-                        <option value="Only_WCDMA">仅3G</option>
-                    </select>
-                    <select class="select" id="USB_TYPE" onchange="changeUSBNetwork(event)">
-                        <option value="0">USB上网:自动</option>
-                        <option value="1">RNDIS</option>
-                        <option value="2">CDC-ECM</option>
-                    </select>
-                </div>
+<body id="BG">
+    <div class="bg" id="BG_OVERLAY">
+        <div class="container">
+            <div class="title" style="align-self: start;justify-self: start;margin-bottom: 10px;;margin-top: 20px">
+                <strong id="MAIN_TITLE">ZTE-UFI管理工具</strong>
             </div>
-        </div>
-        <!-- 状态 -->
-        <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
-            <div class="title" style="margin: 6px 0 ;">
-                <strong>基本状态</strong>
-                <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
-                <button id="REFRESH" class="btn" style="padding: 4px;margin-left: 10px;">停止刷新</button>
-            </div>
-            <ul class="deviceList" id="STATUS">
-                <li style="padding-top: 15px;">
-                    <strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong>
-                </li>
-            </ul>
-        </div>
-        <!-- 锁频锁小区 -->
-        <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;">
-            <div class="title" style="margin: 6px 0 ;"><strong>锁频/锁小区</strong></div>
-            <div style="margin:10px 0;">
-                <p class="title"><i style="font-size: 12px;">🚀 本设置可以不用重启，更改完成后切换一下网络模式即可 🚀</i></p>
-                <form class="bands" id="bandsForm" onsubmit="submitBandForm(event)">
-                    <table class="nice-table">
-                        <thead>
-                            <tr>
-                                <th>选择</th>
-                                <th>Band</th>
-                                <th>频率范围 (MHz)</th>
-                                <th>制式</th>
-                                <th>运营商</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="1"></td>
-                                <td>B1</td>
-                                <td>2100</td>
-                                <td>FDD-LTE</td>
-                                <td>联通/电信</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="3"></td>
-                                <td>B3</td>
-                                <td>1800</td>
-                                <td>FDD-LTE</td>
-                                <td>三大运营商</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="5"></td>
-                                <td>B5</td>
-                                <td>850</td>
-                                <td>FDD-LTE</td>
-                                <td>电信</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="8"></td>
-                                <td>B8</td>
-                                <td>900</td>
-                                <td>FDD-LTE</td>
-                                <td>移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="34"></td>
-                                <td>B34</td>
-                                <td>2000</td>
-                                <td>TD-LTE</td>
-                                <td>移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="38"></td>
-                                <td>B38</td>
-                                <td>2600</td>
-                                <td>TD-LTE</td>
-                                <td>移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="39"></td>
-                                <td>B39</td>
-                                <td>1900</td>
-                                <td>TD-LTE</td>
-                                <td>移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="40"></td>
-                                <td>B40</td>
-                                <td>2300</td>
-                                <td>TD-LTE</td>
-                                <td>联通/电信</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="4G" data-band="41"></td>
-                                <td>B41</td>
-                                <td>2500–2690</td>
-                                <td>TD-LTE</td>
-                                <td>三大运营商</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="1"></td>
-                                <td>N1</td>
-                                <td>1920–1980 / 2110–2170</td>
-                                <td>FDD</td>
-                                <td>联通/电信</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="5"></td>
-                                <td>N5</td>
-                                <td>824–849 / 869–894</td>
-                                <td>FDD</td>
-                                <td>中国电信</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="8"></td>
-                                <td>N8</td>
-                                <td>880–915 / 925–960</td>
-                                <td>FDD</td>
-                                <td>中国移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="28"></td>
-                                <td>N28</td>
-                                <td>703–748 / 758–803</td>
-                                <td>FDD</td>
-                                <td>中国广电</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="41"></td>
-                                <td>N41</td>
-                                <td>2515–2675</td>
-                                <td>TDD</td>
-                                <td>中国移动</td>
-                            </tr>
-                            <tr>
-                                <td><input type="checkbox" data-type="5G" data-band="78"></td>
-                                <td>N78</td>
-                                <td>3300–3600</td>
-                                <td>TDD</td>
-                                <td>联通/电信</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <button type="submit" class="btn"
-                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁频段!</button>
-                </form>
-            </div>
-            <div style="margin: 10px 0;margin-top: 20px;">
-                <p class="title"><i style="font-size: 12px;">🚀 注意，选错小区可能会导致信号不稳定/无信号等问题 🚀</i></p>
-                <div class="title" style="margin: 10px 0 ;margin-top: 20px;"><strong>已锁小区</strong></div>
-                <table class="nice-table" id="LOCKED_CELL_FORM">
-                    <thead>
-                        <tr>
-                            <th>类型</th>
-                            <th>PCI</th>
-                            <th>频率</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                    </tbody>
-                </table>
-                <div class="title" style="margin: 10px 0 ;"><strong>小区列表</strong></div>
-                <div class="title" id="CURRENT_CELL" style="margin: 10px 0;font-size:14px"><strong>当前小区信息：</strong>
-                </div>
-                <form id="cellForm" onsubmit="submitCellForm(event)" style="overflow-x: auto;">
-                    <table class="nice-table">
-                        <thead>
-                            <tr>
-                                <th>频段</th>
-                                <th>频率</th>
-                                <th>PCI</th>
-                                <th>RSRP</th>
-                                <th>RSRQ</th>
-                                <th>SINR</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
-                    <div style="display: flex;align-items: center; padding: 8px;margin-top: 10px;">
-                        <strong>网络选择：</strong>
-                        <label style="display: flex;align-items: center;margin-right: 20px;"><span>4G </span>
-                            <input style="margin: 0 0 0 8px;" type="radio" name="RAT" value="12" />
-                        </label>
-                        <label style="display: flex;align-items: center;"><span>5G </span>
-                            <input style="margin: 0 0 0 8px;" checked type="radio" name="RAT" value="16" />
-                        </label>
+            <!-- 操作按钮 -->
+            <div class="actions" style="flex-shrink: 0;text-align: start;align-self: flex-start">
+                <div style="margin-bottom: 10px;">
+                    <div>
+                        <button id="CLEAR" class="btn">登录/退出登录</button>
+                        <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
+                        <button id="SCHEDULE_REBOOT" class="btn" onclick="createToast('请登录','red')">定时重启</button>
+                        <button id="SHUTDOWN" style="display: none;" class="btn" onclick="createToast('请登录','red')">关机</button>
+                        <button id="BG_SETTING" class="btn" onclick="createToast('请登录','red')">设置背景</button>
                     </div>
-                    <div style="margin: 10px;">
-                        <input style="padding: 8px; width: 100%" id="PCI" name="PCI" type="text" placeholder="PCI">
+                    <div>
+                        <button id="SMS" class="btn">短信收发</button>
+                        <button id="DataManagement" class="btn">流量管理</button>
+                        <button id="ClientManagement" class="btn">连接设备管理</button>
+                        <button id="WIFIManagement" class="btn">WIFI设置</button>
+                        <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
+                        <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
+                        <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
+                        <button id="PERF" class="btn" onclick="createToast('请登录','red')">开启性能模式</button>
+                        <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
+                        <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB</button>
+                        <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
+                            <option value="WL_AND_5G">5G/4G/3G</option>
+                            <option value="LTE_AND_5G">5G NSA</option>
+                            <option value="Only_5G">5G SA</option>
+                            <option value="WCDMA_AND_LTE">4G/3G</option>
+                            <option value="Only_LTE">仅4G</option>
+                            <option value="Only_WCDMA">仅3G</option>
+                        </select>
+                        <select class="select" id="USB_TYPE" onchange="changeUSBNetwork(event)">
+                            <option value="0">USB上网:自动</option>
+                            <option value="1">RNDIS</option>
+                            <option value="2">CDC-ECM</option>
+                        </select>
                     </div>
-                    <div style="margin: 10px;">
-                        <input style="padding: 8px; width: 100%;" id="EARFCN" name="EARFCN" type="text"
-                            placeholder="EARFCN">
-                    </div>
-                    <button type="submit" class="btn"
-                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁小区!</button>
-                </form>
-                <button onclick="unlockAllCell()" class="btn"
-                    style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
-            </div>
-        </div>
-        <!-- 登录模态框 -->
-        <div class="mask" id="tokenModal" style="display: none;">
-            <div class="modal">
-                <div class="title">请输入密码</div>
-                <div class="content"
-                    style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
-                    <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
-                        style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
-                    <input id="tokenInput" placeholder="管理密码" type="password" value=""
-                        style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
-                </div>
-                <div class="btn" style="text-align: right;">
-                    <button onclick="onTokenConfirm()">确认</button>
-                    <button onclick="closeModal('#tokenModal')">取消</button>
                 </div>
             </div>
-        </div>
-        <!-- 短信模态框 -->
-        <div class="modal h100" id="smsList" style="display: none;">
-            <div class="title" style="margin-bottom: 6px;">短信列表</div>
-            <div class="action" style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
-                <span>收件人：</span>
-                <input id="PhoneInput" type="number" style="flex: 1;margin-right: 6px"></input>
-            </div>
-            <div class="content" id="content" style="flex: 1;">
-                <ul id="sms-list">
+            <!-- 状态 -->
+            <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
+                <div class="title" style="margin: 6px 0 ;">
+                    <strong>基本状态</strong>
+                    <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
+                    <button id="REFRESH" class="btn" style="padding: 4px;margin-left: 10px;">停止刷新</button>
+                </div>
+                <ul class="deviceList" id="STATUS">
+                    <li style="padding-top: 15px;">
+                        <strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong>
+                    </li>
                 </ul>
             </div>
-            <div class="action" style="background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
-                <input id="SMSInput" type="text" style="flex: 1;margin-right: 6px"></input>
-                <div class="btn" style="height: 30px;min-width: 103px;">
-                    <button onclick="sendSMS()">发送</button>
-                    <button onclick="closeModal('#smsList')">关闭</button>
+            <!-- 锁频锁小区 -->
+            <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;">
+                <div class="title" style="margin: 6px 0 ;"><strong>锁频/锁小区</strong></div>
+                <div style="margin:10px 0;">
+                    <p class="title"><i style="font-size: 12px;">🚀 本设置可以不用重启，更改完成后切换一下网络模式即可 🚀</i></p>
+                    <form class="bands" id="bandsForm" onsubmit="submitBandForm(event)">
+                        <table class="nice-table">
+                            <thead>
+                                <tr>
+                                    <th>选择</th>
+                                    <th>Band</th>
+                                    <th>频率范围 (MHz)</th>
+                                    <th>制式</th>
+                                    <th>运营商</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="1"></td>
+                                    <td>B1</td>
+                                    <td>2100</td>
+                                    <td>FDD-LTE</td>
+                                    <td>联通/电信</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="3"></td>
+                                    <td>B3</td>
+                                    <td>1800</td>
+                                    <td>FDD-LTE</td>
+                                    <td>三大运营商</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="5"></td>
+                                    <td>B5</td>
+                                    <td>850</td>
+                                    <td>FDD-LTE</td>
+                                    <td>电信</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="8"></td>
+                                    <td>B8</td>
+                                    <td>900</td>
+                                    <td>FDD-LTE</td>
+                                    <td>移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="34"></td>
+                                    <td>B34</td>
+                                    <td>2000</td>
+                                    <td>TD-LTE</td>
+                                    <td>移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="38"></td>
+                                    <td>B38</td>
+                                    <td>2600</td>
+                                    <td>TD-LTE</td>
+                                    <td>移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="39"></td>
+                                    <td>B39</td>
+                                    <td>1900</td>
+                                    <td>TD-LTE</td>
+                                    <td>移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="40"></td>
+                                    <td>B40</td>
+                                    <td>2300</td>
+                                    <td>TD-LTE</td>
+                                    <td>联通/电信</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="4G" data-band="41"></td>
+                                    <td>B41</td>
+                                    <td>2500–2690</td>
+                                    <td>TD-LTE</td>
+                                    <td>三大运营商</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="1"></td>
+                                    <td>N1</td>
+                                    <td>1920–1980 / 2110–2170</td>
+                                    <td>FDD</td>
+                                    <td>联通/电信</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="5"></td>
+                                    <td>N5</td>
+                                    <td>824–849 / 869–894</td>
+                                    <td>FDD</td>
+                                    <td>中国电信</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="8"></td>
+                                    <td>N8</td>
+                                    <td>880–915 / 925–960</td>
+                                    <td>FDD</td>
+                                    <td>中国移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="28"></td>
+                                    <td>N28</td>
+                                    <td>703–748 / 758–803</td>
+                                    <td>FDD</td>
+                                    <td>中国广电</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="41"></td>
+                                    <td>N41</td>
+                                    <td>2515–2675</td>
+                                    <td>TDD</td>
+                                    <td>中国移动</td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" data-type="5G" data-band="78"></td>
+                                    <td>N78</td>
+                                    <td>3300–3600</td>
+                                    <td>TDD</td>
+                                    <td>联通/电信</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="submit" class="btn"
+                            style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁频段!</button>
+                    </form>
+                </div>
+                <div style="margin: 10px 0;margin-top: 20px;">
+                    <p class="title"><i style="font-size: 12px;">🚀 注意，选错小区可能会导致信号不稳定/无信号等问题 🚀</i></p>
+                    <div class="title" style="margin: 10px 0 ;margin-top: 20px;"><strong>已锁小区</strong></div>
+                    <table class="nice-table" id="LOCKED_CELL_FORM">
+                        <thead>
+                            <tr>
+                                <th>类型</th>
+                                <th>PCI</th>
+                                <th>频率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                    <div class="title" style="margin: 10px 0 ;"><strong>小区列表</strong></div>
+                    <div class="title" id="CURRENT_CELL" style="margin: 10px 0;font-size:14px"><strong>当前小区信息：</strong>
+                    </div>
+                    <form id="cellForm" onsubmit="submitCellForm(event)" style="overflow-x: auto;">
+                        <table class="nice-table">
+                            <thead>
+                                <tr>
+                                    <th>频段</th>
+                                    <th>频率</th>
+                                    <th>PCI</th>
+                                    <th>RSRP</th>
+                                    <th>RSRQ</th>
+                                    <th>SINR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                        <div style="display: flex;align-items: center; padding: 8px;margin-top: 10px;">
+                            <strong>网络选择：</strong>
+                            <label style="display: flex;align-items: center;margin-right: 20px;"><span>4G </span>
+                                <input style="margin: 0 0 0 8px;" type="radio" name="RAT" value="12" />
+                            </label>
+                            <label style="display: flex;align-items: center;"><span>5G </span>
+                                <input style="margin: 0 0 0 8px;" checked type="radio" name="RAT" value="16" />
+                            </label>
+                        </div>
+                        <div style="margin: 10px;">
+                            <input style="padding: 8px; width: 100%" id="PCI" name="PCI" type="text" placeholder="PCI">
+                        </div>
+                        <div style="margin: 10px;">
+                            <input style="padding: 8px; width: 100%;" id="EARFCN" name="EARFCN" type="text"
+                                placeholder="EARFCN">
+                        </div>
+                        <button type="submit" class="btn"
+                            style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁小区!</button>
+                    </form>
+                    <button onclick="unlockAllCell()" class="btn"
+                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
                 </div>
             </div>
-        </div>
-        <!-- 状态管理模态框 -->
-        <div id="dictionaryModal" class="modal" style="display: none;">
-            <div class="title">状态显示/隐藏</div>
-            <p style="font-size: 12px;"><i>注：设备不支持/为空的状态无论是否勾选也不会显示</i></p>
-            <div class="content" id="DIC_LIST" style="
+            <!-- 登录模态框 -->
+            <div class="mask" id="tokenModal" style="display: none;">
+                <div class="modal">
+                    <div class="title">请输入密码</div>
+                    <div class="content"
+                        style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
+                        <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
+                            style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
+                        <input id="tokenInput" placeholder="管理密码" type="password" value=""
+                            style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
+                    </div>
+                    <div class="btn" style="text-align: right;">
+                        <button onclick="onTokenConfirm()">确认</button>
+                        <button onclick="closeModal('#tokenModal')">取消</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 短信模态框 -->
+            <div class="modal h100" id="smsList" style="display: none;">
+                <div class="title" style="margin-bottom: 6px;">短信列表</div>
+                <div class="action"
+                    style="margin-top: 10px;background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
+                    <span>收件人：</span>
+                    <input id="PhoneInput" type="number" style="flex: 1;margin-right: 6px"></input>
+                </div>
+                <div class="content" id="content" style="flex: 1;">
+                    <ul id="sms-list">
+                    </ul>
+                </div>
+                <div class="action" style="background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
+                    <input id="SMSInput" type="text" style="flex: 1;margin-right: 6px"></input>
+                    <div class="btn" style="height: 30px;min-width: 103px;">
+                        <button onclick="sendSMS()">发送</button>
+                        <button onclick="closeModal('#smsList')">关闭</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 状态管理模态框 -->
+            <div id="dictionaryModal" class="modal" style="display: none;">
+                <div class="title">状态显示/隐藏</div>
+                <p style="font-size: 12px;"><i>注：设备不支持/为空的状态无论是否勾选也不会显示</i></p>
+                <div class="content" id="DIC_LIST" style="
                 overflow-y: scroll;
                 max-height:400px;
                 padding-top: 15px;
@@ -295,343 +300,283 @@
                 flex-direction: column;
                 align-items: start;
                 ">
-                <!-- 在这里管理字段显示 -->
-                <div class="title" style="margin: 10px 0;">基本状态</div>
-                <label><input type="checkbox" data-name="network_type">蜂窝状态</label>
-                <label><input type="checkbox" data-name="wifi_access_sta_num">WIFI设备数</label>
-                <label><input type="checkbox" data-name="battery">剩余电量</label>
-                <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label>
-                <label><input type="checkbox" data-name="cpu_temp">CPU温度</label>
-                <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label>
-                <label><input type="checkbox" data-name="mem_usage">内存使用率</label>
-                <label><input type="checkbox" data-name="realtime_time">连接时长</label>
-                <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
-                <label><input type="checkbox" data-name="daily_data">当日流量</label>
-                <label><input type="checkbox" data-name="internal_available_storage">内置存储</label>
-                <label><input type="checkbox" data-name="external_available_storage">SD卡</label>
-                <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
+                    <!-- 在这里管理字段显示 -->
+                    <div class="title" style="margin: 10px 0;">基本状态</div>
+                    <label><input type="checkbox" data-name="network_type">蜂窝状态</label>
+                    <label><input type="checkbox" data-name="wifi_access_sta_num">WIFI设备数</label>
+                    <label><input type="checkbox" data-name="battery">剩余电量</label>
+                    <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label>
+                    <label><input type="checkbox" data-name="cpu_temp">CPU温度</label>
+                    <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label>
+                    <label><input type="checkbox" data-name="mem_usage">内存使用率</label>
+                    <label><input type="checkbox" data-name="realtime_time">连接时长</label>
+                    <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
+                    <label><input type="checkbox" data-name="daily_data">当日流量</label>
+                    <label><input type="checkbox" data-name="internal_available_storage">内置存储</label>
+                    <label><input type="checkbox" data-name="external_available_storage">SD卡</label>
+                    <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
 
-                <div class="title" style="margin: 10px 0;">信号参数</div>
-                <label><input type="checkbox" data-name="Z5g_rsrp">5G接收功率</label>
-                <label><input type="checkbox" data-name="Nr_snr">5G SINR</label>
-                <label><input type="checkbox" data-name="Nr_bands">5G 注册频段</label>
-                <label><input type="checkbox" data-name="Nr_fcn">5G 频点</label>
-                <label><input type="checkbox" data-name="Nr_bands_widths">5G 频宽</label>
-                <label><input type="checkbox" data-name="Nr_pci">5G PCI</label>
-                <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label>
-                <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label>
-                <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label>
-                <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label>
-                <label><input type="checkbox" data-name="Lte_snr">4G SINR</label>
-                <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label>
-                <label><input type="checkbox" data-name="Lte_fcn">4G 频点</label>
-                <label><input type="checkbox" data-name="Lte_bands_widths">4G 频宽</label>
-                <label><input type="checkbox" data-name="Lte_pci">4G PCI</label>
-                <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label>
-                <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label>
-                <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label>
-                <div class="title" style="margin: 10px 0;">设备属性</div>
-                <label><input type="checkbox" data-name="model">设备型号</label>
-                <label><input type="checkbox" data-name="cr_version">版本号</label>
-                <label><input type="checkbox" data-name="iccid">ICCID</label>
-                <label><input type="checkbox" data-name="imei">IMEI</label>
-                <label><input type="checkbox" data-name="imsi">IMSI</label>
-                <label><input type="checkbox" data-name="ipv6_wan_ipaddr">IPV6地址</label>
-                <label><input type="checkbox" data-name="lan_ipaddr">本地网关</label>
-                <label><input type="checkbox" data-name="mac_address">MAC地址</label>
-                <label><input type="checkbox" data-name="msisdn">手机号</label>
+                    <div class="title" style="margin: 10px 0;">信号参数</div>
+                    <label><input type="checkbox" data-name="Z5g_rsrp">5G接收功率</label>
+                    <label><input type="checkbox" data-name="Nr_snr">5G SINR</label>
+                    <label><input type="checkbox" data-name="Nr_bands">5G 注册频段</label>
+                    <label><input type="checkbox" data-name="Nr_fcn">5G 频点</label>
+                    <label><input type="checkbox" data-name="Nr_bands_widths">5G 频宽</label>
+                    <label><input type="checkbox" data-name="Nr_pci">5G PCI</label>
+                    <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label>
+                    <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label>
+                    <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label>
+                    <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label>
+                    <label><input type="checkbox" data-name="Lte_snr">4G SINR</label>
+                    <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label>
+                    <label><input type="checkbox" data-name="Lte_fcn">4G 频点</label>
+                    <label><input type="checkbox" data-name="Lte_bands_widths">4G 频宽</label>
+                    <label><input type="checkbox" data-name="Lte_pci">4G PCI</label>
+                    <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label>
+                    <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label>
+                    <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label>
+                    <div class="title" style="margin: 10px 0;">设备属性</div>
+                    <label><input type="checkbox" data-name="model">设备型号</label>
+                    <label><input type="checkbox" data-name="cr_version">版本号</label>
+                    <label><input type="checkbox" data-name="iccid">ICCID</label>
+                    <label><input type="checkbox" data-name="imei">IMEI</label>
+                    <label><input type="checkbox" data-name="imsi">IMSI</label>
+                    <label><input type="checkbox" data-name="ipv6_wan_ipaddr">IPV6地址</label>
+                    <label><input type="checkbox" data-name="lan_ipaddr">本地网关</label>
+                    <label><input type="checkbox" data-name="mac_address">MAC地址</label>
+                    <label><input type="checkbox" data-name="msisdn">手机号</label>
+                </div>
+                <div class="btn" style="text-align: right;">
+                    <button onclick="resetShowList(event)">重置(全选)</button>
+                    <button onclick="closeModal('#dictionaryModal')">关闭</button>
+                </div>
             </div>
-            <div class="btn" style="text-align: right;">
-                <button onclick="resetShowList(event)">重置(全选)</button>
-                <button onclick="closeModal('#dictionaryModal')">关闭</button>
-            </div>
-        </div>
-        <!-- 流量管理模态框 -->
-        <div class="mask" id="DataManagementModal" style="display: none">
-            <div class="modal">
-                <div class="title">流量管理</div>
-                <form onsubmit="handleDataManagementFormSubmit(event)" id="DataManagementForm">
-                    <div class="content" id="DATA_MANAGE_LIST" style="
+            <!-- 流量管理模态框 -->
+            <div class="mask" id="DataManagementModal" style="display: none">
+                <div class="modal">
+                    <div class="title">流量管理</div>
+                    <form onsubmit="handleDataManagementFormSubmit(event)" id="DataManagementForm">
+                        <div class="content" id="DATA_MANAGE_LIST" style="
                         overflow-y: scroll;
                         padding: 15px;
                         width: 66vw;
                         max-width: 400px;">
-                        <div class="item">
-                            <label style="display: flex;align-items: center;">启用流量管理？<input checked type="checkbox"
-                                    name="data_volume_limit_switch"></label>
-                        </div>
-                        <div class="item">
-                            <label style="display: flex;align-items: center;">流量清零？<input checked type="checkbox"
-                                    name="wan_auto_clear_flow_data_switch"></label>
-                        </div>
-                        <div class="item" style="display: flex;">
-                            <span style="font-size: 14px;">套餐形式：</span>
-                            <label for="for_data" style="display: flex;align-items: center;">
-                                <span style="margin-right: 6px;">流量 </span><input id="for_data" style="margin: 0;"
-                                    type="radio" checked name="data_volume_limit_unit">
-                            </label>
-                            <!-- <label for="for_time">
+                            <div class="item">
+                                <label style="display: flex;align-items: center;">启用流量管理？<input checked type="checkbox"
+                                        name="data_volume_limit_switch"></label>
+                            </div>
+                            <div class="item">
+                                <label style="display: flex;align-items: center;">流量清零？<input checked type="checkbox"
+                                        name="wan_auto_clear_flow_data_switch"></label>
+                            </div>
+                            <div class="item" style="display: flex;">
+                                <span style="font-size: 14px;">套餐形式：</span>
+                                <label for="for_data" style="display: flex;align-items: center;">
+                                    <span style="margin-right: 6px;">流量 </span><input id="for_data" style="margin: 0;"
+                                        type="radio" checked name="data_volume_limit_unit">
+                                </label>
+                                <!-- <label for="for_time">
                                 时间 <input id="for_time" type="radio" name="data_volume_limit_unit">
                             </label> -->
-                        </div>
-                        <div class="item">
-                            <label style="
+                            </div>
+                            <div class="item">
+                                <label style="
                                 display: flex;
                                 align-items: center;
                             ">清零日期：<input style="flex: 1;width: 100%;" name="traffic_clear_date" value="1"
-                                    type="number" max="31" min="1" maxlength="2" placeholder="清零日期(1-31)"></label>
-                        </div>
-                        <div class="item">
-                            <label style="
+                                        type="number" max="31" min="1" maxlength="2" placeholder="清零日期(1-31)"></label>
+                            </div>
+                            <div class="item">
+                                <label style="
                                 display: flex;
                                 align-items: center;
                             ">提醒阈值：<input style="flex: 1;width: 100%;" name="data_volume_alert_percent" value="80"
-                                    type="number" maxlength="3" min="0" max="100" placeholder="提醒阈值(0-100%)"></label>
-                        </div>
-                        <div class="item">
-                            <div style="display: flex;align-items: center">
-                                <span>流量套餐：</span>
-                                <input style="flex:1;height: 100%;width: 100%;" type="text"
-                                    name="data_volume_limit_size" value="100" placeholder="流量套餐">
-                                <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
-                                    name="data_volume_limit_type">
-                                    <option data-value="1" value="1">MB</option>
-                                    <option data-value="1024" value="1024">GB</option>
-                                    <option data-value="1048576" value="1048576">TB</option>
-                                </select>
+                                        type="number" maxlength="3" min="0" max="100"
+                                        placeholder="提醒阈值(0-100%)"></label>
+                            </div>
+                            <div class="item">
+                                <div style="display: flex;align-items: center">
+                                    <span>流量套餐：</span>
+                                    <input style="flex:1;height: 100%;width: 100%;" type="text"
+                                        name="data_volume_limit_size" value="100" placeholder="流量套餐">
+                                    <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
+                                        name="data_volume_limit_type">
+                                        <option data-value="1" value="1">MB</option>
+                                        <option data-value="1024" value="1024">GB</option>
+                                        <option data-value="1048576" value="1048576">TB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div style="display: flex;align-items: center;">
+                                    <span>已用流量：</span>
+                                    <input style="flex:1;height: 100%;width: 100%;" type="text"
+                                        name="data_volume_used_size" placeholder="已用流量" value="114">
+                                    <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
+                                        name="data_volume_used_type">
+                                        <option data-value="1" value="1">MB</option>
+                                        <option data-value="1024" value="1024">GB</option>
+                                        <option data-value="1048576" value="1048576">TB</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="item">
-                            <div style="display: flex;align-items: center;">
-                                <span>已用流量：</span>
-                                <input style="flex:1;height: 100%;width: 100%;" type="text" name="data_volume_used_size"
-                                    placeholder="已用流量" value="114">
-                                <select class="select" style="padding: 4px; margin-left: 6px;" value="1024"
-                                    name="data_volume_used_type">
-                                    <option data-value="1" value="1">MB</option>
-                                    <option data-value="1024" value="1024">GB</option>
-                                    <option data-value="1048576" value="1048576">TB</option>
-                                </select>
-                            </div>
+                        <div class="btn" style="text-align: right;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="closeModal('#DataManagementModal')">关闭</button>
                         </div>
-                    </div>
-                    <div class="btn" style="text-align: right;">
-                        <button type="submit">提交</button>
-                        <button type="button" onclick="closeModal('#DataManagementModal')">关闭</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
-        <!-- WIFI设置模态框 -->
-        <div class="mask" id="WIFIManagementModal" style="display: none">
-            <div class="modal">
-                <div class="title" style="margin-bottom: 4px;">WIFI设置</div>
-                <form onsubmit="handleWIFIManagementFormSubmit(event)" id="WIFIManagementForm">
-                    <div class="content" id="DATA_MANAGE_LIST" style="
+            <!-- WIFI设置模态框 -->
+            <div class="mask" id="WIFIManagementModal" style="display: none">
+                <div class="modal">
+                    <div class="title" style="margin-bottom: 4px;">WIFI设置</div>
+                    <form onsubmit="handleWIFIManagementFormSubmit(event)" id="WIFIManagementForm">
+                        <div class="content" id="DATA_MANAGE_LIST" style="
                         overflow-y: scroll;
                         padding: 10px;
                         width: 66vw;
                         max-width: 400px;">
-                        <input style="display: none;" type="text" name="AccessPointIndex" value="0">
-                        <input style="display: none;" type="text" name="ApIsolate" value="0">
-                        <input style="display: none;" type="text" name="ChipIndex" value="0">
-                        <div class="dash-border-round"
-                            style="padding-top: 6px;padding-bottom: 6px;display: flex;justify-content: space-between;align-items: center;">
-                            <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
-                                <option value="0">WIFI:关闭</option>
-                                <option value="chip1">WIFI:2.4G</option>
-                                <option value="chip2">WIFI:5G</option>
-                            </select>
-                            <span style="display: inline; font-size: 10px; text-align: right;">此选项即时更改无需确认。</span>
-                        </div>
-                        <div class="dash-border-round">
-                            <div class="item">
-                                <label style="
+                            <input style="display: none;" type="text" name="AccessPointIndex" value="0">
+                            <input style="display: none;" type="text" name="ApIsolate" value="0">
+                            <input style="display: none;" type="text" name="ChipIndex" value="0">
+                            <div class="dash-border-round"
+                                style="padding-top: 6px;padding-bottom: 6px;display: flex;justify-content: space-between;align-items: center;">
+                                <select class="select" id="WIFI_SWITCH" onchange="changeWIFISwitch(event)">
+                                    <option value="0">WIFI:关闭</option>
+                                    <option value="chip1">WIFI:2.4G</option>
+                                    <option value="chip2">WIFI:5G</option>
+                                </select>
+                                <span style="display: inline; font-size: 10px; text-align: right;">此选项即时更改无需确认。</span>
+                            </div>
+                            <div class="dash-border-round">
+                                <div class="item">
+                                    <label style="
                                 display: flex;
                                 align-items: center;
                             "><span class="label-name">SSID：</span><input style="flex: 1;width: 100%;" name="SSID"
-                                        value="1" type="text" placeholder="请输入SSID"></label>
+                                            value="1" type="text" placeholder="请输入SSID"></label>
+                                </div>
+                                <div class="item">
+                                    <label style="display: flex;align-items: center;"><span
+                                            class="label-name">广播SSID：</span><input checked type="checkbox"
+                                            name="ApBroadcastDisabled"></label>
+                                </div>
                             </div>
-                            <div class="item">
-                                <label style="display: flex;align-items: center;"><span
-                                        class="label-name">广播SSID：</span><input checked type="checkbox"
-                                        name="ApBroadcastDisabled"></label>
-                            </div>
-                        </div>
-                        <div class="dash-border-round">
-                            <div class="item">
-                                <label style="
+                            <div class="dash-border-round">
+                                <div class="item">
+                                    <label style="
                                 display: flex;
                                 align-items: center;
                             ">
-                                    <span class="label-name">安全模式：</span>
-                                    <select class="select" id="WIFI_ENC_MODE" onchange="handleWifiEncodeChange(event)"
-                                        style="width: 100%;flex: 1;padding: 4px; margin-left: 6px;text-align: left;"
-                                        value="OPEN" name="AuthMode">
-                                        <option data-value="OPEN" value="OPEN">OPEN</option>
-                                        <option data-value="WPA2PSK" value="WPA2PSK">WPA2(AES)-PSK</option>
-                                        <option data-value="WPA3PSK" value="WPA3PSK">WPA3-PSK</option>
-                                        <option data-value="WPA2PSKWPA3PSK" value="WPA2PSKWPA3PSK">WPA2-PSK/WPA3-PSK
-                                        </option>
-                                    </select>
-                                </label>
+                                        <span class="label-name">安全模式：</span>
+                                        <select class="select" id="WIFI_ENC_MODE"
+                                            onchange="handleWifiEncodeChange(event)"
+                                            style="width: 100%;flex: 1;padding: 4px; margin-left: 6px;text-align: left;"
+                                            value="OPEN" name="AuthMode">
+                                            <option data-value="OPEN" value="OPEN">OPEN</option>
+                                            <option data-value="WPA2PSK" value="WPA2PSK">WPA2(AES)-PSK</option>
+                                            <option data-value="WPA3PSK" value="WPA3PSK">WPA3-PSK</option>
+                                            <option data-value="WPA2PSKWPA3PSK" value="WPA2PSKWPA3PSK">WPA2-PSK/WPA3-PSK
+                                            </option>
+                                        </select>
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                        <div id="WIFI_FORM_SHOWABLE">
-                            <div class="dash-border-round">
-                                <div class="item">
-                                    <label style="
+                            <div id="WIFI_FORM_SHOWABLE">
+                                <div class="dash-border-round">
+                                    <div class="item">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
                             "><span class="label-name">密码：</span><input id="WIFI_PASSWORD" style="flex: 1;width: 100%;"
-                                            name="Password" value="" type="password" placeholder="密码最短为8位"></label>
+                                                name="Password" value="" type="password" placeholder="密码最短为8位"></label>
+                                    </div>
+                                    <div class="item">
+                                        <label onclick="handleShowPassword(event)"
+                                            style="display: flex;align-items: center;"><span
+                                                class="label-name">显示密码：</span><input type="checkbox"></label>
+                                    </div>
                                 </div>
-                                <div class="item">
-                                    <label onclick="handleShowPassword(event)"
-                                        style="display: flex;align-items: center;"><span
-                                            class="label-name">显示密码：</span><input type="checkbox"></label>
-                                </div>
-                            </div>
-                            <div class="dash-border-round">
-                                <div class="item">
-                                    <label style="
+                                <div class="dash-border-round">
+                                    <div class="item">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
                             "><span class="label-name">最大接入：</span><input style="flex: 1;width: 100%;"
-                                            name="ApMaxStationNumber" value="10" type="number" min="1" maxlength="8"
-                                            placeholder="客户端最大接入"></label>
+                                                name="ApMaxStationNumber" value="10" type="number" min="1" maxlength="8"
+                                                placeholder="客户端最大接入"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dash-border-round" style="text-align: center;">
+                                <div>二维码</div>
+                                <div style="text-align: center">
+                                    <img id="QRCodeImg" style="border-radius: 20px;" src="" alt="">
                                 </div>
                             </div>
                         </div>
-                        <div class="dash-border-round" style="text-align: center;">
-                            <div>二维码</div>
-                            <div style="text-align: center">
-                                <img id="QRCodeImg" style="border-radius: 20px;" src="" alt="">
-                            </div>
+                        <div class="btn" style="text-align: right;margin-top: 6px;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="closeModal('#WIFIManagementModal')">关闭</button>
                         </div>
+                    </form>
+                </div>
+            </div>
+            <!-- 连接设备管理模态框 -->
+            <div class="mask" id="ClientManagementModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 600px; display: flex;flex-direction: column;">
+                    <div class="title" style="margin-bottom: 4px;">连接设备管理</div>
+                    <ul class="deviceList" style="flex: 1; overflow-y: auto;">
+                        <p style="display: flex;justify-content: space-between;">接入设备 <button
+                                style="margin-right: 10px;" class="btn"
+                                onclick="initClientManagementModal()">刷新</button></p>
+                        <li id="CONN_CLIENT_LIST"
+                            style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
+
+                        </li>
+                        <p>黑名单</p>
+                        <li id="BLACK_CLIENT_LIST"
+                            style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
+                        </li>
+                    </ul>
+                    <div class="btn" style="text-align: right;margin-top: 6px;">
+                        <!-- <button type="submit">提交</button> -->
+                        <button type="button" onclick="closeClientManager()">关闭</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 设置背景模态框 -->
+            <div class="mask" id="bgSettingModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
+                    <div class="title" style="margin-bottom: 4px;">主题背景设置</div>
+                    <div style="text-align: left: ;;">
+                        <p><label>启用自定义背景？<input type="checkbox" id="isCheckedBG"></label></p>
+                        <p>图片网址：<input placeholder="输入网址" type="text" id="BG_INPUT"
+                                style="width: 100%;max-width: 200px;padding: 6px 10px;margin: 4px 0;"></p>
                     </div>
                     <div class="btn" style="text-align: right;margin-top: 6px;">
-                        <button type="submit">提交</button>
-                        <button type="button" onclick="closeModal('#WIFIManagementModal')">关闭</button>
+                        <button type="button" onclick="handleSubmitBg(event)">提交</button>
+                        <button type="button" onclick="closeModal('#bgSettingModal')">关闭</button>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
-        <!-- 连接设备管理模态框 -->
-        <div class="mask" id="ClientManagementModal" style="display: none">
-            <div class="modal" style="width: 90%;max-width: 600px; display: flex;flex-direction: column;">
-                <div class="title" style="margin-bottom: 4px;">连接设备管理</div>
-                <ul class="deviceList" style="flex: 1; overflow-y: auto;">
-                    <p style="display: flex;justify-content: space-between;">接入设备 <button style="margin-right: 10px;" class="btn" onclick="initClientManagementModal()">刷新</button></p>
-                    <li id="CONN_CLIENT_LIST" style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
-                        <div style="display: block;width: 100%;">
-                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
-                                class="card-item">
-                                <div style="margin-right: 10px;">
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">主机名称：</span>
-                                        <span>MiniKano-3~fsdak</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">MAC地址：</span>
-                                        <span>b4:fa:48:de:ac:1a</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">IP地址：</span>
-                                        <span>192.168.0.154</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">接入类型：</span>
-                                        <span>无线</span>
-                                    </p>
-                                </div>
-                                <div style="flex:1;text-align: right;">
-                                    <button class="btn" style="padding: 20px 4px;">🚫 拉黑</button>
-                                </div>
-                            </div>
-                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
-                                class="card-item">
-                                <div style="margin-right: 10px;">
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">主机名称：</span>
-                                        <span>MiniKano-3~fsdak</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">MAC地址：</span>
-                                        <span>b4:fa:48:de:ac:1a</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">IP地址：</span>
-                                        <span>192.168.0.154</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">接入类型：</span>
-                                        <span>无线</span>
-                                    </p>
-                                </div>
-                                <div style="flex:1;text-align: right;">
-                                    <button class="btn" style="padding: 20px 4px;">🚫 拉黑</button>
-                                </div>
-                            </div>
+            <!-- 定时重启模态框 -->
+            <div class="mask" id="scheduleRebootModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
+                    <form id="scheduleRebootForm" onsubmit="handleScheduleRebootFormSubmit(event)">
+                        <div class="title" style="margin-bottom: 4px;">每日定时重启</div>
+                        <div style="text-align: left: ;;">
+                            <p><label>启用每日定时重启？<input id="SCHEDULE_ENABLED" type="checkbox" name="restart_schedule_switch"></label></p>
+                            <p>每日重启时间：<input id="SCHEDULE_TIME"  name="restart_time" placeholder="00:00" type="text" id="BG_INPUT"
+                                    style="width: 100%;max-width: 60px;padding: 6px 10px;margin: 4px 0;"></p>
                         </div>
-                    </li>
-                    <p>黑名单</p>
-                    <li id="BLACK_CLIENT_LIST" style="padding:0 10px;box-sizing: border-box;width: 100%;overflow: hidden;;">
-                        <div style="display: block;width: 100%;">
-                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
-                                class="card-item">
-                                <div style="margin-right: 10px;">
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">主机名称：</span>
-                                        <span>MiniKano-3~fsdak</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">MAC地址：</span>
-                                        <span>b4:fa:48:de:ac:1a</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">IP地址：</span>
-                                        <span>192.168.0.154</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">接入类型：</span>
-                                        <span>无线</span>
-                                    </p>
-                                </div>
-                                <div style="flex:1;text-align: right;">
-                                    <button class="btn" style="padding: 20px 4px;">✅ 解封</button>
-                                </div>
-                            </div>
-                            <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;" onclick=""
-                                class="card-item">
-                                <div style="margin-right: 10px;">
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">主机名称：</span>
-                                        <span>MiniKano-3~fsdak</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">MAC地址：</span>
-                                        <span>b4:fa:48:de:ac:1a</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">IP地址：</span>
-                                        <span>192.168.0.154</span>
-                                    </p>
-                                    <p style="display: flex;justify-content: space-between;">
-                                        <span style="justify-self: start;">接入类型：</span>
-                                        <span>无线</span>
-                                    </p>
-                                </div>
-                                <div style="flex:1;text-align: right;">
-                                    <button class="btn" style="padding: 20px 4px;">✅ 解封</button>
-                                </div>
-                            </div>
+                        <div class="btn" style="text-align: right;margin-top: 6px;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="closeModal('#scheduleRebootModal')">关闭</button>
                         </div>
-                    </li>
-                </ul>
-                <div class="btn" style="text-align: right;margin-top: 6px;">
-                    <!-- <button type="submit">提交</button> -->
-                    <button type="button" onclick="closeClientManager()">关闭</button>
+                    </form>
                 </div>
             </div>
         </div>

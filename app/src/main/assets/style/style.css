@@ -2,7 +2,9 @@
     --dark-text-color: #ddd;
     --dark-card-bg: #00000042;
     --dark-card-shadow: 0 0 15px #000 !important;
-    --dark-bg-color: #1F2937;
+    --dark-bg-color-transparent: #1f2937ae;
+    --dark-bg-color: #1f2937;
+    --dark-bgi-color: #0000009c;
     --dark-tag-color: #4b556380;
     --dark-tag-color-active: #4b556380;
 }
@@ -15,7 +17,15 @@ body {
     background-attachment: fixed;
     background-size: cover;
     background-color: var(--dark-bg-color);
+    /* background-image: url(https://t.alcy.cc/ycy); */
+    background-position: center;
+    background-attachment: fixed;
     color: var(--dark-text-color)
+    
+}
+
+.bg {
+    background-color: var(--dark-bgi-color);
 }
 
 ul {
@@ -103,7 +113,7 @@ a {
     display: block;
 }
 
-.row{
+.row {
     padding-top: 0 !important;
 }
 
@@ -143,7 +153,7 @@ a {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: var(--dark-bg-color);
+    background-color: var(--dark-bgi-color);
     backdrop-filter: blur(10px);
     padding: 20px;
     border-radius: 10px;
@@ -314,6 +324,7 @@ input {
     border-collapse: collapse;
     border-radius: 10px;
     overflow: hidden;
+    background: var(--dark-card-bg);
 }
 
 .nice-table thead {
