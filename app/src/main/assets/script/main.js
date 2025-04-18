@@ -1985,7 +1985,7 @@ let handleScheduleRebootFormSubmit = async (e) => {
     }
     const form = e.target; // 获取表单
     const formData = new FormData(form);
-    let regx = /^([0-9]|1[0-9]|2[0-3]):([0-9]|[1-5][0-9])$/
+    let regx = /^(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9])$/
     for ([key, value] of formData.entries()) {
         switch (key) {
             case 'restart_time':
