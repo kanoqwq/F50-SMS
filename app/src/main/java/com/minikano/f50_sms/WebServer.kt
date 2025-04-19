@@ -154,49 +154,41 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val AT_command = AT_command_arr[0]
                     Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
 
-                    //真不想在这里又实现一编登录了
-//                    //查询是否登录
-//                    val client = OkHttpClient()
-//
-//                    val request = Request.Builder()
-//                        .url("http://${targetServerIP}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=loginfo")
-//                        .addHeader("Referer", "http://$targetServerIP/index.html") // 根据需要设置 Referer
-//                        .build()
-//
-//                    val response = client.newCall(request).execute()
-//                    val bodyText = response.body?.string() ?: ""
-//                    val isLogin = JSONObject(bodyText).optString("loginfo", "")
-//                    Log.d("kano_ZTE_LOG", "loginfo响应：$isLogin")
-//                    if(isLogin == "no") throw  Exception("没登录还想玩AT？")
-
-                    val adb_result = ShellKano.executeShellFromAssetsSubfolderWithArgs(
-                        context_app,
-                        "shell/adb",
-                        "",
-                    ) ?: throw Exception("adb初始化失败")
-                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
-
+                    //复制依赖
                     val assetManager = context_app.assets
-                    val inputStream = assetManager.open("shell/ATcmd")
-                    val fileName = File("shell/ATcmd").name
-                    val outFile = File(context_app.cacheDir, fileName)
+                    val inputStream_at = assetManager.open("shell/ATcmd")
+                    val inputStream_adb = assetManager.open("shell/adb")
+                    val fileName1 = File("shell/ATcmd").name
+                    val outFile_atcmd = File(context_app.cacheDir, fileName1)
+                    val fileName2 = File("shell/adb").name
+                    val outFile_adb = File(context_app.cacheDir, fileName2)
 
-                    inputStream.use { input ->
-                        FileOutputStream(outFile).use { output ->
+                    inputStream_adb.use { input ->
+                        FileOutputStream(outFile_adb).use { output ->
                             input.copyTo(output)
                         }
                     }
 
-                    outFile.setExecutable(true)
-                    Log.d("kano_ZTE_LOG", "ATcmd-outFile：${outFile.absolutePath}")
+                    inputStream_at.use { input ->
+                        FileOutputStream(outFile_atcmd).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
 
-                    val adbPath = File(context_app.cacheDir, "adb")
+                    outFile_atcmd.setExecutable(true)
+                    Log.d("kano_ZTE_LOG", "ATcmd-outFile：${outFile_atcmd.absolutePath}")
+
+                    outFile_adb.setExecutable(true)
+                    Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
+
+                    Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
+
                     //AT+CGEQOSRDP=1
                     if(!(AT_command.toString()).startsWith("AT+")){
                         throw  Exception("解析失败，AT字符串 需要以 “AT+” 开头")
                     }
 
-                    val AT_result = ShellKano.runShellCommand("${outFile.absolutePath} -ATcmd $AT_command -adbPath ${adbPath.absolutePath}")
+                    val AT_result = ShellKano.runShellCommand("${outFile_atcmd.absolutePath} -ATcmd $AT_command -adbPath ${outFile_adb.absolutePath}")
                     Log.d("kano_ZTE_LOG", "AT_result：$AT_result")
 
                     if(AT_result == null) throw Exception("AT指令执行失败")
