@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -71,6 +72,14 @@ class MainActivity : ComponentActivity() {
                     114514 // 请求码随便定义一个
                 )
             }
+        }
+
+        // 忽略电池优化权限
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(this.packageName)) {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            intent.data = Uri.parse("package:${this.packageName}")
+            this.startActivity(intent)
         }
 
         //用户使用量权限
