@@ -262,6 +262,7 @@ const onTokenConfirm = debounce(async () => {
         handlerCecullarStatus()
         initScheduleRebootStatus()
         initShutdownBtn()
+        initATBtn()
     }
     catch {
         createToast('登录失败，请检查网络！', 'red')
@@ -762,6 +763,7 @@ clearBtn.onclick = () => {
     handlerCecullarStatus()
     initScheduleRebootStatus()
     initShutdownBtn()
+    initATBtn()
     //退出登录请求
     try {
         login().then(cookie => {
@@ -2197,3 +2199,108 @@ let handleTTYDFormSubmit = (e) => {
     closeModal('#TTYDModal')
     initTTYD()
 }
+
+const executeATCommand = async (command) => {
+    try {
+        const command_enc = encodeURIComponent(command)
+        const res = await (await fetch(`/api/AT?command=${command_enc}`)).json()
+        return res
+    } catch (e) {
+        return null
+    }
+}
+
+let initATBtn = () => {
+    const el = document.querySelector('#AT')
+    if (!initRequestData() || !el) {
+        el.onclick = () => createToast('请登录', 'red')
+        el.style.backgroundColor = '#80808073'
+        return null
+    }
+    el.style.backgroundColor = ''
+    el.onclick = () => {
+        showModal('#ATModal')
+    }
+}
+initATBtn()
+
+const handleATFormSubmit = debounce(() => {
+    const AT_value = document.querySelector('#AT_INPUT')?.value
+    if (!AT_value) return
+    if (AT_value.trim() == '') return createToast('请输入AT指令', 'red')
+    // 执行AT
+    const AT_RESULT = document.querySelector('#AT_RESULT')
+    AT_RESULT.innerHTML = "执行中,请耐心等待..."
+    executeATCommand(AT_value.trim()).then(res => {
+        console.log(res);
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error
+                createToast('执行失败', 'red')
+                return
+            }
+            AT_RESULT.innerHTML = res.result
+            createToast('执行成功', 'green')
+        } else {
+            createToast('执行失败', 'red')
+        }
+    }).catch(({ error }) => {
+        if (error) {
+            AT_RESULT.innerHTML = error
+            createToast('执行失败', 'red')
+            return
+        }
+    })
+}, 1000)
+
+const handleQosAT = debounce(() => {
+    // 执行AT
+    const AT_RESULT = document.querySelector('#AT_RESULT')
+    AT_RESULT.innerHTML = "执行中,请耐心等待..."
+    executeATCommand('AT+CGEQOSRDP=1').then(res => {
+        console.log(res);
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error
+                createToast('执行失败', 'red')
+                return
+            }
+            AT_RESULT.innerHTML = res.result
+            createToast('执行成功', 'green')
+        } else {
+            createToast('执行失败', 'red')
+        }
+    }).catch(({ error }) => {
+        if (error) {
+            AT_RESULT.innerHTML = error
+            createToast('执行失败', 'red')
+            return
+        }
+    })
+}, 1000)
+
+const handleQosIMEI = debounce(() => {
+    // 执行AT
+    const AT_RESULT = document.querySelector('#AT_RESULT')
+    AT_RESULT.innerHTML = "执行中,请耐心等待..."
+    executeATCommand('AT+CGSN').then(res => {
+        console.log(res);
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error
+                createToast('执行失败', 'red')
+                return
+            }
+            AT_RESULT.innerHTML = res.result
+            createToast('执行成功', 'green')
+        } else {
+            createToast('执行失败', 'red')
+        }
+    }).catch(({ error }) => {
+        if (error) {
+            AT_RESULT.innerHTML = error
+            createToast('执行失败', 'red')
+            return
+        }
+    })
+}, 1000)

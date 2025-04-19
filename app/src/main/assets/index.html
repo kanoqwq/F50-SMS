@@ -32,6 +32,7 @@
                         <button id="DataManagement" class="btn">流量管理</button>
                         <button id="ClientManagement" class="btn">连接设备管理</button>
                         <button id="WIFIManagement" class="btn">WIFI设置</button>
+                        <button id="AT" class="btn" onclick="createToast('请登录','red')">AT指令</button>
                         <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
                         <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
                         <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
@@ -608,6 +609,32 @@
                             <button type="button" onclick="closeModal('#TTYDModal')">关闭</button>
                         </div>
                     </form>
+                </div>
+            </div>
+            <!-- AT指令执行模态框 -->
+            <div class="mask" id="ATModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
+                    <div class="title" style="margin-bottom: 4px;">AT指令</div>
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 0;">
+                            <p style="font-size: 14px;margin-bottom: 10px;">自定义AT指令</p>
+                            <input name="at_text" placeholder="AT+开头的指令" type="text" id="AT_INPUT"
+                                style="width: 100%;max-width: 200px;padding: 6px 10px;margin: 4px 0;">
+                            <button class="btn" onclick="handleATFormSubmit()">GO</button>
+                        </div>
+                        <div style="margin-top: 4px;margin-bottom: 10px;">
+                            <p style="font-size: 14px;margin-bottom: 10px;">快捷指令</p>
+                            <button class="btn" onclick="handleQosAT()">点我查卡速率</button>
+                            <button class="btn" onclick="handleQosIMEI()">点我查IMEI</button>
+                        </div>
+                        <div class="title" style="margin-top: 14px;">执行结果</div>
+                        <p id="AT_RESULT" style="margin:20px 0;margin-top: 14px;; font-size: 14px;width: 100%;">
+                            <!-- +CGEQOSRDP: 1,6,0,0,0,0,1000000,300000 -->
+                        </p>
+                    </div>
+                    <div class="btn" style="text-align: right;margin-top: 6px;">
+                        <button type="button" onclick="closeModal('#ATModal')">关闭</button>
+                    </div>
                 </div>
             </div>
         </div>

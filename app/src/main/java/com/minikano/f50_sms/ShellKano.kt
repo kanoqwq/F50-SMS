@@ -44,7 +44,8 @@ class ShellKano {
             return try {
                 val assetManager = context.assets
                 val inputStream = assetManager.open(assetSubPath)
-                val outFile = File(context.cacheDir, "temp_script.sh")
+                val fileName = File(assetSubPath).name
+                val outFile = File(context.cacheDir, fileName)
 
                 inputStream.use { input ->
                     FileOutputStream(outFile).use { output ->

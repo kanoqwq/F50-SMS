@@ -11,13 +11,19 @@ import android.os.Build
 import android.os.StatFs
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.OutputStreamWriter
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Calendar
-import java.util.Locale
 
 
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
@@ -132,6 +138,95 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 response
             }
         }
+
+        if (method == "GET" && uri == "/AT") {
+            // 创建一个 Piped 流来异步返回数据
+            val pipedInput = PipedInputStream()
+            val pipedOutput = PipedOutputStream(pipedInput)
+
+            // 使用协程处理耗时任务
+            CoroutineScope(Dispatchers.IO).launch {
+                val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
+                try {
+                    // 解析 query 参数
+                    val rawParams = session?.parameters ?: throw Exception("缺少 port 参数")
+                    val AT_command_arr = rawParams["command"] ?: throw Exception("qeury 缺少 command 参数")
+                    val AT_command = AT_command_arr[0]
+                    Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
+
+                    //真不想在这里又实现一编登录了
+//                    //查询是否登录
+//                    val client = OkHttpClient()
+//
+//                    val request = Request.Builder()
+//                        .url("http://${targetServerIP}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=loginfo")
+//                        .addHeader("Referer", "http://$targetServerIP/index.html") // 根据需要设置 Referer
+//                        .build()
+//
+//                    val response = client.newCall(request).execute()
+//                    val bodyText = response.body?.string() ?: ""
+//                    val isLogin = JSONObject(bodyText).optString("loginfo", "")
+//                    Log.d("kano_ZTE_LOG", "loginfo响应：$isLogin")
+//                    if(isLogin == "no") throw  Exception("没登录还想玩AT？")
+
+                    val adb_result = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+                        context_app,
+                        "shell/adb",
+                        "",
+                    ) ?: throw Exception("adb初始化失败")
+                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
+
+                    val assetManager = context_app.assets
+                    val inputStream = assetManager.open("shell/ATcmd")
+                    val fileName = File("shell/ATcmd").name
+                    val outFile = File(context_app.cacheDir, fileName)
+
+                    inputStream.use { input ->
+                        FileOutputStream(outFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    outFile.setExecutable(true)
+                    Log.d("kano_ZTE_LOG", "ATcmd-outFile：${outFile.absolutePath}")
+
+                    val adbPath = File(context_app.cacheDir, "adb")
+                    //AT+CGEQOSRDP=1
+                    if(!(AT_command.toString()).startsWith("AT+")){
+                        throw  Exception("解析失败，AT字符串 需要以 “AT+” 开头")
+                    }
+
+                    val AT_result = ShellKano.runShellCommand("${outFile.absolutePath} -ATcmd $AT_command -adbPath ${adbPath.absolutePath}")
+                    Log.d("kano_ZTE_LOG", "AT_result：$AT_result")
+
+                    if(AT_result == null) throw Exception("AT指令执行失败")
+                    val cleanedResult = AT_result
+                    .substringAfter("Command result:")
+                        .lineSequence()
+                        .map { it.trim() }
+                        .firstOrNull { it.isNotEmpty() }
+                        ?: "无结果"                          // 去掉首尾空格
+
+                    val jsonResult = """{"result":"$cleanedResult"}"""
+
+                    writer.write(jsonResult)
+                } catch (e: Exception) {
+                    writer.write("""{"error":"AT指令执行错误：${e.message}"}""")
+                } finally {
+                    writer.flush()
+                    pipedOutput.close()
+                }
+            }
+
+            val response = newChunkedResponse(
+                Response.Status.OK,
+                "application/json",
+                pipedInput
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
+        }
+
         if (method == "POST" && uri == "/adb_wifi_setting") {
             return try {
                 val map = HashMap<String, String>()
@@ -583,5 +678,4 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         // 对温度值排序并取最大值
         return temperatures.sortedDescending().first()
     }
-
 }
