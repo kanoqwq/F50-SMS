@@ -93,6 +93,19 @@ class WebService : Service() {
                 Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行错误：${e.message}")
                 e.printStackTrace()
             }
+            Thread.sleep(5000)
+            try{
+                Log.d("kano_ZTE_LOG", "adb服务正在启动。。。")
+                val res_adb = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+                    applicationContext,
+                    "shell/adb",
+                    "devices"
+                )
+                Log.d("kano_ZTE_LOG", "adb启动执行结果：${res_adb}")
+            }
+            catch (e:Exception){
+                Log.d("kano_ZTE_LOG", "adb服务启动失败：${e.message}")
+            }
         }.start()
     }
 

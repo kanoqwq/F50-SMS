@@ -163,10 +163,14 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val fileName2 = File("shell/adb").name
                     val outFile_adb = File(context_app.cacheDir, fileName2)
 
-                    inputStream_adb.use { input ->
-                        FileOutputStream(outFile_adb).use { output ->
-                            input.copyTo(output)
+                    try {
+                        inputStream_adb.use { input ->
+                            FileOutputStream(outFile_adb).use { output ->
+                                input.copyTo(output)
+                            }
                         }
+                    }catch(e:Exception){
+                        Log.d("kano_ZTE_LOG", "adb文件已存在， 无需复制")
                     }
 
                     inputStream_at.use { input ->
@@ -188,7 +192,14 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                         throw  Exception("解析失败，AT字符串 需要以 “AT+” 开头")
                     }
 
-                    val AT_result = ShellKano.runShellCommand("${outFile_atcmd.absolutePath} -ATcmd $AT_command -adbPath ${outFile_adb.absolutePath}")
+                    val adb_command = "${outFile_adb.absolutePath} disconnect"
+                    val shell_command = "${outFile_atcmd.absolutePath} -ATcmd $AT_command -adbPath ${outFile_adb.absolutePath}"
+                    val adb_result = ShellKano.runShellCommand(adb_command,context_app)
+                    Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
+                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
+                    Thread.sleep(1000)//小睡一下
+                    val AT_result = ShellKano.runShellCommand(shell_command,context_app)
+                    Log.d("kano_ZTE_LOG", "AT_执行命令：$shell_command")
                     Log.d("kano_ZTE_LOG", "AT_result：$AT_result")
 
                     if(AT_result == null) throw Exception("AT指令执行失败")

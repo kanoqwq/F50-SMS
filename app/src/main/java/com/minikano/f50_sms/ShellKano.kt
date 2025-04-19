@@ -36,12 +36,82 @@ class ShellKano {
             return output.toString().trim { it <= ' ' }
         }
 
+        fun runShellCommand(command: String?, context: Context): String? {
+            val output = StringBuilder()
+            try {
+                // 设置 HOME 环境变量
+                val env = arrayOf("HOME=${context.cacheDir.absolutePath}")
+
+                // 启动进程（传入环境变量）
+                val process = Runtime.getRuntime().exec(command, env)
+
+                val reader = BufferedReader(
+                    InputStreamReader(process.inputStream)
+                )
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    output.append(line).append("\n")
+                }
+
+                reader.close()
+                process.waitFor()
+            } catch (e: IOException) {
+                e.printStackTrace()
+                return null
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+                return null
+            }
+
+            return output.toString().trim { it <= ' ' }
+        }
+
+//        fun executeShellFromAssetsSubfolderWithArgs(
+//            context: Context,
+//            assetSubPath: String,
+//            vararg args: String
+//        ): String? {
+//            return try {
+//                val assetManager = context.assets
+//                val inputStream = assetManager.open(assetSubPath)
+//                val fileName = File(assetSubPath).name
+//                val outFile = File(context.cacheDir, fileName)
+//
+//                inputStream.use { input ->
+//                    FileOutputStream(outFile).use { output ->
+//                        input.copyTo(output)
+//                    }
+//                }
+//
+//                outFile.setExecutable(true)
+//
+//                val command = ArrayList<String>().apply {
+//                    add(outFile.absolutePath)
+//                    addAll(args)
+//                }
+//
+//                val process = ProcessBuilder(command)
+//                    .redirectErrorStream(true)
+//                    .start()
+//
+//                val output = process.inputStream.bufferedReader().readText()
+//                process.waitFor()
+//
+//                output
+//            } catch (e: Exception) {
+//                Log.d("kano_ZTE_LOG", "executeShellFromAssetsSubfolderWithArgs 执行出错：${e.message}")
+//                e.printStackTrace()
+//                null
+//            }
+//        }
+
         fun executeShellFromAssetsSubfolderWithArgs(
             context: Context,
             assetSubPath: String,
             vararg args: String
         ): String? {
             return try {
+                // 复制文件到 cache 目录
                 val assetManager = context.assets
                 val inputStream = assetManager.open(assetSubPath)
                 val fileName = File(assetSubPath).name
@@ -53,23 +123,36 @@ class ShellKano {
                     }
                 }
 
+                // 设置可执行权限
                 outFile.setExecutable(true)
 
+                // 拼接命令
                 val command = ArrayList<String>().apply {
                     add(outFile.absolutePath)
                     addAll(args)
                 }
 
+                // 设置 HOME 环境变量
+                val env = arrayOf("HOME=${context.cacheDir.absolutePath}")
+
+                // 构建 ProcessBuilder
                 val process = ProcessBuilder(command)
-                    .redirectErrorStream(true)
+                    .redirectErrorStream(true) // 合并错误输出
+                    .apply {
+                        environment().put("HOME", context.cacheDir.absolutePath)
+                    }
                     .start()
 
+                // 读取输出内容
                 val output = process.inputStream.bufferedReader().readText()
                 process.waitFor()
 
+//                Log.d("kano_ZTE_LOG", "执行命令：${command.joinToString(" ")}")
+//                Log.d("kano_ZTE_LOG", "命令输出：$output")
+
                 output
             } catch (e: Exception) {
-                Log.d("kano_ZTE_LOG", "adb执行出错：${e.message}")
+                Log.d("kano_ZTE_LOG", "executeShellFromAssetsSubfolderWithArgs 执行出错：${e.message}")
                 e.printStackTrace()
                 null
             }
