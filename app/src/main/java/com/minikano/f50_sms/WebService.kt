@@ -131,13 +131,13 @@ class WebService : Service() {
             webServer?.start()
             Log.d("kano_ZTE_LOG", "Web server started on http://0.0.0.0:$port")
             Log.d("kano_ZTE_LOG", "Web server proxy IP: $ip")
-            sendBroadcast(Intent(SERVER_INTENT).putExtra("status", true))
+            sendStickyBroadcast(Intent(SERVER_INTENT).putExtra("status", true))
         }.start()
     }
 
     private fun stopWebServer() {
         webServer?.stop()
-        sendBroadcast(Intent(SERVER_INTENT).putExtra("status", false))
+        sendStickyBroadcast(Intent(SERVER_INTENT).putExtra("status", false))
         Log.d("kano_ZTE_LOG", "Web server stopped")
     }
 
