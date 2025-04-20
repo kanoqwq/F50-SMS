@@ -1,7 +1,9 @@
 package com.minikano.f50_sms
 
 import android.content.Context
+import android.provider.DocumentsContract
 import android.util.Log
+import org.w3c.dom.Document
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -75,22 +77,9 @@ class ShellKano {
          * -1表示执行失败 没有找到任何文本
          */
         fun parseUiDumpAndClick(targetText: String,adbPath:String,context: Context): Number {
-            val cacheFile = getUIFile(adbPath,context)
-            val file = File(cacheFile.absolutePath)
+            val cacheFile = getUiDoc(adbPath,context)
 
-            var countDown = 100
-            while (true) {
-                countDown --
-                if(file.exists() || countDown <= 0){
-                    Log.d("kano_ZTE_LOG","kano_ui.xml文件已经找到：${file.absolutePath}")
-                    break
-                }
-                else{
-                    Thread.sleep(30)
-                }
-            }
-
-            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+            val doc = cacheFile
             Log.d("kano_ZTE_LOG","doc 读取 结果：${doc.getElementsByTagName("node")}")
 
             //tap逻辑
@@ -126,8 +115,7 @@ class ShellKano {
             adbPath: String,
             context: Context
         ): String {
-            val cacheFile = getUIFile(adbPath,context)
-            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(cacheFile)
+            val doc = getUiDoc(adbPath,context)
             val nodes = doc.getElementsByTagName("node")
 
             // 寻找输入框
@@ -193,8 +181,7 @@ class ShellKano {
         }
 
         fun getTextFromUIByResourceId(adbPath: String, context: Context): List<String> {
-            val cacheFile = getUIFile(adbPath, context)
-            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(cacheFile)
+            val doc = getUiDoc(adbPath,context)
             val nodes = doc.getElementsByTagName("node")
 
             val resultTexts = mutableListOf<String>()
@@ -214,7 +201,7 @@ class ShellKano {
             return resultTexts
         }
 
-        //获取UI文件
+        //获取UI 到app cache
         private fun getUIFile(adbPath: String,context: Context):File{
             if (adbPath.isEmpty()) throw Exception("需要 adbPath")
 
@@ -237,6 +224,30 @@ class ShellKano {
             if (!cacheFile.exists()) throw Exception("kano_ui.xml 文件不存在")
             return cacheFile
         }
+
+        //获取UI
+        private fun getUiDoc(adbPath: String, context: Context): Document {
+            if (adbPath.isEmpty()) throw Exception("需要 adbPath")
+
+            // 清除旧的 XML
+            runShellCommand("$adbPath shell rm /sdcard/kano_ui.xml", context)
+            Thread.sleep(100)
+
+            // dump 当前 UI
+            runShellCommand("$adbPath shell uiautomator dump /sdcard/kano_ui.xml", context)
+                ?: throw Exception("uiautomator dump 失败")
+
+            // 使用 cat 读取文件内容（无需 pull 到本地）
+            val xmlContent = runShellCommand("$adbPath shell cat /sdcard/kano_ui.xml", context)
+                ?: throw Exception("cat kano_ui.xml 失败")
+
+            // 解析 XML 字符串为 Document
+            val factory = DocumentBuilderFactory.newInstance()
+            val builder = factory.newDocumentBuilder()
+            val inputStream = xmlContent.byteInputStream()
+            return builder.parse(inputStream)
+        }
+
 
         fun executeShellFromAssetsSubfolderWithArgs(
             context: Context,
