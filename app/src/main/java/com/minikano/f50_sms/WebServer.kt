@@ -10,6 +10,8 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.StatFs
 import android.util.Log
+import com.minikano.f50_sms.ShellKano.Companion.fillInputAndSend
+import com.minikano.f50_sms.ShellKano.Companion.runShellCommand
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -156,10 +158,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                     //复制依赖
                     val assetManager = context_app.assets
-                    val inputStream_at = assetManager.open("shell/ATcmd")
                     val inputStream_adb = assetManager.open("shell/adb")
-                    val fileName1 = File("shell/ATcmd").name
-                    val outFile_atcmd = File(context_app.cacheDir, fileName1)
                     val fileName2 = File("shell/adb").name
                     val outFile_adb = File(context_app.cacheDir, fileName2)
 
@@ -173,15 +172,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                         Log.d("kano_ZTE_LOG", "adb文件已存在， 无需复制")
                     }
 
-                    inputStream_at.use { input ->
-                        FileOutputStream(outFile_atcmd).use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-
-                    outFile_atcmd.setExecutable(true)
-                    Log.d("kano_ZTE_LOG", "ATcmd-outFile：${outFile_atcmd.absolutePath}")
-
                     outFile_adb.setExecutable(true)
                     Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
 
@@ -193,16 +183,43 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     }
 
                     val adb_command = "${outFile_adb.absolutePath} disconnect"
-                    val shell_command = "${outFile_atcmd.absolutePath} -ATcmd $AT_command -adbPath ${outFile_adb.absolutePath}"
-                    val adb_result = ShellKano.runShellCommand(adb_command,context_app)
+                    val adb_result = runShellCommand(adb_command,context_app)
                     Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
                     Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
-                    Thread.sleep(1000)//小睡一下
-                    val AT_result = ShellKano.runShellCommand(shell_command,context_app)
-                    Log.d("kano_ZTE_LOG", "AT_执行命令：$shell_command")
-                    Log.d("kano_ZTE_LOG", "AT_result：$AT_result")
 
-                    if(AT_result == null) throw Exception("AT指令执行失败")
+                    Thread.sleep(1000)//小睡一下
+
+                    //打开工程模式活动
+                    repeat(3){
+                        val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
+                        Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                    }
+
+                    Thread.sleep(200)
+
+                    val res_debug_log_btn = ShellKano.parseUiDumpAndClick("DEBUG&LOG",outFile_adb.absolutePath,context_app)
+                    if(res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
+                    if(res_debug_log_btn == 0) {
+                        val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
+                            "Send AT Command",
+                            outFile_adb.absolutePath,
+                            context_app
+                        )
+                        if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command 失败")
+                    }
+
+                    //输入AT指令，点击发送
+                    val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
+                        "Send AT Command",
+                        outFile_adb.absolutePath,
+                        context_app
+                    )
+                    if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command Tab 失败")
+
+                    val result = fillInputAndSend(AT_command,outFile_adb.absolutePath,context_app)
+
+                    val AT_result ="Command result:$result"
+
                     val cleanedResult = AT_result
                     .substringAfter("Command result:")
                         .lineSequence()
