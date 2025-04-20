@@ -208,7 +208,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                         if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command 失败")
                     }
 
-                    //输入AT指令，点击发送
                     val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
                         "Send AT Command",
                         outFile_adb.absolutePath,
@@ -216,7 +215,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     )
                     if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command Tab 失败")
 
-                    val result = fillInputAndSend(AT_command,outFile_adb.absolutePath,context_app)
+                    //输入AT指令，点击发送
+                    val escapedCommand = AT_command.replace("\"", "\\\"")
+                    val result = fillInputAndSend(escapedCommand,outFile_adb.absolutePath,context_app)
 
                     val AT_result ="Command result:$result"
 

@@ -17,8 +17,9 @@
                 <strong id="MAIN_TITLE">ZTE-UFI管理工具</strong>
             </div>
             <!-- 操作按钮 -->
-            <div class="actions" style="flex-shrink: 0;text-align: start;align-self: flex-start">
-                <div style="margin-bottom: 10px;">
+            <button id="CLPS" style="align-self: start;justify-self: start;margin: 6px;margin-top: 0;;">功能列表</button>
+            <div class="actions collapse" data-name="close" style="flex-shrink: 0;text-align: start;align-self: flex-start">
+                <div style="margin: 0 2px;margin-bottom: 10px;" class="collapse_box">
                     <div>
                         <button id="CLEAR" class="btn">登录/退出登录</button>
                         <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
@@ -56,7 +57,7 @@
                 </div>
             </div>
             <!-- 状态 -->
-            <div style="flex-shrink:0;margin-top: 10px;width: 100%;">
+            <div style="flex-shrink:0;margin-top: 0;width: 100%;">
                 <div class="title" style="margin: 6px 0 ;">
                     <strong>基本状态</strong>
                     <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
@@ -294,9 +295,9 @@
                 </div>
                 <div class="action" style="background-color: #00ffdd17;box-shadow: 0 0 10px 0 ##00ffdd36;">
                     <input id="SMSInput" type="text" style="flex: 1;margin-right: 6px"></input>
-                    <div class="btn" style="height: 30px;min-width: 103px;">
-                        <button onclick="sendSMS()">发送</button>
-                        <button onclick="closeModal('#smsList')">关闭</button>
+                    <div class="btn" style="height: 100%;min-width: 103px;display: flex;justify-content: center;align-items: center;">
+                        <button onclick="sendSMS()" style="margin-right: 6px;height: 100%;">发送</button>
+                        <button onclick="closeModal('#smsList')" style="height: 100%;">关闭</button>
                     </div>
                 </div>
             </div>

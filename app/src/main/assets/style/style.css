@@ -171,6 +171,7 @@ button {
     border-radius: 5px;
     color: white;
     transition: box-shadow .2s;
+    font-size: 12px;
 }
 
 button:hover {
@@ -362,7 +363,7 @@ input {
 .actions select {
     padding: 8px;
     margin: 4px;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 #dictionaryModal {
@@ -463,4 +464,10 @@ input {
 #TTYDModal {
     user-select: none;
     -webkit-user-select: none;
+}
+
+.collapse{
+    overflow: hidden;
+    height: 0;
+    transition: all 0.3s;
 }

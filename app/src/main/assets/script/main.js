@@ -631,7 +631,7 @@ let handlerADBStatus = async () => {
         }
     }
     btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
-    btn.style.backgroundColor = res.usb_port_switch == '1' ? '#018AD8' : ''
+    btn.style.backgroundColor = res.usb_port_switch == '1' ? '#018ad8b0' : ''
 
 }
 handlerADBStatus()
@@ -684,7 +684,7 @@ let handlerADBNetworkStatus = async () => {
         }
     }
     btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
-    btn.style.backgroundColor = res.enabled == "true" || res.enabled == true ? '#018AD8' : ''
+    btn.style.backgroundColor = res.enabled == "true" || res.enabled == true ? '#018ad8b0' : ''
 
 }
 handlerADBNetworkStatus()
@@ -701,7 +701,7 @@ let handlerPerformaceStatus = async () => {
         cmd: 'performance_mode'
     }))
     btn.innerHTML = res.performance_mode == '1' ? '关闭性能模式' : '开启性能模式'
-    btn.style.backgroundColor = res.performance_mode == '1' ? '#018AD8' : ''
+    btn.style.backgroundColor = res.performance_mode == '1' ? '#018ad8b0' : ''
     btn.onclick = async () => {
         try {
             if (!initRequestData()) {
@@ -985,7 +985,7 @@ let initSMBStatus = async () => {
         }
     }
     el.innerHTML = res.samba_switch == '1' ? '关闭SMB' : '开启SMB'
-    el.style.backgroundColor = res.samba_switch == '1' ? '#018AD8' : ''
+    el.style.backgroundColor = res.samba_switch == '1' ? '#018ad8b0' : ''
 }
 initSMBStatus()
 
@@ -1026,7 +1026,7 @@ let initLightStatus = async () => {
         }
     }
     el.innerHTML = res.indicator_light_switch == '1' ? '关闭指示灯' : '开启指示灯'
-    el.style.backgroundColor = res.indicator_light_switch == '1' ? '#018AD8' : ''
+    el.style.backgroundColor = res.indicator_light_switch == '1' ? '#018ad8b0' : ''
 }
 initLightStatus()
 
@@ -1961,7 +1961,7 @@ let handlerCecullarStatus = async () => {
         }
     }
     btn.innerHTML = res.ppp_status == 'ppp_disconnected' ? '开启蜂窝数据' : '关闭蜂窝数据'
-    btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018AD8'
+    btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018ad8b0'
 }
 handlerCecullarStatus()
 
@@ -2035,7 +2035,7 @@ let initScheduleRebootStatus = async () => {
 
     SCHEDULE_ENABLED.checked = restart_schedule_switch == '1'
     SCHEDULE_TIME.value = restart_time
-    btn.style.backgroundColor = restart_schedule_switch == '1' ? '#018AD8' : ''
+    btn.style.backgroundColor = restart_schedule_switch == '1' ? '#018ad8b0' : ''
 
     btn.onclick = () => {
         if (!initRequestData()) {
@@ -2304,3 +2304,41 @@ const handleQosIMEI = debounce(() => {
         }
     })
 }, 1000)
+
+
+//展开收起
+const CLPS = document.querySelector('#CLPS')
+const boxEl = document.querySelector('.collapse')
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (
+            mutation.type === 'attributes' &&
+            mutation.attributeName === 'data-name'
+        ) {
+            const newValue = boxEl.getAttribute('data-name');
+            console.log(newValue);
+            const box = boxEl.querySelector('.collapse_box')
+            if(!box) return
+
+            if (newValue == 'open') {
+                boxEl.style.height = box.getBoundingClientRect().height + 'px'
+                boxEl.style.overflow = 'hidden'
+            } else {
+                boxEl.style.height = '0'
+                boxEl.style.overflow = 'hidden'
+            }
+        }
+    }
+});
+// 配置观察器
+observer.observe(boxEl, {
+    attributes: true, // 监听属性变化
+    attributeFilter: ['data-name'], // 只监听 data-name 属性
+});
+CLPS.onclick = () => {
+    if (boxEl && boxEl.dataset) {
+        boxEl.dataset.name = boxEl.dataset.name == 'open' ? 'close' : 'open'
+        localStorage.setItem('collapse', boxEl.dataset.name)
+    }
+}
+boxEl.dataset.name = localStorage.getItem('collapse') || 'open'
