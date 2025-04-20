@@ -133,8 +133,10 @@ class ShellKano {
                     val tapX = (x1.toInt() + x2.toInt()) / 2
                     val tapY = (y1.toInt() + y2.toInt()) / 2
 
-                    runShellCommand("$adbPath shell input tap $tapX $tapY", context)
-                    Log.d("kano_ZTE_LOG", "点击输入框坐标：$tapX,$tapY")
+                    repeat(3){
+                        runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                        Log.d("kano_ZTE_LOG", "点击输入框坐标：$tapX,$tapY")
+                    }
 
                     Thread.sleep(200) // 稍等软键盘弹出
 
@@ -180,7 +182,7 @@ class ShellKano {
             throw Exception("未找到 SEND 按钮")
         }
 
-        fun getTextFromUIByResourceId(adbPath: String, context: Context): List<String> {
+        private fun getTextFromUIByResourceId(adbPath: String, context: Context): List<String> {
             val doc = getUiDoc(adbPath,context)
             val nodes = doc.getElementsByTagName("node")
 

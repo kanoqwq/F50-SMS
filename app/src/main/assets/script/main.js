@@ -2224,86 +2224,91 @@ let initATBtn = () => {
 }
 initATBtn()
 
-const handleATFormSubmit = debounce(() => {
-    const AT_value = document.querySelector('#AT_INPUT')?.value
-    if (!AT_value) return
-    if (AT_value.trim() == '') return createToast('请输入AT指令', 'red')
-    // 执行AT
-    const AT_RESULT = document.querySelector('#AT_RESULT')
-    AT_RESULT.innerHTML = "执行中,请耐心等待..."
-    executeATCommand(AT_value.trim()).then(res => {
-        console.log(res);
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = res.error
-                createToast('执行失败', 'red')
-                return
-            }
-            AT_RESULT.innerHTML = res.result
-            createToast('执行成功', 'green')
-        } else {
-            createToast('执行失败', 'red')
-        }
-    }).catch(({ error }) => {
-        if (error) {
-            AT_RESULT.innerHTML = error
-            createToast('执行失败', 'red')
-            return
-        }
-    })
-}, 1000)
+const handleATFormSubmit = async () => {
+    const AT_value = document.querySelector('#AT_INPUT')?.value;
+    if (!AT_value || AT_value.trim() === '') {
+        return createToast('请输入AT指令', 'red');
+    }
 
-const handleQosAT = debounce(() => {
-    // 执行AT
-    const AT_RESULT = document.querySelector('#AT_RESULT')
-    AT_RESULT.innerHTML = "执行中,请耐心等待..."
-    executeATCommand('AT+CGEQOSRDP=1').then(res => {
-        console.log(res);
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = res.error
-                createToast('执行失败', 'red')
-                return
-            }
-            AT_RESULT.innerHTML = res.result
-            createToast('执行成功', 'green')
-        } else {
-            createToast('执行失败', 'red')
-        }
-    }).catch(({ error }) => {
-        if (error) {
-            AT_RESULT.innerHTML = error
-            createToast('执行失败', 'red')
-            return
-        }
-    })
-}, 1000)
+    const AT_RESULT = document.querySelector('#AT_RESULT');
+    AT_RESULT.innerHTML = "执行中,请耐心等待...";
 
-const handleQosIMEI = debounce(() => {
+    try {
+        const res = await executeATCommand(AT_value.trim());
+        console.log(res);
+
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error;
+                createToast('执行失败', 'red');
+                return;
+            }
+
+            AT_RESULT.innerHTML = res.result;
+            createToast('执行成功', 'green');
+        } else {
+            createToast('执行失败', 'red');
+        }
+
+    } catch (err) {
+        const error = err?.error || '未知错误';
+        AT_RESULT.innerHTML = error;
+        createToast('执行失败', 'red');
+    }
+};
+
+const handleQosAT = async () => {
+    const AT_RESULT = document.querySelector('#AT_RESULT');
+    AT_RESULT.innerHTML = "执行中,请耐心等待...";
+
+    try {
+        const res = await executeATCommand('AT+CGEQOSRDP=1');
+        console.log(res);
+
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error;
+                createToast('执行失败', 'red');
+                return;
+            }
+
+            AT_RESULT.innerHTML = res.result;
+            createToast('执行成功', 'green');
+        } else {
+            createToast('执行失败', 'red');
+        }
+
+    } catch (err) {
+        const error = err?.error || '未知错误';
+        AT_RESULT.innerHTML = error;
+        createToast('执行失败', 'red');
+    }
+};
+
+const handleQosIMEI = async () => {
     // 执行AT
     const AT_RESULT = document.querySelector('#AT_RESULT')
     AT_RESULT.innerHTML = "执行中,请耐心等待..."
-    executeATCommand('AT+CGSN').then(res => {
-        console.log(res);
+    try {
+        const res = await executeATCommand('AT+CGSN');
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = res.error
-                createToast('执行失败', 'red')
-                return
+                AT_RESULT.innerHTML = res.error;
+                createToast('执行失败', 'red');
+                return;
             }
-            AT_RESULT.innerHTML = res.result
-            createToast('执行成功', 'green')
+
+            AT_RESULT.innerHTML = res.result;
+            createToast('执行成功', 'green');
         } else {
-            createToast('执行失败', 'red')
+            createToast('执行失败', 'red');
         }
-    }).catch(({ error }) => {
-        if (error) {
-            AT_RESULT.innerHTML = error
-            createToast('执行失败', 'red')
-            return
-        }
-    })
-}, 1000)
+    } catch (err) {
+        const error = err?.error || '未知错误';
+        AT_RESULT.innerHTML = error;
+        createToast('执行失败', 'red');
+    }
+}
 
 
 //展开收起
@@ -2318,7 +2323,7 @@ const observer = new MutationObserver((mutationsList) => {
             const newValue = boxEl.getAttribute('data-name');
             console.log(newValue);
             const box = boxEl.querySelector('.collapse_box')
-            if(!box) return
+            if (!box) return
 
             if (newValue == 'open') {
                 boxEl.style.height = box.getBoundingClientRect().height + 'px'
@@ -2342,3 +2347,19 @@ CLPS.onclick = () => {
     }
 }
 boxEl.dataset.name = localStorage.getItem('collapse') || 'open'
+
+
+//执行时禁用按钮
+const disableButtonWhenExecuteFunc = async (e, func) => {
+    const target = e.currentTarget
+    console.log(target, e);
+
+    target.setAttribute("disabled", "true");
+    target.style.opacity = '.5'
+    try {
+        func && await func()
+    } finally {
+        target.removeAttribute("disabled");
+        target.style.opacity = ''
+    }
+}
