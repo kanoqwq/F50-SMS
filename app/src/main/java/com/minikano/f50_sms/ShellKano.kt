@@ -113,7 +113,9 @@ class ShellKano {
         fun fillInputAndSend(
             inputText: String,
             adbPath: String,
-            context: Context
+            context: Context,
+            resId: String,
+            btnName:String
         ): String {
             val doc = getUiDoc(adbPath,context)
             val nodes = doc.getElementsByTagName("node")
@@ -145,44 +147,56 @@ class ShellKano {
                     runShellCommand("$adbPath shell input text \"$escapedInput\"", context)
                     Log.d("kano_ZTE_LOG", "输入文本：$inputText")
                     inputClicked = true
+                    if(escapedInput.length>20){
+                        Thread.sleep(400) // 稍等输入完毕
+                    }
                     break
                 }
             }
 
             if (!inputClicked) throw Exception("未找到 EditText 输入框")
 
-            //找到SEND按钮点击
-            for (i in 0 until nodes.length) {
-                val node = nodes.item(i)
+            //fix：输入框输入完成后ui界面可能会变动（比如按钮位置会被挤下去）需要重新获取UI
+            val nodes_after = getUiDoc(adbPath,context).getElementsByTagName("node")
+            //找到按钮点击
+            for (i in 0 until nodes_after.length) {
+                val node = nodes_after.item(i)
                 val attrs = node.attributes
                 val text = attrs.getNamedItem("text")?.nodeValue ?: ""
                 val bounds = attrs.getNamedItem("bounds")?.nodeValue ?: continue
 
-                if (text.equals("SEND", ignoreCase = true)) {
+                if (text.equals(btnName, ignoreCase = true)) {
                     val regex = Regex("""\[(\d+),(\d+)\]\[(\d+),(\d+)\]""")
                     val match = regex.find(bounds) ?: continue
                     val (x1, y1, x2, y2) = match.destructured
                     val tapX = (x1.toInt() + x2.toInt()) / 2
                     val tapY = (y1.toInt() + y2.toInt()) / 2
-
                     runShellCommand("$adbPath shell input tap $tapX $tapY", context)
-                    Log.d("kano_ZTE_LOG", "点击 SEND 坐标：$tapX,$tapY")
-
+                    Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
                     //继续检测result
-                    val res = getTextFromUIByResourceId(adbPath,context)
-
-                    //返回就完事了
-                    repeat(10) {
-                        runShellCommand("$adbPath shell input keyevent KEYCODE_BACK", context)
+                    if(resId != "") {
+                        val res = getTextFromUIByResourceId(resId, adbPath, context)
+                        Thread.sleep(50) // 稍等
+                        //返回就完事了
+                        repeat(10) {
+                            runShellCommand("$adbPath shell input keyevent KEYCODE_BACK", context)
+                        }
+                        return res[0]
+                    }else{
+                        Thread.sleep(50) // 稍等输入完毕
+                        //返回就完事了
+                        repeat(10) {
+                            runShellCommand("$adbPath shell input keyevent KEYCODE_BACK", context)
+                        }
+                        return ""
                     }
-                    return res[0]
                 }
             }
 
-            throw Exception("未找到 SEND 按钮")
+            throw Exception("未找到 $btnName 按钮")
         }
 
-        private fun getTextFromUIByResourceId(adbPath: String, context: Context): List<String> {
+        private fun getTextFromUIByResourceId(resId:String,adbPath: String, context: Context): List<String> {
             val doc = getUiDoc(adbPath,context)
             val nodes = doc.getElementsByTagName("node")
 
@@ -193,13 +207,13 @@ class ShellKano {
                 val attrs = node.attributes
 
                 val resourceId = attrs.getNamedItem("resource-id")?.nodeValue ?: continue
-                if (resourceId == "com.sprd.engineermode:id/result_text") {
+                if (resourceId == resId) {
                     val text = attrs.getNamedItem("text")?.nodeValue ?: ""
                     resultTexts.add(text)
                 }
             }
 
-            Log.d("kano_ZTE_LOG", "共找到${resultTexts.size}条 result_text 文本：$resultTexts")
+            Log.d("kano_ZTE_LOG", "根据：$resId 共找到${resultTexts.size}条 result_text 文本：$resultTexts")
             return resultTexts
         }
 

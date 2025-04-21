@@ -615,10 +615,10 @@
                     </form>
                 </div>
             </div>
-            <!-- AT指令执行模态框 -->
+            <!-- 指令执行模态框 -->
             <div class="mask" id="ATModal" style="display: none">
                 <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
-                    <div class="title" style="margin-bottom: 4px;">AT指令</div>
+                    <div class="title" style="margin-bottom: 4px;">指令工具</div>
                     <div style="text-align: left;">
                         <div style="margin-bottom: 0;">
                             <p style="font-size: 14px;margin-bottom: 10px;">自定义AT指令</p>
@@ -629,10 +629,14 @@
                         </div>
                         <div style="margin-top: 4px;margin-bottom: 10px;">
                             <p style="font-size: 14px;margin-bottom: 10px;">快捷指令</p>
-                            <button class="btn"
-                                onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
-                            <button class="btn"
-                                onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
+                            <div style="display: flex;flex-wrap: wrap; gap: 10px;">
+                                <button class="btn"
+                                    onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
+                                <button class="btn"
+                                    onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
+                                <button class="btn"
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录为 /</button>
+                            </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
                         <p id="AT_RESULT" style="margin:20px 0;margin-top: 14px;; font-size: 14px;width: 100%;">

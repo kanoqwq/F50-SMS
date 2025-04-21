@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStreamWriter
@@ -141,6 +142,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
         }
 
+        //发送AT指令
         if (method == "GET" && uri == "/AT") {
             // 创建一个 Piped 流来异步返回数据
             val pipedInput = PipedInputStream()
@@ -151,7 +153,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
                 try {
                     // 解析 query 参数
-                    val rawParams = session?.parameters ?: throw Exception("缺少 port 参数")
+                    val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
                     val AT_command_arr = rawParams["command"] ?: throw Exception("qeury 缺少 command 参数")
                     val AT_command = AT_command_arr[0]
                     Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
@@ -189,35 +191,47 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                     Thread.sleep(1000)//小睡一下
 
-                    //打开工程模式活动
-                    repeat(3){
-                        val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
-                        Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
-                    }
+                    fun click_stage1 (){
+                        //打开工程模式活动
+                        repeat(3){
+                            val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
+                            Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                        }
 
-                    Thread.sleep(200)
+                        Thread.sleep(200)
+                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
+                            "DEBUG&LOG",
+                            outFile_adb.absolutePath,
+                            context_app
+                        )
+                        if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
 
-                    val res_debug_log_btn = ShellKano.parseUiDumpAndClick("DEBUG&LOG",outFile_adb.absolutePath,context_app)
-                    if(res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
-                    if(res_debug_log_btn == 0) {
                         val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
                             "Send AT Command",
                             outFile_adb.absolutePath,
                             context_app
                         )
-                        if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command 失败")
+                        if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command Tab 失败")
                     }
 
-                    val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
-                        "Send AT Command",
-                        outFile_adb.absolutePath,
-                        context_app
-                    )
-                    if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command Tab 失败")
+                    var fallBackTime = 0
+                    try{
+                        click_stage1()
+                    }
+                    catch (e:Exception){
+                        //返回
+                        repeat(10) {
+                            runShellCommand("${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK", context_app)
+                        }
+                        Thread.sleep(1000)
+                        if(fallBackTime++<2) {
+                            click_stage1()
+                        }
+                    }
 
                     //输入AT指令，点击发送
                     val escapedCommand = AT_command.replace("\"", "\\\"")
-                    val result = fillInputAndSend(escapedCommand,outFile_adb.absolutePath,context_app)
+                    val result = fillInputAndSend(escapedCommand,outFile_adb.absolutePath,context_app,"com.sprd.engineermode:id/result_text","SEND")
 
                     val AT_result ="Command result:$result"
 
@@ -230,6 +244,141 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                     val jsonResult = """{"result":"$cleanedResult"}"""
 
+                    writer.write(jsonResult)
+                } catch (e: Exception) {
+                    writer.write("""{"error":"AT指令执行错误：${e.message}"}""")
+                } finally {
+                    writer.flush()
+                    pipedOutput.close()
+                }
+            }
+
+            val response = newChunkedResponse(
+                Response.Status.OK,
+                "application/json",
+                pipedInput
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
+        }
+
+        //更改samba分享地址为根目录
+        if (method == "GET" && uri == "/smbPath") {
+            // 创建一个 Piped 流来异步返回数据
+            val pipedInput = PipedInputStream()
+            val pipedOutput = PipedOutputStream(pipedInput)
+
+            // 使用协程处理耗时任务
+            CoroutineScope(Dispatchers.IO).launch {
+                val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
+                try {
+                    // 解析 query 参数
+                    val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
+                    val path_command_arr = rawParams["path"] ?: throw Exception("qeury 缺少 path 参数")
+                    val path_command = path_command_arr[0]
+                    Log.d("kano_ZTE_LOG", "path 传入参数：${path_command}")
+
+                    //复制依赖
+                    val assetManager = context_app.assets
+                    val inputStream_adb = assetManager.open("shell/adb")
+                    val fileName_adb = File("shell/adb").name
+                    val outFile_adb = File(context_app.cacheDir, fileName_adb)
+
+                    val smb = assetManager.open("shell/smb.conf")
+                    val fileName_smb = File("shell/smb.conf").name
+                    val outFile_smb = File(context_app.getExternalFilesDir(null), fileName_smb)
+
+                    //复制smb到外部存储
+                    try {
+                        smb.use { input ->
+                            FileOutputStream(outFile_smb).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_smb.absolutePath} 成功")
+                    } catch (e: Exception) {
+                        Log.e("kano_ZTE_LOG", "复制失败：${e.message}")
+                    }
+
+                    try {
+                        inputStream_adb.use { input ->
+                            FileOutputStream(outFile_adb).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_adb.absolutePath} 成功")
+                    }catch(e:Exception){
+                        Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
+                    }
+
+
+                    outFile_adb.setExecutable(true)
+                    Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
+                    Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
+
+                    val adb_command = "${outFile_adb.absolutePath} disconnect"
+                    val adb_result = runShellCommand(adb_command,context_app)
+                    Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
+                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
+
+                    Thread.sleep(1000)//小睡一下
+
+                    //复制smb到sdcard
+                    val smb_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",context_app)?:throw Exception("工程模式活动打开失败")
+                    Log.d("kano_ZTE_LOG", "执行：${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res")
+
+
+                    fun click_stage1(){
+                        //打开工程模式活动
+                        repeat(3){
+                            val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
+                            Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                        }
+                        Thread.sleep(200)
+                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick("DEBUG&LOG",outFile_adb.absolutePath,context_app)
+                        if(res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
+                        if(res_debug_log_btn == 0) {
+                            val res = ShellKano.parseUiDumpAndClick(
+                                "Adb shell",
+                                outFile_adb.absolutePath,
+                                context_app
+                            )
+                            if (res == -1) throw Exception("点击 Adb Shell 按钮失败")
+                        }
+                    }
+                    var fallBackTime = 0
+                    try{
+                        click_stage1()
+                    }
+                    catch (e:Exception){
+                        //返回
+                        repeat(10) {
+                            runShellCommand("${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK", context_app)
+                        }
+                        Thread.sleep(1000)
+                        if(fallBackTime++<2) {
+                            click_stage1()
+                        }
+                    }
+
+                    //输入指令，点击发送
+                    var jsonResult = """{"result":"执行成功"}"""
+                    try {
+                        val escapedCommand =
+                            "toybox cp /sdcard/${outFile_smb.name} /data/samba/etc/smb.conf".replace(
+                                "\"",
+                                "\\\""
+                            )
+                        fillInputAndSend(
+                            escapedCommand,
+                            outFile_adb.absolutePath,
+                            context_app,
+                            "",
+                            "START"
+                        )
+                    }catch (e:Exception){
+                        jsonResult = """{"result":"执行失败"}"""
+                    }
                     writer.write(jsonResult)
                 } catch (e: Exception) {
                     writer.write("""{"error":"AT指令执行错误：${e.message}"}""")

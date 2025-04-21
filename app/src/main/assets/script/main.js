@@ -2363,3 +2363,28 @@ const disableButtonWhenExecuteFunc = async (e, func) => {
         target.style.opacity = ''
     }
 }
+
+//执行smb目录更改
+const handleSambaPath = async (command = '/') => {
+    const AT_RESULT = document.querySelector('#AT_RESULT')
+    AT_RESULT.innerHTML = "执行中,请耐心等待..."
+    try {
+        const command_enc = encodeURIComponent(command)
+        const res = await (await fetch(`/api/smbPath?path=${command_enc}`)).json()
+        if (res) {
+            if (res.error) {
+                AT_RESULT.innerHTML = res.error;
+                createToast('执行失败', 'red');
+                return;
+            }
+            AT_RESULT.innerHTML = res.result;
+            createToast('执行完成', 'green');
+        } else {
+            AT_RESULT.innerHTML = '';
+            createToast('执行失败', 'red');
+        }
+    } catch (e) {
+        AT_RESULT.innerHTML = '';
+        createToast('执行失败', 'red');
+    }
+}
