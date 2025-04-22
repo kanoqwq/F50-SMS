@@ -26,6 +26,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.SecureRandom
 import java.util.Calendar
 
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
@@ -33,6 +34,26 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
     private val targetServerIP = gatewayIp  // 目标服务器地址
     private val PREFS_NAME = "kano_ZTE_store"
+
+    private val oneMB = 1024 * 1024
+    private val random = SecureRandom()
+    private val randomBlock = ByteArray(oneMB).also {
+        random.nextBytes(it)
+    }
+    private fun getChunkCount(param: String?): Int {
+        val default = 4
+        val max = 1024
+
+        return param?.toIntOrNull()?.let {
+            when {
+                it <= 0 -> default
+                it > max -> max
+                else -> it
+            }
+        } ?: default
+    }
+
+
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
@@ -396,6 +417,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             return response
         }
 
+        //adb自启
         if (method == "POST" && uri == "/adb_wifi_setting") {
             return try {
                 val map = HashMap<String, String>()
@@ -475,6 +497,65 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Response.Status.INTERNAL_ERROR,
                     "application/json",
                     """{"error":"获取型号与电量信息出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //测速
+        // from https://github.com/bg6cq/speedtest/blob/master/backend/garbage.php
+        if (method == "GET" && uri == "/speedtest"){
+           return try{
+                val parms = session?.parameters ?: throw Exception("缺少 query 参数")
+                val ckSize = getChunkCount(parms["ckSize"]?.firstOrNull())
+                val enableCors = parms.containsKey("cors")
+
+               // Headers
+               val headers = mutableMapOf<String, String>()
+               if (enableCors) {
+                   headers["Access-Control-Allow-Origin"] = "*"
+                   headers["Access-Control-Allow-Methods"] = "GET, POST"
+               }
+
+               headers["Content-Description"] = "File Transfer"
+               headers["Content-Type"] = "application/octet-stream"
+               headers["Content-Disposition"] = "attachment; filename=random.dat"
+               headers["Content-Transfer-Encoding"] = "binary"
+               headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+               headers["Pragma"] = "no-cache"
+
+               // 构造一个 InputStream，分多次生成 1MB 数据
+               val stream = object : InputStream() {
+                   private var chunksSent = 0
+                   private var bufferPos = 0
+                   private var buffer = ByteArray(oneMB)
+
+                   override fun read(): Int {
+                       if (chunksSent >= ckSize) return -1
+
+                       if (bufferPos >= buffer.size) {
+                           // 新的一块
+                           random.nextBytes(buffer)
+                           bufferPos = 0
+                           chunksSent++
+                       }
+
+                       return buffer[bufferPos++].toInt() and 0xFF
+                   }
+               }
+
+               val response = newChunkedResponse(Response.Status.OK, "application/octet-stream", stream)
+
+               headers.forEach { (k, v) -> response.addHeader(k, v) }
+
+               return response
+            } catch(e:Exception) {
+                Log.d("kano_ZTE_LOG", "测速出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"测速出错"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response

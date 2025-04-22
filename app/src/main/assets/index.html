@@ -36,6 +36,7 @@
                         <button id="BG_SETTING" class="btn" onclick="createToast('请登录','red')">主题背景</button>
                         <button id="SMS" class="btn">短信收发</button>
                         <button id="DataManagement" class="btn">流量管理</button>
+                        <button id="SpeedTestBtn" class="btn" onclick="showModal('#speedTestModal')">内网测速</button>
                         <button id="ClientManagement" class="btn">连接设备管理</button>
                         <button id="WIFIManagement" class="btn">WIFI设置</button>
                         <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
@@ -57,7 +58,8 @@
                             <option value="1">RNDIS</option>
                             <option value="2">CDC-ECM</option>
                         </select>
-                        <select class="select" id="SIM_CARD_TYPE" style="display: none;" onchange="changeSimCard(event)">
+                        <select class="select" id="SIM_CARD_TYPE" style="display: none;"
+                            onchange="changeSimCard(event)">
                             <option value="0">SIM卡1</option>
                             <option value="1">SIM卡2</option>
                         </select>
@@ -687,19 +689,22 @@
                                 <label style="
                                 display: flex;
                                 align-items: center;
-                            ">旧的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="oldPassword" type="password" placeholder="旧密码"></label>
+                            ">旧的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="oldPassword"
+                                        type="password" placeholder="旧密码"></label>
                             </div>
-                            <div class="item"  style="margin: 10px auto;">
+                            <div class="item" style="margin: 10px auto;">
                                 <label style="
                                 display: flex;
                                 align-items: center;
-                            ">新的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="newPassword" type="password" placeholder="新密码"></label>
+                            ">新的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="newPassword"
+                                        type="password" placeholder="新密码"></label>
                             </div>
-                            <div class="item"  style="margin: 10px auto;">
+                            <div class="item" style="margin: 10px auto;">
                                 <label style="
                                 display: flex;
                                 align-items: center;
-                            ">确认密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="confirmPassword" type="password" placeholder="确认密码"></label>
+                            ">确认密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="confirmPassword"
+                                        type="password" placeholder="确认密码"></label>
                             </div>
                         </div>
                         <div class="btn" style="text-align: right;">
@@ -707,6 +712,32 @@
                             <button type="button" onclick="onCloseChangePassForm()">关闭</button>
                         </div>
                     </form>
+                </div>
+            </div>
+            <!-- 网络测速模态框 -->
+            <div class="mask" id="speedTestModal" style="display: none">
+                <div class="modal">
+                    <div class="title">内网测速</div>
+
+                    <div class="content" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                        <div class="item" style="margin: 10px auto;">
+                            <label style="
+                            display: flex;
+                            font-size: 14px;
+                            align-items: center;
+                        ">块大小(1个块儿1MB)：<input style="flex: 1;padding: 4px 6px;width: 100%;" value="500" id="ckSize" type="number"
+                                    placeholder=""></label>
+                        </div>
+                        <div class="speedtest" id="speedtestResult">准备就绪</div>
+                    </div>
+                    <div class="btn" style="text-align: right;">
+                        <button onclick="startTest(event)">开始测速</button>
+                        <button type="button" onclick="closeModal('#speedTestModal')">关闭</button>
+                    </div>
                 </div>
             </div>
         </div>

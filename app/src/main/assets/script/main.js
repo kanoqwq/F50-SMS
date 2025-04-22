@@ -2474,14 +2474,14 @@ const onCloseChangePassForm = () => {
 let initSimCardType = async () => {
     const selectEl = document.querySelector('#SIM_CARD_TYPE')
     //查询是否支持双卡
-    const { dual_sim_support } = await getData(new URLSearchParams({
-        cmd: 'dual_sim_support'
-    }))
-    if (dual_sim_support && dual_sim_support == '0') {
-        return
-    } else {
-        selectEl.style.display = ''
-    }
+    // const { dual_sim_support } = await getData(new URLSearchParams({
+    //     cmd: 'dual_sim_support'
+    // }))
+    // if (dual_sim_support && dual_sim_support == '0') {
+    //     return
+    // } else {
+    selectEl.style.display = ''
+    // }
     if (!initRequestData() || !selectEl) {
         selectEl.style.backgroundColor = '#80808073'
         selectEl.disabled = true
@@ -2528,5 +2528,84 @@ let changeSimCard = async (e) => {
         await initUSBNetworkType()
     } catch (e) {
         // createToast(e.message)
+    }
+}
+
+
+// 控制测速请求的中断器
+let speedFlag = false;
+let speedController = null; // 可重置的变量
+
+async function startTest(e) {
+    if (!initRequestData()) {
+        createToast('请登录', 'red')
+        return null
+    }
+    if (speedFlag) {
+        speedController.abort();
+        createToast('测速已取消');
+        return;
+    }
+
+    speedFlag = true;
+    speedController = new AbortController();
+    const speedSignal = speedController.signal;
+
+    e.target.style.backgroundColor = '#80808073';
+    e.target.innerHTML = '停止测速';
+
+    const serverUrl = `${KANO_baseURL}/speedtest`;
+    const ckSize = document.querySelector('#speedTestModal #ckSize').value;
+    const chunkSize = !isNaN(Number(ckSize)) ? Number(ckSize) : 1000;
+    const resultDiv = document.getElementById('speedtestResult');
+
+    const url = `${serverUrl}?ckSize=${chunkSize}&cors`;
+    resultDiv.textContent = `测速中...`;
+
+    let totalBytes = 0;
+    let startTime = performance.now();
+    let lastUpdateTime = startTime;
+    let lastBytes = 0;
+
+    try {
+        const res = await fetch(url, { signal: speedSignal });
+        const reader = res.body.getReader();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            totalBytes += value.length;
+            const now = performance.now();
+
+            if (now - lastUpdateTime >= 50) {
+                const elapsed = (now - lastUpdateTime) / 1000;
+                const speed = ((totalBytes - lastBytes) * 8 / 1024 / 1024) / elapsed;
+
+                resultDiv.innerHTML = `实时测速中...
+下载总量：${(totalBytes / 1024 / 1024).toFixed(2)} MB
+当前速度：${speed.toFixed(2)} Mbps`;
+
+                lastUpdateTime = now;
+                lastBytes = totalBytes;
+            }
+        }
+
+        const totalTime = (performance.now() - startTime) / 1000;
+        const avgSpeed = ((totalBytes * 8) / 1024 / 1024) / totalTime;
+
+        resultDiv.innerHTML += `<br/>✅ 测试完成
+总耗时：${totalTime.toFixed(2)} 秒
+平均速度：${avgSpeed.toFixed(2)} Mbps`;
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            resultDiv.innerHTML += `<br/>⚠️ 已中止测速`;
+        } else {
+            resultDiv.innerHTML = `❌ 测试失败：${err.message}`;
+        }
+    } finally {
+        speedFlag = false;
+        e.target.innerHTML = '开始测速';
+        e.target.style.backgroundColor = '';
     }
 }

@@ -521,6 +521,12 @@ li.dragging {
     margin-right: 4px;
 }
 
-.spin{
+.spin {
     animation: spin .4s linear infinite;
+}
+
+.speedtest {
+    white-space: pre-wrap;
+    padding: 0 10px;
+    border-left: 4px solid #2196F3;
 }
