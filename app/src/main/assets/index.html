@@ -164,14 +164,14 @@
                                     <td>B40</td>
                                     <td>2300</td>
                                     <td>TD-LTE</td>
-                                    <td>联通/电信</td>
+                                    <td>移动</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="4G" data-band="41"></td>
                                     <td>B41</td>
                                     <td>2500–2690</td>
                                     <td>TD-LTE</td>
-                                    <td>三大运营商</td>
+                                    <td>移动</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="5G" data-band="1"></td>
@@ -185,28 +185,28 @@
                                     <td>N5</td>
                                     <td>824–849 / 869–894</td>
                                     <td>FDD</td>
-                                    <td>中国电信</td>
+                                    <td>电信</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="5G" data-band="8"></td>
                                     <td>N8</td>
                                     <td>880–915 / 925–960</td>
                                     <td>FDD</td>
-                                    <td>中国移动</td>
+                                    <td>移动</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="5G" data-band="28"></td>
                                     <td>N28</td>
                                     <td>703–748 / 758–803</td>
                                     <td>FDD</td>
-                                    <td>中国广电</td>
+                                    <td>广电/移动</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="5G" data-band="41"></td>
                                     <td>N41</td>
                                     <td>2515–2675</td>
                                     <td>TDD</td>
-                                    <td>中国移动</td>
+                                    <td>移动</td>
                                 </tr>
                                 <tr>
                                     <td><input type="checkbox" data-type="5G" data-band="78"></td>
@@ -715,29 +715,28 @@
                 </div>
             </div>
             <!-- 网络测速模态框 -->
-            <div class="mask" id="speedTestModal" style="display: none">
-                <div class="modal">
-                    <div class="title">内网测速</div>
+            <div class="modal" id="speedTestModal" style="display: none">
+                <div class="title">内网测速</div>
 
-                    <div class="content" style="
-                        overflow-y: scroll;
-                        padding: 15px;
-                        width: 66vw;
-                        max-width: 400px;">
-                        <div class="item" style="margin: 10px auto;">
-                            <label style="
-                            display: flex;
-                            font-size: 14px;
-                            align-items: center;
-                        ">块大小(1个块儿1MB)：<input style="flex: 1;padding: 4px 6px;width: 100%;" value="500" id="ckSize" type="number"
-                                    placeholder=""></label>
-                        </div>
-                        <div class="speedtest" id="speedtestResult">准备就绪</div>
+                <div class="content" style="
+                    overflow-y: scroll;
+                    padding: 15px;
+                    width: 66vw;
+                    max-width: 400px;">
+                    <div class="item" style="margin: 10px auto;">
+                        <label style="
+                        display: flex;
+                        font-size: 14px;
+                        align-items: center;
+                    ">块大小(1MB 最大 1024)：<input style="flex: 1;padding: 4px 6px;width: 100%;" value="500" id="ckSize" type="number"
+                            max="1024" placeholder=""></label>
                     </div>
-                    <div class="btn" style="text-align: right;">
-                        <button onclick="startTest(event)">开始测速</button>
-                        <button type="button" onclick="closeModal('#speedTestModal')">关闭</button>
-                    </div>
+                    <div class="speedtest" id="speedtestResult">准备就绪</div>
+                </div>
+                <div class="btn" style="text-align: right;">
+                    <button id="startSpeedBtn" onclick="startTest(event)">开始测速</button>
+                    <button id="loopMode" onclick="handleLoopMode(event)">循环测速</button>
+                    <button type="button" onclick="closeModal('#speedTestModal')">关闭</button>
                 </div>
             </div>
         </div>

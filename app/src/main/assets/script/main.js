@@ -2609,3 +2609,24 @@ async function startTest(e) {
         e.target.style.backgroundColor = '';
     }
 }
+
+//无限测速
+let loopSpeedTestTimer = null
+const handleLoopMode = (e) => {
+    const speedTestButton = document.querySelector('#startSpeedBtn')
+    if (e.target.innerHTML == '循环测速') {
+        e.target.innerHTML = '停止循环'
+        loopSpeedTestTimer && loopSpeedTestTimer()
+        loopSpeedTestTimer = requestInterval(() => {
+            if (speedTestButton && speedTestButton.innerHTML == "开始测速") {
+                speedTestButton.click()
+            }
+        }, 10)
+    } else {
+        loopSpeedTestTimer && loopSpeedTestTimer()
+        if (speedTestButton && speedTestButton.innerHTML == "停止测速") {
+            speedTestButton.click()
+        }
+        e.target.innerHTML = '循环测速'
+    }
+}

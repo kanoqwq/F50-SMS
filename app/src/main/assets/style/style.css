@@ -504,7 +504,8 @@ li.dragging {
 }
 
 .drag li {
-    width: 100%;
+    width: 70%;
+    min-width: 150px;
     border-radius: 10px;
     background-color: var(--dark-bg-color);
     margin-bottom: 6px;
