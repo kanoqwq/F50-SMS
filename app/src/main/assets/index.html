@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title id="TITLE">ZTE-UFI-TOOLS-WEB</title>
     <link rel="stylesheet" href="/style/style.css">
+    <script src="/script/draglist.js"></script>
 </head>
 
 <body id="BG">
@@ -25,13 +26,14 @@
                 <div style="margin: 0 2px;margin-bottom: 10px;" class="collapse_box">
                     <div>
                         <button id="CLEAR" class="btn">登录/退出登录</button>
+                        <button id="CHANGEPWD" class="btn" onclick="createToast('请登录','red')">更改密码</button>
                         <button id="REBOOT" class="btn" onclick="createToast('请登录','red')">重启设备</button>
                         <button id="SCHEDULE_REBOOT" class="btn" onclick="createToast('请登录','red')">定时重启</button>
                         <button id="SHUTDOWN" style="display: none;" class="btn"
                             onclick="createToast('请登录','red')">关机</button>
                     </div>
                     <div>
-                        <button id="BG_SETTING" class="btn" onclick="createToast('请登录','red')">设置背景</button>
+                        <button id="BG_SETTING" class="btn" onclick="createToast('请登录','red')">主题背景</button>
                         <button id="SMS" class="btn">短信收发</button>
                         <button id="DataManagement" class="btn">流量管理</button>
                         <button id="ClientManagement" class="btn">连接设备管理</button>
@@ -55,19 +57,27 @@
                             <option value="1">RNDIS</option>
                             <option value="2">CDC-ECM</option>
                         </select>
+                        <select class="select" id="SIM_CARD_TYPE" style="display: none;" onchange="changeSimCard(event)">
+                            <option value="0">SIM卡1</option>
+                            <option value="1">SIM卡2</option>
+                        </select>
                     </div>
                 </div>
             </div>
             <!-- 状态 -->
             <div style="flex-shrink:0;margin-top: 0;width: 100%;">
-                <div class="title" style="margin: 6px 0 ;">
+                <div class="title" style="margin: 6px 0;">
                     <strong>基本状态</strong>
                     <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
                     <button id="REFRESH" class="btn" style="padding: 4px;margin-left: 10px;">停止刷新</button>
                 </div>
                 <ul class="deviceList" id="STATUS">
                     <li style="padding-top: 15px;">
-                        <strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong>
+                        <strong class="green"
+                            style="margin: 10px auto;margin-top: 0; display: flex;flex-direction: column;padding: 40px;">
+                            <span style="font-size: 50px;" class="spin">🌀</span>
+                            <span style="font-size: 16px;padding-top: 10px;">loading...</span>
+                        </strong>
                     </li>
                 </ul>
             </div>
@@ -305,7 +315,7 @@
                 </div>
             </div>
             <!-- 状态管理模态框 -->
-            <div id="dictionaryModal" class="modal" style="display: none;">
+            <div id="dictionaryModal" class="modal" style="display: none;width: 90%;max-width: 400px;">
                 <div class="title">状态显示/隐藏</div>
                 <p style="font-size: 12px;"><i>注：设备不支持/为空的状态无论是否勾选也不会显示</i></p>
                 <div class="content" id="DIC_LIST" style="
@@ -319,49 +329,63 @@
                 ">
                     <!-- 在这里管理字段显示 -->
                     <div class="title" style="margin: 10px 0;">基本状态</div>
-                    <label><input type="checkbox" data-name="network_type">蜂窝状态</label>
-                    <label><input type="checkbox" data-name="wifi_access_sta_num">WIFI设备数</label>
-                    <label><input type="checkbox" data-name="battery">剩余电量</label>
-                    <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label>
-                    <label><input type="checkbox" data-name="cpu_temp">CPU温度</label>
-                    <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label>
-                    <label><input type="checkbox" data-name="mem_usage">内存使用率</label>
-                    <label><input type="checkbox" data-name="realtime_time">连接时长</label>
-                    <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
-                    <label><input type="checkbox" data-name="daily_data">当日流量</label>
-                    <label><input type="checkbox" data-name="internal_available_storage">内置存储</label>
-                    <label><input type="checkbox" data-name="external_available_storage">SD卡</label>
-                    <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
+                    <ul class="drag" id="draggable_status">
+                        <li draggable="true"> <label><input type="checkbox" data-name="network_type">蜂窝状态</label></li>
+                        <li draggable="true"> <label><input type="checkbox"
+                                    data-name="wifi_access_sta_num">WIFI设备数</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="battery">剩余电量</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="cpu_temp">CPU温度</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="cpu_usage">CPU使用率</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="mem_usage">内存使用率</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="realtime_time">连接时长</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="monthly_tx_bytes">流量使用情况</label>
+                        </li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="daily_data">当日流量</label></li>
+                        <li draggable="true"> <label><input type="checkbox"
+                                    data-name="internal_available_storage">内置存储</label></li>
+                        <li draggable="true"> <label><input type="checkbox"
+                                    data-name="external_available_storage">SD卡</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="realtime_rx_thrpt">实时网速</label>
+                        </li>
+                    </ul>
 
                     <div class="title" style="margin: 10px 0;">信号参数</div>
-                    <label><input type="checkbox" data-name="Z5g_rsrp">5G接收功率</label>
-                    <label><input type="checkbox" data-name="Nr_snr">5G SINR</label>
-                    <label><input type="checkbox" data-name="Nr_bands">5G 注册频段</label>
-                    <label><input type="checkbox" data-name="Nr_fcn">5G 频点</label>
-                    <label><input type="checkbox" data-name="Nr_bands_widths">5G 频宽</label>
-                    <label><input type="checkbox" data-name="Nr_pci">5G PCI</label>
-                    <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label>
-                    <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label>
-                    <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label>
-                    <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label>
-                    <label><input type="checkbox" data-name="Lte_snr">4G SINR</label>
-                    <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label>
-                    <label><input type="checkbox" data-name="Lte_fcn">4G 频点</label>
-                    <label><input type="checkbox" data-name="Lte_bands_widths">4G 频宽</label>
-                    <label><input type="checkbox" data-name="Lte_pci">4G PCI</label>
-                    <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label>
-                    <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label>
-                    <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label>
+                    <ul class="drag" id="draggable_signal">
+                        <li draggable="true"> <label><input type="checkbox" data-name="Z5g_rsrp">5G接收功率</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_snr">5G SINR</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_bands">5G 注册频段</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_fcn">5G 频点</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_bands_widths">5G 频宽</label>
+                        </li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_pci">5G PCI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_snr">4G SINR</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_fcn">4G 频点</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_bands_widths">4G 频宽</label>
+                        </li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_pci">4G PCI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label></li>
+                    </ul>
                     <div class="title" style="margin: 10px 0;">设备属性</div>
-                    <label><input type="checkbox" data-name="model">设备型号</label>
-                    <label><input type="checkbox" data-name="cr_version">版本号</label>
-                    <label><input type="checkbox" data-name="iccid">ICCID</label>
-                    <label><input type="checkbox" data-name="imei">IMEI</label>
-                    <label><input type="checkbox" data-name="imsi">IMSI</label>
-                    <label><input type="checkbox" data-name="ipv6_wan_ipaddr">IPV6地址</label>
-                    <label><input type="checkbox" data-name="lan_ipaddr">本地网关</label>
-                    <label><input type="checkbox" data-name="mac_address">MAC地址</label>
-                    <label><input type="checkbox" data-name="msisdn">手机号</label>
+                    <ul class="drag" id="draggable_props">
+                        <li draggable="true"> <label><input type="checkbox" data-name="model">设备型号</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="cr_version">版本号</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="iccid">ICCID</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="imei">IMEI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="imsi">IMSI</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="ipv6_wan_ipaddr">IPV6地址</label>
+                        </li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="lan_ipaddr">本地网关</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="mac_address">MAC地址</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="msisdn">手机号</label></li>
+                    </ul>
                 </div>
                 <div class="btn" style="text-align: right;">
                     <button onclick="resetShowList(event)">重置(全选)</button>
@@ -450,7 +474,7 @@
                 <div class="modal">
                     <div class="title" style="margin-bottom: 4px;">WIFI设置</div>
                     <form onsubmit="handleWIFIManagementFormSubmit(event)" id="WIFIManagementForm">
-                        <div class="content" id="DATA_MANAGE_LIST" style="
+                        <div class="content" style="
                         overflow-y: scroll;
                         padding: 10px;
                         width: 66vw;
@@ -635,7 +659,8 @@
                                 <button class="btn"
                                     onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
                                 <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录为 /</button>
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录为
+                                    /</button>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
@@ -648,11 +673,48 @@
                     </div>
                 </div>
             </div>
+            <!-- 更改密码模态框 -->
+            <div class="mask" id="changePassModal" style="display: none">
+                <div class="modal">
+                    <div class="title">更改密码</div>
+                    <form onsubmit="handleChangePassword(event)" id="changePassForm">
+                        <div class="content" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">旧的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="oldPassword" type="password" placeholder="旧密码"></label>
+                            </div>
+                            <div class="item"  style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">新的密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="newPassword" type="password" placeholder="新密码"></label>
+                            </div>
+                            <div class="item"  style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">确认密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" name="confirmPassword" type="password" placeholder="确认密码"></label>
+                            </div>
+                        </div>
+                        <div class="btn" style="text-align: right;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="onCloseChangePassForm()">关闭</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     <div class="footer">
         <p>Made by <a href="https://github.com/kanoqwq" target="_blank">MiniKano</a> with love ❤️</p>
     </div>
+    <script src="/script/utils.js"></script>
     <script src="/script/requests.js"></script>
     <script src="/script/main.js"></script>
 </body>

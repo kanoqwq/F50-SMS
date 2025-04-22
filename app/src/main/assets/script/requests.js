@@ -2,14 +2,14 @@ function SHA256(e) { function t(e, t) { var n = (65535 & e) + (65535 & t); retur
 function gsmEncode(text) { function encodeText(text) { let encoded = []; for (let i = 0; i < text.length; i++) { const char = text[i]; const codePoint = char.codePointAt(0); if (codePoint <= 0xFFFF) { encoded.push((codePoint >> 8) & 0xFF); encoded.push(codePoint & 0xFF) } else { const highSurrogate = 0xD800 + ((codePoint - 0x10000) >> 10); const lowSurrogate = 0xDC00 + ((codePoint - 0x10000) & 0x3FF); encoded.push((highSurrogate >> 8) & 0xFF); encoded.push(highSurrogate & 0xFF); encoded.push((lowSurrogate >> 8) & 0xFF); encoded.push(lowSurrogate & 0xFF) } } return encoded } function toHexString(byteArray) { return byteArray.map(byte => byte.toString(16).padStart(2, '0')).join('') } const encodedBytes = encodeText(text); return toHexString(encodedBytes) }
 
 //注意，如果是在f50本机内发起请求，请将请求端口更改为8080
-let KANO_baseURL = ''
+let KANO_baseURL = '/api'
 let KANO_PASSWORD = null
 
 //登录
 const common_headers = {
-    "referer": '/api' + KANO_baseURL + '/index.html',
+    "referer": KANO_baseURL + '/index.html',
     "host": KANO_baseURL,
-    "origin": '/api' + KANO_baseURL,
+    "origin": KANO_baseURL,
 }
 
 const login = async () => {
@@ -25,7 +25,7 @@ const login = async () => {
             "password": pwd,
             "user": "admin"
         })
-        const res = await fetch("/api" + KANO_baseURL + "/goform/goform_set_cmd_process", {
+        const res = await fetch(KANO_baseURL + "/goform/goform_set_cmd_process", {
             method: "POST",
             headers: {
                 ...common_headers,
@@ -51,7 +51,7 @@ const logout = async (cookie) => {
         "isTest": "false",
         AD: AD
     })
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_set_cmd_process", {
+    const res = await fetch(KANO_baseURL + "/goform/goform_set_cmd_process", {
         method: "POST",
         headers: {
             ...common_headers,
@@ -64,7 +64,7 @@ const logout = async (cookie) => {
 }
 
 const getLD = async () => {
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=LD&_=" + Date.now(), {
+    const res = await fetch(KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=LD&_=" + Date.now(), {
         method: "GET",
         headers: {
             ...common_headers,
@@ -73,10 +73,9 @@ const getLD = async () => {
     return await res.json()
 }
 
-
 const getRD = async (cookie) => {
     if (!cookie) throw new Error('请提供cookie')
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=RD&_=" + Date.now(), {
+    const res = await fetch(KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=RD&_=" + Date.now(), {
         method: "GET",
         headers: {
             ...common_headers,
@@ -87,7 +86,7 @@ const getRD = async (cookie) => {
 }
 
 const getUFIInfo = async () => {
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=Language,cr_version,wa_inner_version&multi_data=1&_=" + Date.now(), {
+    const res = await fetch(KANO_baseURL + "/goform/goform_get_cmd_process?isTest=false&cmd=Language,cr_version,wa_inner_version&multi_data=1&_=" + Date.now(), {
         method: "GET",
         headers: {
             ...common_headers
@@ -112,7 +111,7 @@ const postData = async (cookie, data = {}) => {
         isTest: false,
         "AD": AD
     })
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_set_cmd_process", {
+    const res = await fetch(KANO_baseURL + "/goform/goform_set_cmd_process", {
         method: "POST",
         headers: {
             ...common_headers,
@@ -124,10 +123,11 @@ const postData = async (cookie, data = {}) => {
     })
     return res
 }
+
 const getData = async (data = new URLSearchParams({})) => {
     data.append('isTest', 'false')
     data.append('_', Date.now())
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_get_cmd_process?" + data.toString(), {
+    const res = await fetch(KANO_baseURL + "/goform/goform_get_cmd_process?" + data.toString(), {
         method: "GET",
         headers: {
             ...common_headers,
@@ -175,7 +175,7 @@ const removeSmsById = async (id) => {
 const getSmsInfo = async () => {
     const params = new URLSearchParams()
     params.append('_', Date.now().toString())
-    const res = await fetch("/api" + KANO_baseURL + "/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=sms_data_total&page=0&data_per_page=500&mem_store=1&tags=100&order_by=order by id desc&" + params, {
+    const res = await fetch(KANO_baseURL + "/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=sms_data_total&page=0&data_per_page=500&mem_store=1&tags=100&order_by=order by id desc&" + params, {
         headers: {
             ...common_headers
         }
@@ -193,7 +193,7 @@ const getUFIData = async () => {
 
         const cmd = 'battery_value,battery_vol_percent,network_signalbar,network_rssi,cr_version,iccid,imei,imsi,ipv6_wan_ipaddr,lan_ipaddr,mac_address,msisdn,network_information,Lte_ca_status,rssi,Z5g_rsrp,lte_rsrp,wifi_access_sta_num,loginfo,data_volume_alert_percent,data_volume_limit_size,realtime_rx_thrpt,realtime_tx_thrpt,realtime_time,monthly_tx_bytes,monthly_rx_bytes,monthly_time,network_type,network_provider,ppp_status';
 
-        const res = await fetch(`/api${KANO_baseURL}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=${cmd}&${params.toString()}`, {
+        const res = await fetch(`${KANO_baseURL}/goform/goform_get_cmd_process?multi_data=1&isTest=false&cmd=${cmd}&${params.toString()}`, {
             headers: {
                 ...common_headers
             },
@@ -203,21 +203,21 @@ const getUFIData = async () => {
         //获取CPU温度，整合（如果有）
         let cpu_t = null
         try {
-            const { temp } = await (await fetch('/api/temp')).json()
+            const { temp } = await (await fetch(`${KANO_baseURL}/temp`)).json()
             cpu_t = temp
         } catch {/*没有，不处理*/ }
 
         //获取CPU使用，整合（如果有）
         let cpu_u = null
         try {
-            const { cpu } = await (await fetch('/api/cpu')).json()
+            const { cpu } = await (await fetch(`${KANO_baseURL}/cpu`)).json()
             cpu_u = cpu
         } catch {/*没有，不处理*/ }
 
         //获取内存使用，整合（如果有）
         let mem_u = null
         try {
-            const { mem } = await (await fetch('/api/mem')).json()
+            const { mem } = await (await fetch(`${KANO_baseURL}/mem`)).json()
             mem_u = mem
         } catch {/*没有，不处理*/ }
 
@@ -225,7 +225,7 @@ const getUFIData = async () => {
         let battery = null
         let model = null
         try {
-            let battery_res = await (await fetch('/api/battery_and_model')).json()
+            let battery_res = await (await fetch(`${KANO_baseURL}/battery_and_model`)).json()
             battery = battery_res.battery
             model = battery_res.model
         } catch {/*没有，不处理*/ }
@@ -239,7 +239,7 @@ const getUFIData = async () => {
         let external_used_storage = null
         let external_total_storage = null
         try {
-            const res = await (await fetch('/api/storage_and_dailyData')).json()
+            const res = await (await fetch(`${KANO_baseURL}/storage_and_dailyData`)).json()
             daily_data = res.daily_data
             internal_available_storage = res.internal_available_storage
             internal_total_storage = res.internal_total_storage

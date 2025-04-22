@@ -148,7 +148,7 @@ class ShellKano {
                     Log.d("kano_ZTE_LOG", "输入文本：$inputText")
                     inputClicked = true
                     if(escapedInput.length>20){
-                        Thread.sleep(400) // 稍等输入完毕
+                        Thread.sleep(500) // 稍等输入完毕
                     }
                     break
                 }

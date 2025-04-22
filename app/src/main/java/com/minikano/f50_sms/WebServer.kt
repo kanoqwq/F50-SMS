@@ -28,7 +28,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Calendar
 
-
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
@@ -96,7 +95,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         //内存使用率
         if (method == "GET" && uri == "/mem") {
             return try {
-                val info = ShellKano.runShellCommand("cat /proc/meminfo") ?: throw Exception("没有info")
+                val info = runShellCommand("cat /proc/meminfo") ?: throw Exception("没有info")
                 val usage = parseMeminfo(info)
                 Log.d("kano_ZTE_LOG", "内存使用率：%.2f%%".format(usage * 100))
                 val response = newFixedLengthResponse(
