@@ -28,6 +28,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.SecureRandom
 import java.util.Calendar
+import java.util.Random
 
 class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
 
@@ -505,52 +506,75 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
         //测速
         // from https://github.com/bg6cq/speedtest/blob/master/backend/garbage.php
-        if (method == "GET" && uri == "/speedtest"){
-           return try{
+        // 优化后的测速接口
+        if (method == "GET" && uri == "/speedtest") {
+            return try {
                 val parms = session?.parameters ?: throw Exception("缺少 query 参数")
                 val ckSize = getChunkCount(parms["ckSize"]?.firstOrNull())
                 val enableCors = parms.containsKey("cors")
 
-               // Headers
-               val headers = mutableMapOf<String, String>()
-               if (enableCors) {
-                   headers["Access-Control-Allow-Origin"] = "*"
-                   headers["Access-Control-Allow-Methods"] = "GET, POST"
-               }
+                // Headers
+                val headers = mutableMapOf<String, String>()
+                if (enableCors) {
+                    headers["Access-Control-Allow-Origin"] = "*"
+                    headers["Access-Control-Allow-Methods"] = "GET, POST"
+                }
 
-               headers["Content-Description"] = "File Transfer"
-               headers["Content-Type"] = "application/octet-stream"
-               headers["Content-Disposition"] = "attachment; filename=random.dat"
-               headers["Content-Transfer-Encoding"] = "binary"
-               headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
-               headers["Pragma"] = "no-cache"
+                headers["Content-Description"] = "File Transfer"
+                headers["Content-Type"] = "application/octet-stream"
+                headers["Content-Disposition"] = "attachment; filename=random.dat"
+                headers["Content-Transfer-Encoding"] = "binary"
+                headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+                headers["Pragma"] = "no-cache"
 
-               // 构造一个 InputStream，分多次生成 1MB 数据
-               val stream = object : InputStream() {
-                   private var chunksSent = 0
-                   private var bufferPos = 0
-                   private var buffer = ByteArray(oneMB)
+                val chunkSizeBytes = 1024 * 1024  // 每个chunk 1MB
+                val totalChunks = ckSize
 
-                   override fun read(): Int {
-                       if (chunksSent >= ckSize) return -1
+                // 预生成一个随机1MB buffer
+                val fixedBuffer = ByteArray(chunkSizeBytes).apply {
+                    Random().nextBytes(this)
+                }
 
-                       if (bufferPos >= buffer.size) {
-                           // 新的一块
-                           random.nextBytes(buffer)
-                           bufferPos = 0
-                           chunksSent++
-                       }
+                // 构造高效输出流
+                val stream = object : InputStream() {
+                    private var chunksSent = 0
+                    private var bufferPos = 0
 
-                       return buffer[bufferPos++].toInt() and 0xFF
-                   }
-               }
+                    override fun read(b: ByteArray, off: Int, len: Int): Int {
+                        if (chunksSent >= totalChunks) return -1
 
-               val response = newChunkedResponse(Response.Status.OK, "application/octet-stream", stream)
+                        val bytesRemaining = chunkSizeBytes - bufferPos
+                        val bytesToCopy = minOf(len, bytesRemaining)
 
-               headers.forEach { (k, v) -> response.addHeader(k, v) }
+                        System.arraycopy(fixedBuffer, bufferPos, b, off, bytesToCopy)
+                        bufferPos += bytesToCopy
 
-               return response
-            } catch(e:Exception) {
+                        if (bufferPos >= chunkSizeBytes) {
+                            chunksSent++
+                            bufferPos = 0
+                        }
+
+                        return bytesToCopy
+                    }
+
+                    override fun read(): Int {
+                        // fallback 单字节读取，仍然使用已有buffer
+                        if (chunksSent >= totalChunks) return -1
+                        val byteValue = fixedBuffer[bufferPos++].toInt() and 0xFF
+                        if (bufferPos >= chunkSizeBytes) {
+                            bufferPos = 0
+                            chunksSent++
+                        }
+                        return byteValue
+                    }
+                }
+
+                val response = newChunkedResponse(Response.Status.OK, "application/octet-stream", stream)
+
+                headers.forEach { (k, v) -> response.addHeader(k, v) }
+
+                response
+            } catch (e: Exception) {
                 Log.d("kano_ZTE_LOG", "测速出错： ${e.message}")
                 val response = newFixedLengthResponse(
                     Response.Status.INTERNAL_ERROR,

@@ -2613,6 +2613,10 @@ async function startTest(e) {
 //无限测速
 let loopSpeedTestTimer = null
 const handleLoopMode = (e) => {
+    if (!initRequestData()) {
+        createToast('请登录', 'red')
+        return null
+    }
     const speedTestButton = document.querySelector('#startSpeedBtn')
     if (e.target.innerHTML == '循环测速') {
         e.target.innerHTML = '停止循环'
