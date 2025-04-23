@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "F50-SMS"
+rootProject.name = "UFI-TOOLS"
 include(":app")
