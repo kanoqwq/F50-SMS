@@ -16,9 +16,9 @@
 * **3G/4G/5G 网络切换**
 * **其他未来会继续更新功能**
 
+|   ![](img/1.png)   |   ![](img/2.png)   |
+| ---- | ---- |
 
-![](https://kanokano.cn/wp-content/uploads/2025/04/33765df57d9acefe785d6b86974fdd3e.webp)
-![](https://kanokano.cn/wp-content/uploads/2025/04/2e3b22b558b52cee342bfd292ad061e2.webp)
 
 
 
