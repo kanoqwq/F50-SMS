@@ -271,18 +271,25 @@ function notNullOrundefinedOrIsShow(obj, dicName, flag = false) {
 const onTokenConfirm = debounce(async () => {
     try {
         let tkInput = document.querySelector('#tokenInput')
+        let tokenInput = document.querySelector('#TOKEN')
         let password = tkInput && (tkInput.value)
+        let token = tokenInput && (tokenInput.value)
         if (!password || !password?.trim()) return createToast('请输入密码！', 'red')
+        if (!token || !token?.trim()) return createToast('请输入token！', 'red')
         KANO_PASSWORD = password.trim()
+        KANO_TOKEN = token.trim()
+        common_headers.authorization = KANO_TOKEN
         const cookie = await login()
         if (!cookie) {
-            createToast(`登录失败，请检查密码和网络！`, 'red')
+            createToast(`登录失败，请检查token密码和网络！`, 'red')
             tkInput.value = ''
+            tokenInput.value = ''
             out()
             return null
         }
         createToast('登录成功！', 'green')
         localStorage.setItem('kano_sms_pwd', password.trim())
+        localStorage.setItem('kano_sms_token', token.trim())
 
         closeModal('#tokenModal')
         handlerADBStatus()
@@ -320,9 +327,12 @@ function out() {
 
 let initRequestData = () => {
     const PWD = localStorage.getItem('kano_sms_pwd')
-    if (!PWD) {
+    const TOKEN = localStorage.getItem('kano_sms_token')
+    if (!PWD || !TOKEN) {
         return false
     }
+    KANO_TOKEN = TOKEN
+    common_headers.authorization = KANO_TOKEN
     KANO_PASSWORD = PWD
     return true
 }
@@ -473,9 +483,16 @@ let handleSmsRender = async () => {
 
 
 let StopStatusRenderTimer = null
+let isNotLoginOnce = true
 let handlerStatusRender = async (flag = false) => {
     const status = document.querySelector('#STATUS')
     if (flag) {
+        const TOKEN = localStorage.getItem('kano_sms_token')
+        if (!TOKEN) {
+            return false
+        }
+        KANO_TOKEN = TOKEN
+        common_headers.authorization = KANO_TOKEN
         status.innerHTML = `
         <li style="padding-top: 15px;">
             <strong class="green" style="margin: 10px auto;margin-top: 0; display: flex;flex-direction: column;padding: 40px;">
@@ -489,16 +506,17 @@ let handlerStatusRender = async (flag = false) => {
         // out()
         if (flag) {
             status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
-            createToast('获取数据失败，请检查网络！', 'red')
-            setTimeout(() => {
-                try {
-                    KANO_INTERFACE && KANO_INTERFACE.exit()
-                } catch { }
-            }, 3000);
+            createToast('获取数据失败，请检查网络和密码！', 'red')
+        }
+        if ((!KANO_TOKEN || !common_headers.authorization) && isNotLoginOnce) {
+            status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
+            createToast('登录后获取数据', 'pink')
+            isNotLoginOnce = false
         }
         return
     }
     if (res) {
+        isNotLoginOnce = false
         const current_cell = document.querySelector('#CURRENT_CELL')
         let html = ''
 
@@ -656,7 +674,8 @@ let handlerADBNetworkStatus = async () => {
     let res = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json'
+            ...common_headers,
+            'Content-Type': 'application/json',
         }
     })).json()
 
@@ -674,6 +693,7 @@ let handlerADBNetworkStatus = async () => {
             let res1 = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
                 method: 'POST',
                 headers: {
+                    ...common_headers,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -759,6 +779,9 @@ clearBtn.onclick = () => {
     isFirstRender = true
     lastRequestSmsIds = null
     localStorage.removeItem('kano_sms_pwd')
+    localStorage.removeItem('kano_sms_token')
+    KANO_TOKEN = null
+    common_headers.authorization = null
     handlerADBStatus()
     handlerADBNetworkStatus()
     handlerPerformaceStatus()
@@ -777,7 +800,7 @@ clearBtn.onclick = () => {
     initSimCardType()
     //退出登录请求
     try {
-        login().then(cookie => {
+        login().finally(cookie => {
             logout(cookie)
         })
     } catch { }
@@ -1984,7 +2007,7 @@ handlerCecullarStatus()
 // title
 const loadTitle = async () => {
     try {
-        const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`)).json()
+        const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
         document.querySelector('#TITLE').innerHTML = "ZTE-UFI-TOOLS-WEB Ver: " + app_ver
         document.querySelector('#MAIN_TITLE').innerHTML = "ZTE-UFI管理工具 Ver: " + app_ver
     } catch {/*没有，不处理*/ }
@@ -2201,6 +2224,7 @@ let initTTYD = async () => {
         TTYD_INPUT && (TTYD_INPUT.value = port)
         const res = await (await fetch(`${KANO_baseURL}/hasTTYD?port=${port}`, {
             method: "get",
+            headers: common_headers
         })).json()
         if (res.code !== '200') {
             TTYD.style.display = 'none'
@@ -2251,7 +2275,7 @@ let handleTTYDFormSubmit = (e) => {
 const executeATCommand = async (command) => {
     try {
         const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}`)).json()
+        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}`, { headers: common_headers })).json()
         return res
     } catch (e) {
         return null
@@ -2422,7 +2446,7 @@ const handleSambaPath = async (command = '/') => {
     AT_RESULT.innerHTML = "执行中,请耐心等待..."
     try {
         const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`)).json()
+        const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
         if (res) {
             if (res.error) {
                 AT_RESULT.innerHTML = res.error;
@@ -2599,7 +2623,7 @@ async function startTest(e) {
     let lastBytes = 0;
 
     try {
-        const res = await fetch(url, { signal: speedSignal });
+        const res = await fetch(url, { signal: speedSignal, headers: { ...common_headers } });
         const reader = res.body.getReader();
 
         while (true) {

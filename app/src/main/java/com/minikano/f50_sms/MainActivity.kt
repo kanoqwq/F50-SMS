@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.app.ActivityCompat
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
+    private val PREF_LOGIN_TOKEN = "login_token"
     private val serverStatusLiveData = MutableLiveData<Boolean>()
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
@@ -116,6 +118,15 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            var loginToken by remember {
+                mutableStateOf(
+                    sharedPrefs.getString(
+                        PREF_LOGIN_TOKEN,
+                        "admin"
+                    ) ?: "admin"
+                )
+            }
+
             if (isServerRunning) {
                 ServerUI(
                     serverAddress = "http://localhost:$port",
@@ -131,10 +142,13 @@ class MainActivity : ComponentActivity() {
                 InputUI(
                     gatewayIp = gatewayIp,
                     onGatewayIpChange = { gatewayIp = it },
+                    loginToken = loginToken,
                     versionName = versionName ?: "未知" ,
+                    onLoginTokenChange = { loginToken = it },
                     onConfirm = {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
+                        sharedPrefs.edit().putString(PREF_LOGIN_TOKEN, loginToken).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                         serverStatusLiveData.postValue(true)
                         Log.d("kano_ZTE_LOG", "user touched start btn")
@@ -185,7 +199,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit, onConfirm: () -> Unit,versionName:String) {
+fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit,
+            loginToken:String, onLoginTokenChange: (String) -> Unit,
+            onConfirm: () -> Unit,versionName:String
+) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Card(
             shape = RoundedCornerShape(16.dp), // 圆角
@@ -209,6 +226,18 @@ fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit, onConfirm: (
                     label = { Text("路由器管理 IP") },
                     singleLine = true
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 登录口令输入框
+                OutlinedTextField(
+                    value = loginToken,
+                    onValueChange = onLoginTokenChange,
+                    label = { Text("登录口令(默认admin)") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation() // 可隐藏口令
+                )
+
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onConfirm) {
                     Text("启动服务")

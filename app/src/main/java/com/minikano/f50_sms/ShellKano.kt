@@ -9,10 +9,17 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
 
 class ShellKano {
     companion object {
+
+        fun sha256(input: String): String {
+            val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
+            return bytes.joinToString("") { "%02x".format(it) }
+        }
+
         fun runShellCommand(command: String?): String? {
             val output = StringBuilder()
             try {

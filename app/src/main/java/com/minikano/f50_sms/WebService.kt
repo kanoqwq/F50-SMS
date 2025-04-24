@@ -1,5 +1,6 @@
 package com.minikano.f50_sms
 
+import android.R.attr.start
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,8 +14,8 @@ import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import java.io.File
-import java.io.FileOutputStream
+import fi.iki.elonen.NanoHTTPD.SOCKET_READ_TIMEOUT
+import java.io.IOException
 
 
 class WebService : Service() {
@@ -56,7 +57,7 @@ class WebService : Service() {
                     Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
                 }
             }
-
+            Thread.sleep(500)
             try{
                 val sharedPrefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -93,7 +94,9 @@ class WebService : Service() {
                 Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行错误：${e.message}")
                 e.printStackTrace()
             }
+
             Thread.sleep(5000)
+
             try{
                 Log.d("kano_ZTE_LOG", "adb服务正在启动。。。")
                 val res_adb = ShellKano.executeShellFromAssetsSubfolderWithArgs(

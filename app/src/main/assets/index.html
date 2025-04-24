@@ -281,12 +281,14 @@
             <!-- 登录模态框 -->
             <div class="mask" id="tokenModal" style="display: none;">
                 <div class="modal">
-                    <div class="title">请输入密码</div>
+                    <div class="title">请输入口令与密码</div>
                     <div class="content"
                         style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
                         <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
                             style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
-                        <input id="tokenInput" placeholder="管理密码" type="password" value=""
+                        <input id="TOKEN" placeholder="APP设置的口令" type="password"
+                            style="text-indent: .5em;margin:0 4px;margin-bottom: 10px;height: 30px;">
+                        <input id="tokenInput" placeholder="管理密码" type="password"
                             style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
                     </div>
                     <div class="btn" style="text-align: right;">
@@ -686,7 +688,7 @@
                                 <button class="btn"
                                     onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
                                 <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录/临时ROOT</button>
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录/临时ROOT<br />(完成后手动点击重新启用SMB)</button>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
@@ -702,7 +704,7 @@
             <!-- 更改密码模态框 -->
             <div class="mask" id="changePassModal" style="display: none">
                 <div class="modal">
-                    <div class="title">更改密码</div>
+                    <div class="title">更改密码(中兴WEB密码)</div>
                     <form onsubmit="handleChangePassword(event)" id="changePassForm">
                         <div class="content" style="
                         overflow-y: scroll;

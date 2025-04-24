@@ -4,12 +4,15 @@ function gsmEncode(text) { function encodeText(text) { let encoded = []; for (le
 //注意，如果是在f50本机内发起请求，请将请求端口更改为8080
 let KANO_baseURL = '/api'
 let KANO_PASSWORD = null
+let KANO_TOKEN = null
+// 'mysecrettoken'
 
 //登录
 const common_headers = {
     "referer": KANO_baseURL + '/index.html',
     "host": KANO_baseURL,
     "origin": KANO_baseURL,
+    "authorization": KANO_TOKEN
 }
 
 const login = async () => {
@@ -165,7 +168,7 @@ const removeSmsById = async (id) => {
     const res = await postData(cookie, {
         goformId: 'DELETE_SMS',
         msg_id: id,
-        notCallback: true
+        notCallback: true,
     })
     await logout(cookie)
     return await res.json()
@@ -203,21 +206,21 @@ const getUFIData = async () => {
         //获取CPU温度，整合（如果有）
         let cpu_t = null
         try {
-            const { temp } = await (await fetch(`${KANO_baseURL}/temp`)).json()
+            const { temp } = await (await fetch(`${KANO_baseURL}/temp`, { headers: { ...common_headers } })).json()
             cpu_t = temp
         } catch {/*没有，不处理*/ }
 
         //获取CPU使用，整合（如果有）
         let cpu_u = null
         try {
-            const { cpu } = await (await fetch(`${KANO_baseURL}/cpu`)).json()
+            const { cpu } = await (await fetch(`${KANO_baseURL}/cpu`, { headers: { ...common_headers } })).json()
             cpu_u = cpu
         } catch {/*没有，不处理*/ }
 
         //获取内存使用，整合（如果有）
         let mem_u = null
         try {
-            const { mem } = await (await fetch(`${KANO_baseURL}/mem`)).json()
+            const { mem } = await (await fetch(`${KANO_baseURL}/mem`, { headers: { ...common_headers } })).json()
             mem_u = mem
         } catch {/*没有，不处理*/ }
 
@@ -225,7 +228,7 @@ const getUFIData = async () => {
         let battery = null
         let model = null
         try {
-            let battery_res = await (await fetch(`${KANO_baseURL}/battery_and_model`)).json()
+            let battery_res = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: { ...common_headers } })).json()
             battery = battery_res.battery
             model = battery_res.model
         } catch {/*没有，不处理*/ }
@@ -239,7 +242,7 @@ const getUFIData = async () => {
         let external_used_storage = null
         let external_total_storage = null
         try {
-            const res = await (await fetch(`${KANO_baseURL}/storage_and_dailyData`)).json()
+            const res = await (await fetch(`${KANO_baseURL}/storage_and_dailyData`, { headers: { ...common_headers } })).json()
             daily_data = res.daily_data
             internal_available_storage = res.internal_available_storage
             internal_total_storage = res.internal_total_storage
@@ -282,7 +285,8 @@ function fetchWithTimeout(url = '', options = {}, timeout = 10000) {
     const tid = setTimeout(() => controller.abort(), timeout);
     return fetch(url, {
         ...options,
-        signal: controller.signal
+        signal: controller.signal,
+        headers: { ...common_headers }
     })
         .then(response => {
             // 处理响应

@@ -49,6 +49,10 @@ a {
     color: pink;
 }
 
+input::placeholder {
+    color: var(--dark-text-color);
+}
+
 .h100 {
     height: 100%;
 }
@@ -334,6 +338,7 @@ input {
     font-size: 14px;
     border-radius: 6px;
     text-align: center;
+    border-color: #ffc0cb7a;
 }
 
 .nice-table {

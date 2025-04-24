@@ -18,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStreamWriter
@@ -26,7 +25,6 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.SecureRandom
 import java.util.Calendar
 import java.util.Random
 
@@ -35,29 +33,31 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
     private val targetServerIP = gatewayIp  // 目标服务器地址
     private val PREFS_NAME = "kano_ZTE_store"
-
-    private val oneMB = 1024 * 1024
-    private val random = SecureRandom()
-    private val randomBlock = ByteArray(oneMB).also {
-        random.nextBytes(it)
-    }
-    private fun getChunkCount(param: String?): Int {
-        val default = 4
-        val max = 1024
-
-        return param?.toIntOrNull()?.let {
-            when {
-                it <= 0 -> default
-                it > max -> max
-                else -> it
-            }
-        } ?: default
-    }
-
+    private val PREF_LOGIN_TOKEN = "login_token"
 
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
+        val sharedPrefsForToken = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val auth_token = sharedPrefsForToken.getString(PREF_LOGIN_TOKEN,"admin")
+        try {
+
+            if(session?.uri != null && session.uri.contains("/api")){
+                // 获取请求头
+                val headers = session.headers ?: throw Exception("401")
+                val authHeader = headers["authorization"]
+                if (authHeader != auth_token) {
+                   throw Exception("401")
+                }
+            }
+        } catch (e:Exception){
+            return newFixedLengthResponse(
+                Response.Status.UNAUTHORIZED,
+                MIME_PLAINTEXT,
+                "401 Unauthorized"
+            )
+        }
+
         //cpu温度
         if (method == "GET" && uri == "/temp") {
             return try {
@@ -309,6 +309,23 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val fileName_smb = File("shell/smb.conf").name
                     val outFile_smb = File(context_app.getExternalFilesDir(null), fileName_smb)
 
+                    //ttyd
+                    val ttyd = assetManager.open("shell/ttyd")
+                    val fileName_ttyd = File("shell/ttyd").name
+                    val outFile_ttyd = File(context_app.cacheDir, fileName_ttyd)
+
+                    //复制ttyd到context_app.cacheDir
+                    try {
+                        ttyd.use { input ->
+                            FileOutputStream(outFile_ttyd).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_ttyd.absolutePath} 成功")
+                    } catch (e: Exception) {
+                        Log.e("kano_ZTE_LOG", "复制失败：${e.message}")
+                    }
+
                     //复制smb到外部存储
                     try {
                         smb.use { input ->
@@ -332,8 +349,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                         Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
                     }
 
-
                     outFile_adb.setExecutable(true)
+                    outFile_ttyd.setExecutable(true)
+
                     Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
                     Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
@@ -345,8 +363,12 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Thread.sleep(1000)//小睡一下
 
                     //复制smb到sdcard
-                    val smb_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",context_app)?:throw Exception("工程模式活动打开失败")
+                    val smb_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",context_app)?:throw Exception("smb复制到sd卡失败")
                     Log.d("kano_ZTE_LOG", "执行：${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res")
+
+                    //复制ttyd到sdcard
+                    val ttyd_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",context_app)?:throw Exception("ttyd复制到sd卡失败")
+                    Log.d("kano_ZTE_LOG", "执行：${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res")
 
 
                     fun click_stage1(){
@@ -386,7 +408,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     var jsonResult = """{"result":"执行成功"}"""
                     try {
                         val escapedCommand =
-                            "toybox cp /sdcard/${outFile_smb.name} /data/samba/etc/smb.conf".replace(
+                            "toybox cp /sdcard/${outFile_smb.name} /data/samba/etc/".replace(
                                 "\"",
                                 "\\\""
                             )
@@ -586,21 +608,6 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
         }
 
-        fun getStatusCode(urlStr: String): Int {
-            val url = URL(urlStr)
-            val connection = url.openConnection() as HttpURLConnection
-            return try {
-                connection.requestMethod = "GET"
-                connection.connect()
-                connection.responseCode // 返回状态码
-            } catch (e: Exception) {
-                e.printStackTrace()
-                -1 // 表示请求失败
-            } finally {
-                connection.disconnect()
-            }
-        }
-
         //判断是否存在TTYD
         if (method == "GET" && uri == "/hasTTYD") {
             return try {
@@ -773,10 +780,39 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         }
     }
 
+
+    private fun getChunkCount(param: String?): Int {
+        val default = 4
+        val max = 1024
+
+        return param?.toIntOrNull()?.let {
+            when {
+                it <= 0 -> default
+                it > max -> max
+                else -> it
+            }
+        } ?: default
+    }
+
     // 静态文件处理逻辑
     // 添加一个变量保存 context 的 assets
     private val assetManager = context.assets
     private val context_app = context
+
+    fun getStatusCode(urlStr: String): Int {
+        val url = URL(urlStr)
+        val connection = url.openConnection() as HttpURLConnection
+        return try {
+            connection.requestMethod = "GET"
+            connection.connect()
+            connection.responseCode // 返回状态码
+        } catch (e: Exception) {
+            e.printStackTrace()
+            -1 // 表示请求失败
+        } finally {
+            connection.disconnect()
+        }
+    }
 
     //获取电池电量
     private fun getBatteryPercentage(): Int {
