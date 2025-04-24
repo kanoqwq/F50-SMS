@@ -591,18 +591,43 @@
                 </div>
             </div>
             <!-- 设置背景模态框 -->
-            <div class="mask" id="bgSettingModal" style="display: none">
-                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
-                    <div class="title" style="margin-bottom: 4px;">主题背景设置</div>
-                    <div style="text-align: left: ;;">
-                        <p><label>启用自定义背景？<input type="checkbox" id="isCheckedBG"></label></p>
-                        <p>图片网址：<input placeholder="输入网址" type="text" id="BG_INPUT"
-                                style="width: 100%;max-width: 200px;padding: 6px 10px;margin: 4px 0;"></p>
+            <div class="modal" id="bgSettingModal"
+                style="width: 90%;max-width: 400px; display: flex;flex-direction: column;display: none;">
+                <div class="title" style="margin-bottom: 4px;">主题背景设置</div>
+                <div style="text-align: left ;">
+                    <p style="font-size: 14px"><label
+                            style="display: flex;align-items: center;"><span>启用背景？</span><input type="checkbox"
+                                id="isCheckedBG"></label></p>
+                    <p style="font-size: 14px;">图片网址：
+                        <input placeholder="输入网址" type="text" id="BG_INPUT"
+                            style="width: 100%;max-width: 200px;padding: 6px 10px;margin: 4px 0;">
+                    </p>
+                    <label><input id="fileUploader" type="file" style="display: none;"
+                            onchange="handleFileUpload(event)">
+                        <button style="width: 100%;"
+                            onclick="document.querySelector('#fileUploader').click()">上传图片(3MB内)</button></label>
+                </div>
+                <div style="text-align: left;width: 100%;font-size: 14px;">
+                    <p>字体颜色(黑-白)</p>
+                    <input id="textColorEl" oninput="updateTextColor(event)"
+                        style="width: 100%;margin-left: 0;margin-right: 0;" min="0" max="100" type="range">
+                    <p>主题颜色(颜色、饱和度、亮度)</p>
+                    <div class="color-panel">
                     </div>
-                    <div class="btn" style="text-align: right;margin-top: 6px;">
-                        <button type="button" onclick="handleSubmitBg(event)">提交</button>
-                        <button type="button" onclick="closeModal('#bgSettingModal')">关闭</button>
-                    </div>
+                    <input id="colorEl" oninput="getColorByPercent(event)"
+                        style="width: 100%;margin-left: 0;margin-right: 0;" min="0" max="100" type="range">
+                    <input id="saturationEl" oninput="getSaturationByPercent(event)"
+                        style="width: 100%;margin-left: 0;margin-right: 0;" min="0" max="100" type="range">
+                    <input id="brightEl" oninput="getValueByPercent(event)"
+                        style="width: 100%;margin-left: 0;margin-right: 0;" min="0" max="100" type="range">
+                    <p>背景透明度</p>
+                    <input id="opacityEl" oninput="getOpacityByPercent(event)"
+                        style="width: 100%;margin-left: 0;margin-right: 0;" type="range" min="0" max="100">
+                </div>
+                <div class="btn" style="text-align: right;margin-top: 6px;">
+                    <button type="button" onclick="resetTheme(event)">重置主题</button>
+                    <button type="button" onclick="handleSubmitBg(event)">提交</button>
+                    <button type="button" onclick="closeModal('#bgSettingModal')">关闭</button>
                 </div>
             </div>
             <!-- 定时重启模态框 -->
@@ -661,8 +686,7 @@
                                 <button class="btn"
                                     onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
                                 <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录为
-                                    /</button>
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录/临时ROOT</button>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
@@ -728,8 +752,8 @@
                         display: flex;
                         font-size: 14px;
                         align-items: center;
-                    ">块大小(1MB 最大 1024)：<input style="flex: 1;padding: 4px 6px;width: 100%;" value="500" id="ckSize" type="number"
-                            max="1024" placeholder=""></label>
+                    ">块大小(1MB 最大 1024)：<input style="flex: 1;padding: 4px 6px;width: 100%;" value="500" id="ckSize"
+                                type="number" max="1024" placeholder=""></label>
                     </div>
                     <div class="speedtest" id="speedtestResult">准备就绪</div>
                 </div>
@@ -745,6 +769,7 @@
         <p>Made by <a href="https://github.com/kanoqwq" target="_blank">MiniKano</a> with love ❤️</p>
     </div>
     <script src="/script/utils.js"></script>
+    <script src="/script/theme.js"></script>
     <script src="/script/requests.js"></script>
     <script src="/script/main.js"></script>
 </body>

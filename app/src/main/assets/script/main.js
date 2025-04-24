@@ -2001,18 +2001,19 @@ let handleSubmitBg = () => {
     const bg_checked = document.querySelector('#isCheckedBG')?.checked
     const BG = document.querySelector('#BG')
     const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
-    if (!imgUrl == undefined || !BG || bg_checked == undefined || !BG_OVERLAY) return
+    if (!BG || bg_checked == undefined || !BG_OVERLAY) return
     if (!bg_checked) {
         BG.style.backgroundImage = 'unset'
-        BG_OVERLAY.style.background = 'transparent'
+        // BG_OVERLAY.style.background = 'transparent'
         localStorage.removeItem('backgroundUrl')
     } else {
-        BG.style.backgroundImage = `url(${imgUrl})`
-        BG_OVERLAY.style.background = 'var(--dark-bgi-color)'
+        imgUrl.trim() && (BG.style.backgroundImage = `url(${imgUrl})`)
+        // BG_OVERLAY.style.background = 'var(--dark-bgi-color)'
         // 保存
-        localStorage.setItem('backgroundUrl', imgUrl)
+        imgUrl.trim() && localStorage.setItem('backgroundUrl', imgUrl)
     }
     createToast('保存成功~', 'green')
+    document.querySelector('#fileUploader').value = ''
     closeModal('#bgSettingModal')
 }
 
@@ -2024,14 +2025,44 @@ let handleSubmitBg = () => {
     const BG_INPUT = document.querySelector('#BG_INPUT')
     if (!BG || !isCheckedBG || !BG_INPUT) return
     isCheckedBG.checked = imgUrl ? true : false
-    BG_INPUT.value = imgUrl
+    if (imgUrl?.length < 9999) {
+        BG_INPUT.value = imgUrl
+    }
     if (!imgUrl) {
         const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
-        BG_OVERLAY && (BG_OVERLAY.style.background = 'transparent')
+        // BG_OVERLAY && (BG_OVERLAY.style.background = 'transparent')
         return
     }
     BG.style.backgroundImage = `url(${imgUrl})`
 })()
+
+//重置主题
+let resetThemeBtnTimer = 1
+let isConfirmResetTheme = false
+const resetTheme = (e) => {
+    e.target.innerHTML = "确定？"
+    if (!isConfirmResetTheme) {
+        isConfirmResetTheme = true
+        return
+    }
+    resetThemeBtnTimer && clearTimeout(resetThemeBtnTimer)
+    resetThemeBtnTimer = setTimeout(() => {
+        isConfirmResetTheme = false
+        e.target.disabled = false
+        e.target.innerHTML = '重置主题'
+    }, 2000)
+    localStorage.removeItem('themeColor')
+    localStorage.removeItem('textColorPer')
+    localStorage.removeItem('textColor')
+    localStorage.removeItem('saturationPer')
+    localStorage.removeItem('opacityPer')
+    localStorage.removeItem('colorPer')
+    localStorage.removeItem('brightPer')
+    initTheme && initTheme()
+    createToast('重置成功！', 'green')
+    e.target.innerHTML = '重置主题'
+    e.target.disabled = true
+}
 
 //定时重启模态框
 let initScheduleRebootStatus = async () => {
@@ -2633,4 +2664,35 @@ const handleLoopMode = (e) => {
         }
         e.target.innerHTML = '循环测速'
     }
+}
+
+//文件上传
+const handleFileUpload = (event) => {
+    return new Promise((resolve, reject) => {
+        const file = event.target.files[0];
+        if (file) {
+            // 检查文件大小
+            if (file.size > 3 * 1024 * 1024) {
+                // 3MB
+                createToast(`文件大小不能超过${3}MB！`, 'red')
+                reject({ msg: `文件大小不能超过${3}MB！`, data: null })
+            } else {
+                const reader = new FileReader();
+                reader.readAsDataURL(file); // 将文件读取为Data URL
+                reader.onload = (e) => {
+                    const base64String = e.target.result;
+                    if (!base64String.startsWith('data:image')) {
+                        createToast('请上传图片文件！', 'red')
+                        reject({ msg: '请上传图片文件！', data: null })
+                        return
+                    }
+                    document.querySelector("#BG_INPUT").value = ''
+                    BG.style.backgroundImage = `url(${base64String})`
+                    document.querySelector('#isCheckedBG').checked = true
+                    localStorage.setItem('backgroundUrl', base64String)
+                    resolve({ msg: 'ok' })
+                };
+            }
+        }
+    })
 }
