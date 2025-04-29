@@ -821,7 +821,6 @@ clearBtn.onclick = () => {
 }
 
 let initNetworktype = async () => {
-    atCommand("AT+CGEQOSRDP=1")
     const selectEl = document.querySelector('#NET_TYPE')
     if (!initRequestData() || !selectEl) {
         selectEl.style.backgroundColor = '#80808073'
@@ -842,6 +841,16 @@ let initNetworktype = async () => {
             item.selected = true
         }
     })
+    atCommand("AT+CGEQOSRDP=1")
+    let interCount = 0
+    let temp_inte = requestInterval(async () => {
+        let res = await atCommand("AT+CGEQOSRDP=1")
+        if (interCount == 20) return temp_inte && temp_inte()
+        if (res && !res.includes("ERROR")) {
+            return temp_inte && temp_inte()
+        }
+        interCount++
+    }, 1000);
 }
 initNetworktype()
 
@@ -1986,7 +1995,6 @@ let handlerCecullarStatus = async () => {
         cmd: 'ppp_status'
     }))
     btn.onclick = async () => {
-        atCommand("AT+CGEQOSRDP=1")
         try {
             if (!initRequestData()) {
                 return null
@@ -2005,6 +2013,7 @@ let handlerCecullarStatus = async () => {
                 setTimeout(async () => {
                     await handlerCecullarStatus()
                     createToast('操作成功！', 'green')
+                    atCommand("AT+CGEQOSRDP=1")
                 }, 2000);
             } else {
                 createToast('操作失败！', 'red')
@@ -2290,16 +2299,14 @@ let handleTTYDFormSubmit = (e) => {
 function parseCGEQOSRDP(input) {
     const match = input.match(/\+CGEQOSRDP:\s*(.+?)\s*OK/);
     if (!match) {
-        return input
+        return null
     }
 
     const parts = match[1].split(',').map(Number);
     if (parts.length < 8) {
-        return input
+        return null
     }
-
     return `QCI等级：${parts[1]} 🔽 ${+parts[6] / 1000}Mbps 🔼 ${+parts[7] / 1000}Mbps`
-
 }
 
 
@@ -2571,7 +2578,6 @@ const onCloseChangePassForm = () => {
 
 //sim卡切换
 let initSimCardType = async () => {
-    atCommand("AT+CGEQOSRDP=1")
     const selectEl = document.querySelector('#SIM_CARD_TYPE')
     //查询是否支持双卡
     // const { dual_sim_support } = await getData(new URLSearchParams({
@@ -2600,6 +2606,7 @@ let initSimCardType = async () => {
             item.selected = true
         }
     })
+    atCommand("AT+CGEQOSRDP=1")
 }
 initSimCardType()
 
