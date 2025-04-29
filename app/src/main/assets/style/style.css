@@ -550,3 +550,11 @@ li.dragging {
     background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #7f00ff, #ff00ff);
     border-radius: 10px;
 }
+
+#AT_RESULT p {
+    padding: 6px;
+    background-color: var(--dark-tag-color);
+    border-radius: 10px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}

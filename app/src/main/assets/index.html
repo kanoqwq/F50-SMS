@@ -334,6 +334,7 @@
                     <div class="title" style="margin: 10px 0;">基本状态</div>
                     <ul class="drag" id="draggable_status">
                         <li draggable="true"> <label><input type="checkbox" data-name="network_type">蜂窝状态</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="QORS_MESSAGE">QCI等级</label></li>
                         <li draggable="true"> <label><input type="checkbox"
                                     data-name="wifi_access_sta_num">WIFI设备数</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="battery">剩余电量</label></li>
@@ -694,12 +695,19 @@
                         <div style="margin-top: 2px;margin-bottom: 10px;">
                             <p style="font-size: 14px;margin-bottom: 10px;margin-top: 8px;">快捷指令</p>
                             <div style="display: flex;flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <button class="btn"
+                                        onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
+                                    <button class="btn"
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGSN'))">点我查IMEI</button>
+                                    <button class="btn"
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGMR'))">点我查基带信息</button>
+                                    <button class="btn" style="margin-top: 6px;"
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CIMI'))">点我查IMSI</button>
+                                </div>
                                 <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
-                                <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
-                                <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(此选项需开启网络adb自启并重启机器)<br />更改Samba目录/临时ROOT<br />(完成后手动点击重新启用SMB)</button>
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(此选项需开启网络adb自启并重启机器)<br />(完成后手动连一下smb)<br />更改Samba目录到
+                                    / </button>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>

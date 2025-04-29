@@ -6,12 +6,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
 })
 
+let QORS_MESSAGE = null
+
 //读取展示列表
 const _stor = localStorage.getItem('showList')
 const showList = _stor != null ? JSON.parse(_stor) : {
     statusShowList: [
         {
             "name": "network_type",
+            "isShow": true
+        },
+        {
+            "name": "QORS_MESSAGE",
             "isShow": true
         },
         {
@@ -260,7 +266,6 @@ let isIncludeInShowList = (dicName) => (
 function notNullOrundefinedOrIsShow(obj, dicName, flag = false) {
     let isNumber = typeof obj[dicName] === 'number'
     if (isNumber) {
-
         return isIncludeInShowList(dicName) || flag
     }
     let isReadable = obj[dicName] != null && obj[dicName] != undefined && obj[dicName] != ''
@@ -308,6 +313,7 @@ const onTokenConfirm = debounce(async () => {
         initATBtn()
         initChangePassData()
         initSimCardType()
+        atCommand("AT+CGEQOSRDP=1")
     }
     catch {
         createToast('登录失败，请检查网络！', 'red')
@@ -501,7 +507,7 @@ let handlerStatusRender = async (flag = false) => {
             </strong>
         </li>`
     }
-    const res = await getUFIData()
+    let res = await getUFIData()
     if (!res) {
         // out()
         if (flag) {
@@ -536,8 +542,13 @@ let handlerStatusRender = async (flag = false) => {
             `
         }
 
+        if (QORS_MESSAGE) {
+            res['QORS_MESSAGE'] = QORS_MESSAGE
+        }
+
         let statusHtml_base = {
             network_type: `${notNullOrundefinedOrIsShow(res, 'network_type') ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}`,
+            QORS_MESSAGE: `${notNullOrundefinedOrIsShow(res, "QORS_MESSAGE") ? `<strong onclick="copyText(event)"  class="green">${QORS_MESSAGE}</strong>` : ''}`,
             wifi_access_sta_num: `${notNullOrundefinedOrIsShow(res, 'wifi_access_sta_num') ? `<strong onclick="copyText(event)"  class="blue">WIFI设备数：${res.wifi_access_sta_num}</strong>` : ''}`,
             battery: `${notNullOrundefinedOrIsShow(res, 'battery') ? `<strong onclick="copyText(event)"  class="green">剩余电量：${res.battery} %</strong>` : ''}`,
             rssi: `${notNullOrundefinedOrIsShow(res, 'rssi') || notNullOrundefinedOrIsShow(res, 'network_signalbar', true) ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(notNullOrundefinedOrIsShow(res, 'rssi') ? res.rssi : res.network_signalbar)}</strong>` : ''}`,
@@ -798,6 +809,7 @@ clearBtn.onclick = () => {
     initATBtn()
     initChangePassData()
     initSimCardType()
+    atCommand("AT+CGEQOSRDP=1")
     //退出登录请求
     try {
         login().finally(cookie => {
@@ -809,6 +821,7 @@ clearBtn.onclick = () => {
 }
 
 let initNetworktype = async () => {
+    atCommand("AT+CGEQOSRDP=1")
     const selectEl = document.querySelector('#NET_TYPE')
     if (!initRequestData() || !selectEl) {
         selectEl.style.backgroundColor = '#80808073'
@@ -1973,6 +1986,7 @@ let handlerCecullarStatus = async () => {
         cmd: 'ppp_status'
     }))
     btn.onclick = async () => {
+        atCommand("AT+CGEQOSRDP=1")
         try {
             if (!initRequestData()) {
                 return null
@@ -2284,7 +2298,7 @@ function parseCGEQOSRDP(input) {
         return input
     }
 
-    return `QCI等级：${parts[1]}<br/>下载限速：${+parts[6] / 1000}Mbps<br/>上传限速：${+parts[7] / 1000}Mbps`
+    return `QCI等级：${parts[1]} 🔽 ${+parts[6] / 1000}Mbps 🔼 ${+parts[7] / 1000}Mbps`
 
 }
 
@@ -2302,6 +2316,14 @@ const executeATCommand = async (command) => {
         return null
     }
 }
+
+async function atCommand(cmd) {
+    if (!cmd) return QORS_MESSAGE = null
+    let res = await executeATCommand(cmd)
+    if (res.result) return QORS_MESSAGE = parseCGEQOSRDP(res.result)
+    return QORS_MESSAGE = null
+}
+atCommand("AT+CGEQOSRDP=1")
 
 let initATBtn = () => {
     const el = document.querySelector('#AT')
@@ -2332,11 +2354,11 @@ const handleATFormSubmit = async () => {
 
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
+                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
                 createToast('执行失败', 'red');
                 return;
             }
-            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${parseCGEQOSRDP(res.result)}</strong></p>`;
+            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
@@ -2344,7 +2366,7 @@ const handleATFormSubmit = async () => {
 
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
+        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
         createToast('执行失败', 'red');
     }
 };
@@ -2358,12 +2380,12 @@ const handleQosAT = async () => {
 
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
+                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
                 createToast('执行失败', 'red');
                 return;
             }
 
-            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${parseCGEQOSRDP(res.result)}</strong></p>`;
+            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
@@ -2371,32 +2393,33 @@ const handleQosAT = async () => {
 
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
+        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
         createToast('执行失败', 'red');
     }
 };
 
-const handleQosIMEI = async () => {
+const handleAT = async (params) => {
+    if (!params) return
     // 执行AT
     const AT_RESULT = document.querySelector('#AT_RESULT')
     AT_RESULT.innerHTML = "执行中,请耐心等待..."
     try {
-        const res = await executeATCommand('AT+CGSN');
+        const res = await executeATCommand(params);
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
+                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
                 createToast('执行失败', 'red');
                 return;
             }
 
-            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.result}</strong></p>`;
+            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${res.result}</p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
         }
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
+        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
         createToast('执行失败', 'red');
     }
 }
@@ -2548,6 +2571,7 @@ const onCloseChangePassForm = () => {
 
 //sim卡切换
 let initSimCardType = async () => {
+    atCommand("AT+CGEQOSRDP=1")
     const selectEl = document.querySelector('#SIM_CARD_TYPE')
     //查询是否支持双卡
     // const { dual_sim_support } = await getData(new URLSearchParams({
