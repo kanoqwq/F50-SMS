@@ -78,7 +78,6 @@ class WebService : Service() {
 
                     val adb_wifi = ShellKano.executeShellFromAssetsSubfolderWithArgs(
                         applicationContext,
-
                         "shell/adbPort",
                         "-ip", ADB_IP,
                         "-pwd", ADMIN_PWD,
