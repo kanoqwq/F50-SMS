@@ -176,18 +176,20 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     // 解析 query 参数
                     val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
                     val AT_command_arr = rawParams["command"] ?: throw Exception("qeury 缺少 command 参数")
+                    val AT_slot_arr = rawParams["slot"] ?: throw Exception("qeury 缺少 slot 参数")
                     val AT_command = AT_command_arr[0]
+                    val AT_slot = AT_slot_arr.getOrNull(0)?.toIntOrNull() ?: 0 // 如果取不到或不是数字，就用 0
                     Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
 
                     //复制依赖
                     val assetManager = context_app.assets
-                    val inputStream_adb = assetManager.open("shell/adb")
-                    val fileName2 = File("shell/adb").name
-                    val outFile_adb = File(context_app.cacheDir, fileName2)
+                    val inputStream_adb = assetManager.open("shell/sendat")
+                    val fileName2 = File("shell/sendat").name
+                    val outFile_at = File(context_app.cacheDir, fileName2)
 
                     try {
                         inputStream_adb.use { input ->
-                            FileOutputStream(outFile_adb).use { output ->
+                            FileOutputStream(outFile_at).use { output ->
                                 input.copyTo(output)
                             }
                         }
@@ -195,76 +197,30 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                         Log.d("kano_ZTE_LOG", "adb文件已存在， 无需复制")
                     }
 
-                    outFile_adb.setExecutable(true)
-                    Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
-
-                    Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
+                    outFile_at.setExecutable(true)
+                    Log.d("kano_ZTE_LOG", "AT-outFile：${outFile_at.absolutePath}")
 
                     //AT+CGEQOSRDP=1
                     if(!(AT_command.toString()).startsWith("AT+")){
                         throw  Exception("解析失败，AT字符串 需要以 “AT+” 开头")
                     }
-
-                    val adb_command = "${outFile_adb.absolutePath} disconnect"
-                    val adb_result = runShellCommand(adb_command,context_app)
-                    Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
-                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
-
-                    Thread.sleep(1000)//小睡一下
-
-                    fun click_stage1 (){
-                        //打开工程模式活动
-                        repeat(3){
-                            val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
-                            Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
-                        }
-
-                        Thread.sleep(200)
-                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
-                            "DEBUG&LOG",
-                            outFile_adb.absolutePath,
-                            context_app
-                        )
-                        if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
-
-                        val res_send_at_cmd = ShellKano.parseUiDumpAndClick(
-                            "Send AT Command",
-                            outFile_adb.absolutePath,
-                            context_app
-                        )
-                        if (res_send_at_cmd == -1) throw Exception("点击 Send AT Command Tab 失败")
+                    val command = "${outFile_at.absolutePath} -n $AT_slot -c $AT_command"
+                    val result = runShellCommand(command) ?: throw Exception("没有输出")
+                    var res = result
+                        .replace("\"", "\\\"")      // 转义引号
+                        .replace("\n", "")          // 去掉换行
+                        .replace("\r", "")          // 去掉回车
+                        .trimStart()
+                    if (res.lowercase().endsWith("ok")) {
+                        res = res.dropLast(2).trimEnd() + " OK"
                     }
-
-                    var fallBackTime = 0
-                    try{
-                        click_stage1()
+                    // 去掉开头的逗号
+                    if (res.startsWith(",")) {
+                        res = res.removePrefix(",").trimStart()
                     }
-                    catch (e:Exception){
-                        //返回
-                        repeat(10) {
-                            runShellCommand("${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK", context_app)
-                        }
-                        Thread.sleep(1000)
-                        if(fallBackTime++<2) {
-                            click_stage1()
-                        }
-                    }
-
-                    //输入AT指令，点击发送
-                    val escapedCommand = AT_command.replace("\"", "\\\"")
-                    val result = fillInputAndSend(escapedCommand,outFile_adb.absolutePath,context_app,"com.sprd.engineermode:id/result_text","SEND")
-
-                    val AT_result ="Command result:$result"
-
-                    val cleanedResult = AT_result
-                    .substringAfter("Command result:")
-                        .lineSequence()
-                        .map { it.trim() }
-                        .firstOrNull { it.isNotEmpty() }
-                        ?: "无结果"                          // 去掉首尾空格
-
-                    val jsonResult = """{"result":"$cleanedResult"}"""
-
+                    Log.d("kano_ZTE_LOG", "AT_cmd：$command")
+                    Log.d("kano_ZTE_LOG", "AT_result：$res")
+                    val jsonResult = """{"result":"${res}"}"""
                     writer.write(jsonResult)
                 } catch (e: Exception) {
                     writer.write("""{"error":"AT指令执行错误：${e.message}"}""")

@@ -14,8 +14,6 @@ import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import fi.iki.elonen.NanoHTTPD.SOCKET_READ_TIMEOUT
-import java.io.IOException
 
 
 class WebService : Service() {

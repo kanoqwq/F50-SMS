@@ -2272,10 +2272,31 @@ let handleTTYDFormSubmit = (e) => {
     initTTYD()
 }
 
+
+function parseCGEQOSRDP(input) {
+    const match = input.match(/\+CGEQOSRDP:\s*(.+?)\s*OK/);
+    if (!match) {
+        return input
+    }
+
+    const parts = match[1].split(',').map(Number);
+    if (parts.length < 8) {
+        return input
+    }
+
+    return `QCI等级：${parts[1]}<br/>下载限速：${+parts[6] / 1000}Mbps<br/>上传限速：${+parts[7] / 1000}Mbps`
+
+}
+
+
 const executeATCommand = async (command) => {
+    let at_slot_value = document.querySelector("#AT_SLOT")?.value
+    if (isNaN(Number(at_slot_value?.trim())) || at_slot_value == undefined || at_slot_value == null) {
+        at_slot_value = 0
+    }
     try {
         const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}`, { headers: common_headers })).json()
+        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}&slot=${at_slot_value.trim()}`, { headers: common_headers })).json()
         return res
     } catch (e) {
         return null
@@ -2296,6 +2317,7 @@ let initATBtn = () => {
 }
 initATBtn()
 
+
 const handleATFormSubmit = async () => {
     const AT_value = document.querySelector('#AT_INPUT')?.value;
     if (!AT_value || AT_value.trim() === '') {
@@ -2310,12 +2332,11 @@ const handleATFormSubmit = async () => {
 
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = res.error;
+                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
                 createToast('执行失败', 'red');
                 return;
             }
-
-            AT_RESULT.innerHTML = res.result;
+            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${parseCGEQOSRDP(res.result)}</strong></p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
@@ -2323,7 +2344,7 @@ const handleATFormSubmit = async () => {
 
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = error;
+        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
         createToast('执行失败', 'red');
     }
 };
@@ -2337,12 +2358,12 @@ const handleQosAT = async () => {
 
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = res.error;
+                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
                 createToast('执行失败', 'red');
                 return;
             }
 
-            AT_RESULT.innerHTML = res.result;
+            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${parseCGEQOSRDP(res.result)}</strong></p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
@@ -2350,7 +2371,7 @@ const handleQosAT = async () => {
 
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = error;
+        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
         createToast('执行失败', 'red');
     }
 };
@@ -2363,19 +2384,19 @@ const handleQosIMEI = async () => {
         const res = await executeATCommand('AT+CGSN');
         if (res) {
             if (res.error) {
-                AT_RESULT.innerHTML = res.error;
+                AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.error}</strong></p>`;
                 createToast('执行失败', 'red');
                 return;
             }
 
-            AT_RESULT.innerHTML = res.result;
+            AT_RESULT.innerHTML = `<p class="deviceList"><strong>${res.result}</strong></p>`;
             createToast('执行成功', 'green');
         } else {
             createToast('执行失败', 'red');
         }
     } catch (err) {
         const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = error;
+        AT_RESULT.innerHTML = `<p class="deviceList"><strong>${error}</strong></p>`;
         createToast('执行失败', 'red');
     }
 }

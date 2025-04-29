@@ -11,8 +11,6 @@
 </head>
 
 <body id="BG">
-    <button id="AT" style="position: fixed;right: 10px;top: 10px;padding: 10px;opacity: 0" class="btn"
-        onclick="createToast('请登录','red')"></button>
     <div class="bg" id="BG_OVERLAY">
         <div class="container">
             <div class="title" onclick="enableTTYD()"
@@ -39,6 +37,7 @@
                         <button id="SpeedTestBtn" class="btn" onclick="showModal('#speedTestModal')">内网测速</button>
                         <button id="ClientManagement" class="btn">连接设备管理</button>
                         <button id="WIFIManagement" class="btn">WIFI设置</button>
+                        <button id="AT" class=" btn" onclick="createToast('请登录','red')">AT指令</button>
                         <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
                         <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
                         <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
@@ -672,23 +671,35 @@
             <div class="mask" id="ATModal" style="display: none">
                 <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
                     <div class="title" style="margin-bottom: 4px;">指令工具</div>
-                    <div style="text-align: left;">
+                    <div class="title" style="margin-bottom: 4px;font-size: 12px;">
+                        <i>⚠️警告：执行自定义 AT 指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
+                    </div>
+                    <p style="font-size: 14px;margin-bottom: 0;margin-top:10px;">自定义AT指令</p>
+                    <div style="margin: 10px 0;">
+                        <span style="font-size: 14px;">AT执行槽位：</span>
+                        <select class="select" id="AT_SLOT" style="width: 100%;max-width: 100px;padding: 6px 10px;"
+                            value="0">
+                            <option data-value="0" value="0">0</option>
+                            <option data-value="1" value="1">1</option>
+                            </option>
+                        </select>
+                    </div>
+                    <div style="text-align: left">
                         <div style="margin-bottom: 0;">
-                            <p style="font-size: 14px;margin-bottom: 10px;">自定义AT指令</p>
                             <input name="at_text" placeholder="AT+开头的指令" type="text" id="AT_INPUT"
                                 style="width: 100%;max-width: 200px;padding: 6px 10px;margin: 4px 0;">
                             <button class="btn"
                                 onclick="disableButtonWhenExecuteFunc(event,handleATFormSubmit)">GO</button>
                         </div>
-                        <div style="margin-top: 4px;margin-bottom: 10px;">
-                            <p style="font-size: 14px;margin-bottom: 10px;">快捷指令</p>
+                        <div style="margin-top: 2px;margin-bottom: 10px;">
+                            <p style="font-size: 14px;margin-bottom: 10px;margin-top: 8px;">快捷指令</p>
                             <div style="display: flex;flex-wrap: wrap; gap: 10px;">
                                 <button class="btn"
                                     onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
                                 <button class="btn"
                                     onclick="disableButtonWhenExecuteFunc(event,handleQosIMEI)">点我查IMEI</button>
                                 <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(试验)更改Samba目录/临时ROOT<br />(完成后手动点击重新启用SMB)</button>
+                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(此选项需开启网络adb自启并重启机器)<br />更改Samba目录/临时ROOT<br />(完成后手动点击重新启用SMB)</button>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
