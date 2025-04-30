@@ -1,12 +1,13 @@
-name: CI
+name: Android Release CI
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [ "http-server-version" ]
+    tags:
+      - 'v*'  # 匹配 v1.0.0 等 tag
 
 jobs:
   build-release:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -23,12 +24,32 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
+      - name: Build with tag version
+        run: |
+          ./gradlew assembleDebug 
 
-      - name: Upload Release APK to GitHub Release
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/UFI-TOOLS_WEB_debug.apk
+
+      - name: Generate tag info
+        id: tag
+        run: |
+          TAG_NAME=$(date +'%Y.%m.%d_%H.%M')
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Git Tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
+      - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/ZTE-UFI-TOOLS_WEB_debug.apk
+          tag_name: ${{ env.TAG_NAME }}
+          files: app/build/outputs/apk/debug/UFI-TOOLS_WEB_debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
