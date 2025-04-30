@@ -35,7 +35,7 @@ jobs:
       - name: Generate tag info
         id: tag
         run: |
-          TAG_NAME=$(date +'%Y.%m.%d')
+          TAG_NAME=$(date +'%Y.%m.%d_%H.%M')
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
 
