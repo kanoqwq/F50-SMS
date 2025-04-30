@@ -201,11 +201,11 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Log.d("kano_ZTE_LOG", "AT-outFile：${outFile_at.absolutePath}")
 
                     //AT+CGEQOSRDP=1
-                    if(!(AT_command.toString()).startsWith("AT+")){
-                        throw  Exception("解析失败，AT字符串 需要以 “AT+” 开头")
+                    if (!AT_command.toString().startsWith("AT", ignoreCase = true)) {
+                        throw Exception("解析失败，AT指令需要以 “AT” 开头")
                     }
-                    val command = "${outFile_at.absolutePath} -n $AT_slot -c $AT_command"
-                    val result = runShellCommand(command) ?: throw Exception("没有输出")
+                    val command = "${outFile_at.absolutePath} -n $AT_slot -c '${AT_command.trimStart()}'"
+                    val result = runShellCommand(command,true) ?: throw Exception("没有输出")
                     var res = result
                         .replace("\"", "\\\"")      // 转义引号
                         .replace("\n", "")          // 去掉换行

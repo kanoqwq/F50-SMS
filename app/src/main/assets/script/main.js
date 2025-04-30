@@ -2299,12 +2299,12 @@ let handleTTYDFormSubmit = (e) => {
 function parseCGEQOSRDP(input) {
     const match = input.match(/\+CGEQOSRDP:\s*(.+?)\s*OK/);
     if (!match) {
-        return null
+        return input
     }
 
     const parts = match[1].split(',').map(Number);
     if (parts.length < 8) {
-        return null
+        return input
     }
     return `QCI等级：${parts[1]} 🔽 ${+parts[6] / 1000}Mbps 🔼 ${+parts[7] / 1000}Mbps`
 }

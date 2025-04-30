@@ -126,10 +126,10 @@ class MainActivity : ComponentActivity() {
                     ) ?: "admin"
                 )
             }
-
+//            val host = targetServerIP.substringBefore(":")
             if (isServerRunning) {
                 ServerUI(
-                    serverAddress = "http://localhost:$port",
+                    serverAddress = "http://${gatewayIp.substringBefore(":")}:$port",
                     gatewayIp,
                     versionName = versionName ?: "未知" ,
                     onStopServer = {
@@ -286,6 +286,8 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,ve
                     fontSize = 16.sp,
                     url = "http://$gatewayIP"
                 )
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("可点击停止服务更改口令密码(默认admin)", fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onStopServer) {
                     Text("停止服务")

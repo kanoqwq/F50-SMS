@@ -20,10 +20,13 @@ class ShellKano {
             return bytes.joinToString("") { "%02x".format(it) }
         }
 
-        fun runShellCommand(command: String?): String? {
+        fun runShellCommand(command: String?,escaped:Boolean=false): String? {
             val output = StringBuilder()
             try {
-                val process = Runtime.getRuntime().exec(command)
+                var process = Runtime.getRuntime().exec(command)
+                if(escaped) {
+                    process = Runtime.getRuntime().exec(arrayOf("sh", "-c", command))
+                }
                 val reader = BufferedReader(
                     InputStreamReader(process.inputStream)
                 )
