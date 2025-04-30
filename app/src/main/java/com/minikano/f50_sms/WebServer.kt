@@ -863,15 +863,15 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         var totalBytes = 0L
 
         try {
-            val summary = networkStatsManager.querySummary(
+            val summary = networkStatsManager.querySummaryForDevice(
                 ConnectivityManager.TYPE_MOBILE,
                 null,
                 startTime,
                 endTime
             )
-            val bucket = NetworkStats.Bucket()
-            summary.getNextBucket(bucket)
-            totalBytes = bucket.rxBytes + bucket.txBytes
+//            val bucket = NetworkStats.Bucket()
+//            summary.getNextBucket(bucket)
+            totalBytes = summary.rxBytes + summary.txBytes
         } catch (e: Exception) {
             e.printStackTrace()
         }
