@@ -1,13 +1,11 @@
-name: Android CI
+name: CI
 
 on:
-  push:
-    branches: [ "http-server-version" ]
-  pull_request:
-    branches: [ "http-server-version" ]
+  release:
+    types: [published]
 
 jobs:
-  build:
+  build-release:
 
     runs-on: ubuntu-latest
 
@@ -25,11 +23,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew assembleDebug
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Upload Release APK to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/ZTE-UFI-TOOLS_WEB_debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
