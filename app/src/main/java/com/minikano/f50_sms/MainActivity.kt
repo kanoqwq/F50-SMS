@@ -48,7 +48,6 @@ class MainActivity : ComponentActivity() {
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
 
-
     fun hasUsageAccessPermission(context: Context): Boolean {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
@@ -286,9 +285,19 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,ve
                     fontSize = 16.sp,
                     url = "http://$gatewayIP"
                 )
-                Spacer(modifier = Modifier.height(32.dp))
-                Text("可点击停止服务更改口令密码(默认admin)", fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                HyperlinkText(
+                    "在手机安装使用的，请点击localhost:2333跳转",
+                    "localhost:2333",
+                    fontSize = 10.sp,
+                    url = "http://localhost:2333"
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("可点击停止服务更改网关和口令密码(默认admin)", fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("本软件需安装在随身WiFi机内，安装在手机上会导致部分功能不可用", fontSize = 10.sp)
+                Text("如需手机使用，请下载手机独立版", fontSize = 10.sp)
+                Spacer(modifier = Modifier.height(20.dp))
                 Button(onClick = onStopServer) {
                     Text("停止服务")
                 }
