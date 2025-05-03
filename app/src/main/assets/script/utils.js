@@ -244,3 +244,45 @@ function hsvToRgb(h, s, v) {
         b: Math.round((b + m) * 255)
     };
 }
+
+// 创建一个开关
+function createSwitch({ text, value, className = '', onChange }) {
+    const container = document.createElement('div');
+    container.className = 'Switch';
+
+    const label = document.createElement('label');
+    label.className = `outer ${className}`;
+
+    const span = document.createElement('span');
+    span.className = 'text';
+    span.textContent = text;
+
+    const switchDiv = document.createElement('div');
+    switchDiv.className = 'switch text-center p-2';
+    if (value) switchDiv.classList.add('active');
+
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    switchDiv.appendChild(dot);
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = value;
+    input.className = 'inline-block w-5 h-5 align-sub';
+    input.addEventListener('click', (e) => {
+      const checked = e.target.checked;
+      if (checked) {
+        switchDiv.classList.add('active');
+      } else {
+        switchDiv.classList.remove('active');
+      }
+      onChange?.(checked);
+    });
+
+    label.appendChild(span);
+    label.appendChild(switchDiv);
+    label.appendChild(input);
+    container.appendChild(label);
+
+    return container;
+  }

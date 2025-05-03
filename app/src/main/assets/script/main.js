@@ -1,3 +1,4 @@
+const MODEL = document.querySelector("#MODEL")
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
         let container = document.querySelector('.container')
@@ -256,7 +257,6 @@ const isNullOrUndefiend = (obj) => {
     return obj != undefined || obj != null
 }
 
-//如果是数字类型，直接返回
 let isIncludeInShowList = (dicName) => (
     showList.statusShowList.find(i => i.name == dicName)
     || showList.propsShowList.find(i => i.name == dicName)
@@ -509,6 +509,7 @@ let handlerStatusRender = async (flag = false) => {
     }
     let res = await getUFIData()
     if (!res) {
+        MODEL.innerHTML = " 设备："
         // out()
         if (flag) {
             status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
@@ -522,6 +523,7 @@ let handlerStatusRender = async (flag = false) => {
         return
     }
     if (res) {
+        MODEL.innerHTML = " 设备：" + res.model
         isNotLoginOnce = false
         const current_cell = document.querySelector('#CURRENT_CELL')
         let html = ''
@@ -2031,8 +2033,8 @@ handlerCecullarStatus()
 const loadTitle = async () => {
     try {
         const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
-        document.querySelector('#TITLE').innerHTML = "ZTE-UFI-TOOLS-WEB Ver: " + app_ver
-        document.querySelector('#MAIN_TITLE').innerHTML = "ZTE-UFI管理工具 Ver: " + app_ver
+        document.querySelector('#TITLE').innerHTML = `ZTE-UFI-TOOLS-WEB Ver: ${app_ver}`
+        document.querySelector('#MAIN_TITLE').innerHTML = `ZTE-UFI管理工具 <span style="font-size:14px">Ver: ${app_ver}</span>`
     } catch {/*没有，不处理*/ }
 }
 loadTitle()
@@ -2435,12 +2437,21 @@ const handleAT = async (params) => {
 //展开收起
 const CLPS = document.querySelector('#CLPS')
 const boxEl = document.querySelector('.collapse')
-window.addEventListener('resize', () => {
-    const box = boxEl.querySelector('.collapse_box')
+const box = boxEl.querySelector('.collapse_box')
+
+const onCollapseResize = () => {
     const value = boxEl.getAttribute('data-name');
     if (!box || value != 'open') return
     boxEl.style.height = box.getBoundingClientRect().height + 'px'
-})
+}
+
+// window.addEventListener('resize', onCollapseResize)
+
+const resizeObserver = new ResizeObserver(() => {
+    onCollapseResize()
+});
+resizeObserver.observe(box);
+
 const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
         if (
@@ -2468,14 +2479,27 @@ observer.observe(boxEl, {
     attributeFilter: ['data-name'], // 只监听 data-name 属性
 });
 
-CLPS.onclick = () => {
-    if (boxEl && boxEl.dataset) {
-        boxEl.dataset.name = boxEl.dataset.name == 'open' ? 'close' : 'open'
-        localStorage.setItem('collapse', boxEl.dataset.name)
-    }
-}
 boxEl.dataset.name = localStorage.getItem('collapse') || 'open'
+const collapseBtn = document.querySelector('#collapseBtn')
+const switchComponent = createSwitch({
+    text: '功能列表',
+    value: boxEl.dataset.name == 'open',
+    className: 'my-custom-class',
+    onChange: (newVal) => {
+        if (boxEl && boxEl.dataset) {
+            boxEl.dataset.name = newVal ? 'open' : 'close'
+            localStorage.setItem('collapse', boxEl.dataset.name)
+        }
+    }
+});
+collapseBtn.appendChild(switchComponent);
 
+// CLPS.onclick = () => {
+//     if (boxEl && boxEl.dataset) {
+//         boxEl.dataset.name = boxEl.dataset.name == 'open' ? 'close' : 'open'
+//         localStorage.setItem('collapse', boxEl.dataset.name)
+//     }
+// }
 
 //执行时禁用按钮
 const disableButtonWhenExecuteFunc = async (e, func) => {

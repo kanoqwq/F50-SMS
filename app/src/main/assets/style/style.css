@@ -558,3 +558,60 @@ li.dragging {
     word-wrap: break-word;
     white-space: pre-wrap;
 }
+
+.Switch {
+    width: 100%;
+    display: inline-block;
+}
+
+.Switch .outer {
+    overflow: hidden;
+    user-select: none;
+}
+
+.Switch .outer .text {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-right: 4px;
+    line-height: 24px;
+    font-size: 14px;
+}
+
+.Switch .switch {
+    display: inline-block;
+    position: relative;
+    user-select: none;
+    height: 24px;
+    width: 60px;
+    padding: 0;
+    border-radius: 4px;
+    background-color: var(--dark-card-bg);
+    transition: all 0.3s ease;
+}
+
+.Switch .switch .dot {
+    position: absolute;
+    left: 0;
+    height: 100%;
+    width: 50%;
+    background-color: var(--dark-btn-disabled-color);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.Switch .switch.active {
+    background-color: var(--dark-btn-color);
+}
+
+.Switch .switch.active .dot {
+    left: 100%;
+    transform: translateX(-96%);
+    background-color: #fff !important;
+    opacity: .7;
+}
+
+.Switch .outer input {
+    display: none;
+}
