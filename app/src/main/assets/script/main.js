@@ -302,6 +302,7 @@ const onTokenConfirm = debounce(async () => {
         handlerPerformaceStatus()
         initNetworktype()
         initSMBStatus()
+        initROAMStatus()
         initLightStatus()
         initBandForm()
         initUSBNetworkType()
@@ -558,7 +559,7 @@ let handlerStatusRender = async (flag = false) => {
             cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
             mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
             realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
-            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
+            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && res.data_volume_limit_switch == '1' ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
                 const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
                 if (!limit_size) return ''
                 return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
@@ -800,6 +801,7 @@ clearBtn.onclick = () => {
     handlerPerformaceStatus()
     initNetworktype()
     initSMBStatus()
+    initROAMStatus()
     initLightStatus()
     initBandForm()
     rebootDeviceBtnInit()
@@ -1046,6 +1048,49 @@ let initSMBStatus = async () => {
     el.style.backgroundColor = res.samba_switch == '1' ? '#018ad8b0' : ''
 }
 initSMBStatus()
+
+//检查网路漫游状态
+let initROAMStatus = async () => {
+    const el = document.querySelector('#ROAM')
+    if (!initRequestData() || !el) {
+        el.onclick = () => createToast('请登录', 'red')
+        el.style.backgroundColor = '#80808073'
+        return null
+    }
+    let res = await getData(new URLSearchParams({
+        cmd: 'roam_setting_option'
+    }))
+    if (!el || !res || res.roam_setting_option == null || res.roam_setting_option == undefined) return
+    el.onclick = async () => {
+        if (!initRequestData()) {
+            return null
+        }
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            let res1 = await (await postData(cookie, {
+                goformId: 'SET_CONNECTION_MODE',
+                ConnectionMode: "auto_dial",
+                roam_setting_option: res.roam_setting_option == 'on' ? 'off' : 'on'
+            })).json()
+            if (res1.result == 'success') {
+                createToast('操作成功！', 'green')
+            } else {
+                createToast('操作失败！', 'red')
+            }
+            await initROAMStatus()
+        } catch (e) {
+            // createToast(e.message)
+        }
+    }
+    el.innerHTML = res.roam_setting_option == 'on' ? '关闭网络漫游' : '开启网络漫游'
+    el.style.backgroundColor = res.roam_setting_option == 'on' ? '#018ad8b0' : ''
+}
+initROAMStatus()
 
 let initLightStatus = async () => {
     const el = document.querySelector('#LIGHT')
@@ -2795,4 +2840,12 @@ const handleFileUpload = (event) => {
             }
         }
     })
+}
+
+//打赏模态框设置
+const payModalState = localStorage.getItem('hidePayModal') || false
+!payModalState && showModal('#payModal')
+const onClosePayModal = () => {
+    closeModal('#payModal')
+    localStorage.setItem('hidePayModal', 'true')
 }

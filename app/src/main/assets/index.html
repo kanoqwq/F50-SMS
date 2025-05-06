@@ -46,7 +46,8 @@
                         <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
                         <button id="PERF" class="btn" onclick="createToast('请登录','red')">开启性能模式</button>
                         <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
-                        <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB</button>
+                        <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB文件共享</button>
+                        <button id="ROAM" class="btn" onclick="createToast('请登录','red')">开启网络漫游</button>
                         <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
                             <option value="WL_AND_5G">5G/4G/3G</option>
                             <option value="LTE_AND_5G">5G NSA</option>
@@ -787,11 +788,38 @@
                     <button type="button" onclick="closeModal('#speedTestModal')">关闭</button>
                 </div>
             </div>
+            <!-- ❤️ -->
+            <div class="mask" id="payModal" style="display: none">
+                <div class="modal">
+                    <div class="title">打赏作者</div>
+                    <div class="title" style="display: flex;align-items: center;margin-top: 10px;font-size: 12px;">
+                        <div>
+                            <p style="margin: 0; font-style: italic;">开发不易，打赏随意～</p>
+                            <p style="margin: 0; font-style: italic;">點擊即可讓黑奴幹活（bushi）</p>
+                            <p style="margin: 0; font-style: italic;">长按赞赏码可保存为图片</p>
+                        </div>
+                        <img style="max-width: 80px;flex:1; animation: a 5s infinite ease-in-out;border-radius: 8px;"
+                            src="https://kanokano.cn/wp-content/uploads/2025/05/BFEE3DCE16FE04E6EF4EC52396E618B1.webp"
+                            alt="">
+                    </div>
+                    <div class="content" style="overflow-y: hidden;padding: 15px;width: 66vw;max-width: 400px;max-height:fit-content;">
+                        <div class="item" style="margin: 10px auto;">
+                            <img style="width: 100%;border-radius: 20px;"
+                                src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp" alt="">
+                        </div>
+                    </div>
+                    <div class="btn" style="text-align: right;">
+                        <button type="button" onclick="onClosePayModal()">不再显示</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="footer">
-        <p>Made by <a href="https://github.com/kanoqwq" target="_blank">MiniKano</a> with love ❤️</p>
+        <p>Made by <a href="https://github.com/kanoqwq/UFI-TOOLS" target="_blank">MiniKano</a> with love ❤️ &nbsp;<a
+                href="javascript:;" onclick="showModal('#payModal')">打赏作者</a></p>
     </div>
+    <div id="toastContainer"></div>
     <script src="/script/utils.js"></script>
     <script src="/script/theme.js"></script>
     <script src="/script/requests.js"></script>

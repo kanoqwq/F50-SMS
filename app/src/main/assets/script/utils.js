@@ -155,16 +155,16 @@ function encodeBase64(plainText) {
 }
 
 function createToast(text, color, delay = 3000) {
+    const toastContainer = document.querySelector("#toastContainer")
     const toastEl = document.createElement('div')
-    toastEl.style.position = 'fixed'
-    toastEl.style.zIndex = '114514'
     toastEl.style.padding = '10px'
-    toastEl.style.top = '20px'
-    toastEl.style.right = '50%'
-    toastEl.style.transform = 'translateX(50%)'
+    toastEl.style.width = "fit-content"
+    toastEl.style.position = "relative"
+    toastEl.style.top = "0px"
     toastEl.style.color = color || 'while'
     toastEl.style.backgroundColor = 'var(--dark-card-bg)'
-    toastEl.style.transition = `opacity .2s`
+    toastEl.style.transform = `scale(1)`
+    toastEl.style.transition = `all .3s`
     toastEl.style.opacity = `0`
     toastEl.style.boxShadow = '0 0 10px 0 #87ceeb70'
     toastEl.style.fontWeight = 'bold'
@@ -173,23 +173,19 @@ function createToast(text, color, delay = 3000) {
     toastEl.innerHTML = text;
     const id = 'toastkano'
     toastEl.setAttribute('class', id);
-    const toasts = document.querySelectorAll('.toastkano')
-    document.body.appendChild(toastEl)
+    toastContainer.appendChild(toastEl)
     setTimeout(() => {
         toastEl.style.opacity = `1`
     }, 0);
-    if (toasts.length) {
-        const top = toasts[toasts.length - 1].getBoundingClientRect().top
-        const height = toastEl.getBoundingClientRect().height
-        toastEl.style.top = top + height + 10 + 'px'
-    }
     let timer = null
     setTimeout(() => {
         toastEl.style.opacity = `0`
+        toastEl.style.transform = `scale(0)`
+        toastEl.style.top = '-' + toastEl.getBoundingClientRect().height + 'px'
         clearTimeout(timer)
         timer = setTimeout(() => {
-            document.body.removeChild(toastEl)
-        }, 200);
+            toastContainer.removeChild(toastEl)
+        }, 300);
     }, delay);
 }
 
@@ -270,13 +266,13 @@ function createSwitch({ text, value, className = '', onChange }) {
     input.checked = value;
     input.className = 'inline-block w-5 h-5 align-sub';
     input.addEventListener('click', (e) => {
-      const checked = e.target.checked;
-      if (checked) {
-        switchDiv.classList.add('active');
-      } else {
-        switchDiv.classList.remove('active');
-      }
-      onChange?.(checked);
+        const checked = e.target.checked;
+        if (checked) {
+            switchDiv.classList.add('active');
+        } else {
+            switchDiv.classList.remove('active');
+        }
+        onChange?.(checked);
     });
 
     label.appendChild(span);
@@ -285,4 +281,4 @@ function createSwitch({ text, value, className = '', onChange }) {
     container.appendChild(label);
 
     return container;
-  }
+}
