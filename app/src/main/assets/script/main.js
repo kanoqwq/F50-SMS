@@ -558,7 +558,7 @@ let handlerStatusRender = async (flag = false) => {
             cpu_temp: `${notNullOrundefinedOrIsShow(res, 'cpu_temp') ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}`,
             cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
             mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
-            realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
+            realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长: ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
             monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && (res.flux_data_volume_limit_switch == '1' || res.data_volume_limit_switch == '1') ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
                 const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
                 if (!limit_size) return ''
@@ -578,7 +578,7 @@ let handlerStatusRender = async (flag = false) => {
             Lte_pci: `${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}`,
             lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
             lte_rssi: `${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}`,
-            Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 小区ID：${res.Lte_cell_id}</strong>` : ''}`,
+            Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 基站ID：${res.Lte_cell_id}</strong>` : ''}`,
             Z5g_rsrp: `${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${kano_parseSignalBar(res.Z5g_rsrp)}</strong>` : ''}`,
             Nr_snr: `${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</strong>` : ''}`,
             Nr_bands: `${notNullOrundefinedOrIsShow(res, 'Nr_bands') ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}`,
@@ -587,7 +587,7 @@ let handlerStatusRender = async (flag = false) => {
             Nr_pci: `${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}`,
             nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
             nr_rssi: `${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}`,
-            Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 小区ID：${res.Nr_cell_id}</strong>` : ''}`,
+            Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 基站ID：${res.Nr_cell_id}</strong>` : ''}`,
         }
 
         let statusHtml_other = {
@@ -1218,11 +1218,11 @@ const submitBandForm = async (e) => {
     }
 }
 
-//锁小区
+//锁基站
 let initCellInfo = async () => {
     try {
-        //已锁小区信息
-        //小区信息
+        //已锁基站信息
+        //基站信息
         const { neighbor_cell_info, locked_cell_info } = await getData(new URLSearchParams({
             cmd: 'neighbor_cell_info,locked_cell_info'
         }))
@@ -1275,7 +1275,7 @@ let onSelectCellRow = (pci, earfcn) => {
     }
 }
 
-//锁小区
+//锁基站
 const submitCellForm = async (e) => {
     e.preventDefault()
     if (!initRequestData()) {
@@ -1315,12 +1315,12 @@ const submitCellForm = async (e) => {
         if (res.result == 'success') {
             pciEl.value = ''
             earfcnEl.value = ''
-            createToast('设置小区成功！', 'green')
+            createToast('设置基站成功！', 'green')
         } else {
-            throw '设置小区失败'
+            throw '设置基站失败'
         }
     } catch (e) {
-        createToast('设置小区失败', 'red')
+        createToast('设置基站失败', 'red')
     }
 }
 
@@ -1342,13 +1342,13 @@ let unlockAllCell = async () => {
         })).json()
 
         if (res.result == 'success') {
-            createToast('解锁小区成功！', 'green')
+            createToast('解锁基站成功！', 'green')
         } else {
-            throw '解锁小区失败'
+            throw '解锁基站失败'
         }
 
     } catch {
-        createToast('解锁小区失败', 'red')
+        createToast('解锁基站失败', 'red')
     }
 }
 
@@ -2506,74 +2506,6 @@ const handleAT = async (params) => {
     }
 }
 
-
-//展开收起
-const CLPS = document.querySelector('#CLPS')
-const boxEl = document.querySelector('.collapse')
-const box = boxEl.querySelector('.collapse_box')
-
-const onCollapseResize = () => {
-    const value = boxEl.getAttribute('data-name');
-    if (!box || value != 'open') return
-    boxEl.style.height = box.getBoundingClientRect().height + 'px'
-}
-
-// window.addEventListener('resize', onCollapseResize)
-
-const resizeObserver = new ResizeObserver(() => {
-    onCollapseResize()
-});
-resizeObserver.observe(box);
-
-const observer = new MutationObserver((mutationsList) => {
-    for (const mutation of mutationsList) {
-        if (
-            mutation.type === 'attributes' &&
-            mutation.attributeName === 'data-name'
-        ) {
-            const newValue = boxEl.getAttribute('data-name');
-            const box = boxEl.querySelector('.collapse_box')
-            if (!box) return
-
-            if (newValue == 'open') {
-                boxEl.style.height = box.getBoundingClientRect().height + 'px'
-                boxEl.style.overflow = 'hidden'
-            } else {
-                boxEl.style.height = '0'
-                boxEl.style.overflow = 'hidden'
-            }
-        }
-    }
-});
-
-// 配置观察器
-observer.observe(boxEl, {
-    attributes: true, // 监听属性变化
-    attributeFilter: ['data-name'], // 只监听 data-name 属性
-});
-
-boxEl.dataset.name = localStorage.getItem('collapse') || 'open'
-const collapseBtn = document.querySelector('#collapseBtn')
-const switchComponent = createSwitch({
-    text: '功能列表',
-    value: boxEl.dataset.name == 'open',
-    className: 'my-custom-class',
-    onChange: (newVal) => {
-        if (boxEl && boxEl.dataset) {
-            boxEl.dataset.name = newVal ? 'open' : 'close'
-            localStorage.setItem('collapse', boxEl.dataset.name)
-        }
-    }
-});
-collapseBtn.appendChild(switchComponent);
-
-// CLPS.onclick = () => {
-//     if (boxEl && boxEl.dataset) {
-//         boxEl.dataset.name = boxEl.dataset.name == 'open' ? 'close' : 'open'
-//         localStorage.setItem('collapse', boxEl.dataset.name)
-//     }
-// }
-
 //执行时禁用按钮
 const disableButtonWhenExecuteFunc = async (e, func) => {
     const target = e.currentTarget
@@ -2877,3 +2809,40 @@ const onClosePayModal = () => {
     closeModal('#payModal')
     localStorage.setItem('hidePayModal', 'true')
 }
+
+
+//展开收起
+// 配置观察器_菜单
+(() => {
+    const { el: collapseMenuEl } = createCollapseObserver(document.querySelector(".collapse_menu"))
+    collapseMenuEl.dataset.name = localStorage.getItem('collapse_menu') || 'open'
+    const collapseBtn = document.querySelector('#collapseBtn_menu')
+    const switchComponent = createSwitch({
+        text: '功能列表',
+        value: collapseMenuEl.dataset.name == 'open',
+        className: 'collapse_menu',
+        onChange: (newVal) => {
+            if (collapseMenuEl && collapseMenuEl.dataset) {
+                collapseMenuEl.dataset.name = newVal ? 'open' : 'close'
+                localStorage.setItem('collapse_menu', collapseMenuEl.dataset.name)
+            }
+        }
+    });
+    collapseBtn.appendChild(switchComponent);
+})();
+
+//展开收起
+// 配置观察器_基本状态
+collapseGen("#collapse_status_btn", "#collapse_status", "collapse_status")
+
+//展开收起
+// 配置观察器_TTYD
+collapseGen("#collapse_ttyd_btn", "#collapse_ttyd", "collapse_ttyd")
+
+//展开收起
+// 配置观察器_锁频
+collapseGen("#collapse_lkband_btn", "#collapse_lkband", "collapse_lkband")
+
+//展开收起
+// 配置观察器_锁基站
+collapseGen("#collapse_lkcell_btn", "#collapse_lkcell", "collapse_lkcell")

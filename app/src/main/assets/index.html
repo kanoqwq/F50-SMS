@@ -19,10 +19,10 @@
                 <strong id="MODEL" style="font-size: 14px;"></strong>
             </div>
             <!-- 操作按钮 -->
-            <div id="collapseBtn" style="align-self: start;justify-self: start;margin: 6px;margin-top: 0;">
+            <div id="collapseBtn_menu" style="align-self: start;justify-self: start;margin: 6px;margin-top: 0;">
                 <!-- <button id="CLPS">功能列表</button> -->
             </div>
-            <div class="actions collapse" data-name="close"
+            <div class="actions collapse collapse_menu" data-name="close"
                 style="flex-shrink: 0;text-align: start;align-self: flex-start">
                 <div style="margin: 0 2px;margin-bottom: 10px;" class="collapse_box">
                     <div>
@@ -70,215 +70,241 @@
                 </div>
             </div>
             <!-- 状态 -->
-            <div style="flex-shrink:0;margin-top: 0;width: 100%;">
+            <div style="flex-shrink:0;width: 100%;margin-top: 10px;">
                 <div class="title" style="margin: 6px 0;">
                     <strong>基本状态</strong>
+                    <div style="display: inline-block;" id="collapse_status_btn"></div>
                     <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
                     <button id="REFRESH" class="btn" style="padding: 4px;margin-left: 10px;">停止刷新</button>
                 </div>
-                <ul class="deviceList" id="STATUS">
-                    <li style="padding-top: 15px;">
-                        <strong class="green"
-                            style="margin: 10px auto;margin-top: 0; display: flex;flex-direction: column;padding: 40px;">
-                            <span style="font-size: 50px;" class="spin">🌀</span>
-                            <span style="font-size: 16px;padding-top: 10px;">loading...</span>
-                        </strong>
-                    </li>
-                </ul>
+                <div class="collapse" id="collapse_status">
+                    <div class="collapse_box">
+                        <ul class="deviceList" id="STATUS">
+                            <li style="padding-top: 15px;">
+                                <strong class="green"
+                                    style="margin: 10px auto;margin-top: 0; display: flex;flex-direction: column;padding: 40px;">
+                                    <span style="font-size: 50px;" class="spin">🌀</span>
+                                    <span style="font-size: 16px;padding-top: 10px;">loading...</span>
+                                </strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <!-- TTYD -->
-            <div id="TTYD" style="display: none;width: 100%;">
-                <div class="title" style="margin: 6px 0 ;"><strong>TTYD</strong></div>
-                <ul class="deviceList">
-                    <!-- <li style="padding:10px">
+            <div id="TTYD" style="display: none;width: 100%;margin-top: 10px;">
+                <div class="title" style="margin: 6px 0 ;">
+                    <strong>TTYD</strong>
+                    <div style="display: inline-block;" id="collapse_ttyd_btn"></div>
+                </div>
+                <div class="collapse" id="collapse_ttyd">
+                    <div class="collapse_box">
+                        <ul class="deviceList">
+                            <!-- <li style="padding:10px">
                         <iframe src="http://192.168.0.1:1145/"
                             style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
                     </li> -->
-                </ul>
-            </div>
-            <!-- 锁频锁小区 -->
-            <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;">
-                <div class="title" style="margin: 6px 0 ;"><strong>锁频/锁小区</strong></div>
-                <div style="margin:10px 0;">
-                    <p class="title"><i style="font-size: 12px;">🚀 本设置可以不用重启，更改完成后切换一下网络模式即可 🚀</i></p>
-                    <form class="bands" id="bandsForm" onsubmit="submitBandForm(event)">
-                        <table class="nice-table">
-                            <thead>
-                                <tr>
-                                    <th>选择</th>
-                                    <th>Band</th>
-                                    <th>频率范围 (MHz)</th>
-                                    <th>制式</th>
-                                    <th>运营商</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="1"></td>
-                                    <td>B1</td>
-                                    <td>2100</td>
-                                    <td>FDD-LTE</td>
-                                    <td>联通/电信</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="3"></td>
-                                    <td>B3</td>
-                                    <td>1800</td>
-                                    <td>FDD-LTE</td>
-                                    <td>三大运营商</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="5"></td>
-                                    <td>B5</td>
-                                    <td>850</td>
-                                    <td>FDD-LTE</td>
-                                    <td>电信</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="8"></td>
-                                    <td>B8</td>
-                                    <td>900</td>
-                                    <td>FDD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="34"></td>
-                                    <td>B34</td>
-                                    <td>2000</td>
-                                    <td>TD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="38"></td>
-                                    <td>B38</td>
-                                    <td>2600</td>
-                                    <td>TD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="39"></td>
-                                    <td>B39</td>
-                                    <td>1900</td>
-                                    <td>TD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="40"></td>
-                                    <td>B40</td>
-                                    <td>2300</td>
-                                    <td>TD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="4G" data-band="41"></td>
-                                    <td>B41</td>
-                                    <td>2500–2690</td>
-                                    <td>TD-LTE</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="1"></td>
-                                    <td>N1</td>
-                                    <td>1920–1980 / 2110–2170</td>
-                                    <td>FDD</td>
-                                    <td>联通/电信</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="5"></td>
-                                    <td>N5</td>
-                                    <td>824–849 / 869–894</td>
-                                    <td>FDD</td>
-                                    <td>电信</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="8"></td>
-                                    <td>N8</td>
-                                    <td>880–915 / 925–960</td>
-                                    <td>FDD</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="28"></td>
-                                    <td>N28</td>
-                                    <td>703–748 / 758–803</td>
-                                    <td>FDD</td>
-                                    <td>广电/移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="41"></td>
-                                    <td>N41</td>
-                                    <td>2515–2675</td>
-                                    <td>TDD</td>
-                                    <td>移动</td>
-                                </tr>
-                                <tr>
-                                    <td><input type="checkbox" data-type="5G" data-band="78"></td>
-                                    <td>N78</td>
-                                    <td>3300–3600</td>
-                                    <td>TDD</td>
-                                    <td>联通/电信</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <button type="submit" class="btn"
-                            style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁频段!</button>
-                    </form>
-                </div>
-                <div style="margin: 10px 0;margin-top: 20px;">
-                    <p class="title"><i style="font-size: 12px;">🚀 注意，选错小区可能会导致信号不稳定/无信号等问题 🚀</i></p>
-                    <div class="title" style="margin: 10px 0 ;margin-top: 20px;"><strong>已锁小区</strong></div>
-                    <table class="nice-table" id="LOCKED_CELL_FORM">
-                        <thead>
-                            <tr>
-                                <th>类型</th>
-                                <th>PCI</th>
-                                <th>频率</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
-                    <div class="title" style="margin: 10px 0 ;"><strong>小区列表</strong></div>
-                    <div class="title" id="CURRENT_CELL" style="margin: 10px 0;font-size:14px"><strong>当前小区信息：</strong>
+                        </ul>
                     </div>
-                    <form id="cellForm" onsubmit="submitCellForm(event)" style="overflow-x: auto;">
-                        <table class="nice-table">
+                </div>
+            </div>
+            <!-- 锁频锁基站 -->
+            <div style="width: 100%;flex-shrink: 0;margin-bottom: 40px;margin-top: 10px;">
+                <div class="title" style="margin: 6px 0 ;">
+                    <strong>🔒 锁定频段</strong>
+                    <div style="display: inline-block" id="collapse_lkband_btn"></div>
+                </div>
+                <div class="collapse" id="collapse_lkband" style="overflow: visible;margin: 10px 0">
+                    <div class="collapse_box">
+                        <p class="title"><i style="font-size: 12px;">🚀 本设置可以不用重启，更改完成后切换一下网络模式即可 🚀</i></p>
+                        <form class="bands" id="bandsForm" onsubmit="submitBandForm(event)">
+                            <table class="nice-table">
+                                <thead>
+                                    <tr>
+                                        <th>选择</th>
+                                        <th>Band</th>
+                                        <th>频率范围 (MHz)</th>
+                                        <th>制式</th>
+                                        <th>运营商</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="1"></td>
+                                        <td>B1</td>
+                                        <td>2100</td>
+                                        <td>FDD-LTE</td>
+                                        <td>联通/电信</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="3"></td>
+                                        <td>B3</td>
+                                        <td>1800</td>
+                                        <td>FDD-LTE</td>
+                                        <td>三大运营商</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="5"></td>
+                                        <td>B5</td>
+                                        <td>850</td>
+                                        <td>FDD-LTE</td>
+                                        <td>电信</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="8"></td>
+                                        <td>B8</td>
+                                        <td>900</td>
+                                        <td>FDD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="34"></td>
+                                        <td>B34</td>
+                                        <td>2000</td>
+                                        <td>TD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="38"></td>
+                                        <td>B38</td>
+                                        <td>2600</td>
+                                        <td>TD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="39"></td>
+                                        <td>B39</td>
+                                        <td>1900</td>
+                                        <td>TD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="40"></td>
+                                        <td>B40</td>
+                                        <td>2300</td>
+                                        <td>TD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="4G" data-band="41"></td>
+                                        <td>B41</td>
+                                        <td>2500–2690</td>
+                                        <td>TD-LTE</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="1"></td>
+                                        <td>N1</td>
+                                        <td>1920–1980 / 2110–2170</td>
+                                        <td>FDD</td>
+                                        <td>联通/电信</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="5"></td>
+                                        <td>N5</td>
+                                        <td>824–849 / 869–894</td>
+                                        <td>FDD</td>
+                                        <td>电信</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="8"></td>
+                                        <td>N8</td>
+                                        <td>880–915 / 925–960</td>
+                                        <td>FDD</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="28"></td>
+                                        <td>N28</td>
+                                        <td>703–748 / 758–803</td>
+                                        <td>FDD</td>
+                                        <td>广电/移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="41"></td>
+                                        <td>N41</td>
+                                        <td>2515–2675</td>
+                                        <td>TDD</td>
+                                        <td>移动</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" data-type="5G" data-band="78"></td>
+                                        <td>N78</td>
+                                        <td>3300–3600</td>
+                                        <td>TDD</td>
+                                        <td>联通/电信</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button type="submit" class="btn"
+                                style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁频段!</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="title" style="margin: 6px 0; margin-top: 10px;">
+                    <strong>🔒 锁定基站</strong>
+                    <div style="display: inline-block;" id="collapse_lkcell_btn"></div>
+                </div>
+                <div class="collapse" id="collapse_lkcell" style="overflow: visible;margin: 10px 0;margin-top: 20px;">
+                    <div class="collapse_box">
+                        <p class="title"><i style="font-size: 12px;">🚀 注意，选错基站可能会导致信号不稳定/无信号等问题 🚀</i></p>
+                        <div class="title" style="margin: 10px 0 ;margin-top: 20px;"><strong>已锁基站</strong></div>
+                        <table class="nice-table" id="LOCKED_CELL_FORM">
                             <thead>
                                 <tr>
-                                    <th>频段</th>
-                                    <th>频率</th>
+                                    <th>类型</th>
                                     <th>PCI</th>
-                                    <th>RSRP</th>
-                                    <th>RSRQ</th>
-                                    <th>SINR</th>
+                                    <th>频率</th>
                                 </tr>
                             </thead>
                             <tbody>
 
                             </tbody>
                         </table>
-                        <div style="display: flex;align-items: center; padding: 8px;margin-top: 10px;">
-                            <strong>网络选择：</strong>
-                            <label style="display: flex;align-items: center;margin-right: 20px;"><span>4G </span>
-                                <input style="margin: 0 0 0 8px;" type="radio" name="RAT" value="12" />
-                            </label>
-                            <label style="display: flex;align-items: center;"><span>5G </span>
-                                <input style="margin: 0 0 0 8px;" checked type="radio" name="RAT" value="16" />
-                            </label>
+                        <div class="title" style="margin: 10px 0 ;"><strong>基站列表</strong></div>
+                        <div class="title" id="CURRENT_CELL" style="margin: 10px 0;font-size:14px">
+                            <strong>当前基站信息：</strong>
                         </div>
-                        <div style="margin: 10px;">
-                            <input style="padding: 8px; width: 100%" id="PCI" name="PCI" type="text" placeholder="PCI">
-                        </div>
-                        <div style="margin: 10px;">
-                            <input style="padding: 8px; width: 100%;" id="EARFCN" name="EARFCN" type="text"
-                                placeholder="EARFCN">
-                        </div>
-                        <button type="submit" class="btn"
-                            style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁小区!</button>
-                    </form>
-                    <button onclick="unlockAllCell()" class="btn"
-                        style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定小区</button>
+                        <form id="cellForm" onsubmit="submitCellForm(event)" style="overflow-x: auto;">
+                            <table class="nice-table">
+                                <thead>
+                                    <tr>
+                                        <th>频段</th>
+                                        <th>频率</th>
+                                        <th>PCI</th>
+                                        <th>RSRP</th>
+                                        <th>RSRQ</th>
+                                        <th>SINR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                </tbody>
+                            </table>
+                            <div style="display: flex;align-items: center; padding: 8px;margin-top: 10px;">
+                                <strong>网络选择：</strong>
+                                <label style="display: flex;align-items: center;margin-right: 20px;"><span>4G
+                                    </span>
+                                    <input style="margin: 0 0 0 8px;" type="radio" name="RAT" value="12" />
+                                </label>
+                                <label style="display: flex;align-items: center;"><span>5G </span>
+                                    <input style="margin: 0 0 0 8px;" checked type="radio" name="RAT" value="16" />
+                                </label>
+                            </div>
+                            <div style="margin: 10px;">
+                                <input style="padding: 8px; width: 100%" id="PCI" name="PCI" type="text"
+                                    placeholder="PCI">
+                            </div>
+                            <div style="margin: 10px;">
+                                <input style="padding: 8px; width: 100%;" id="EARFCN" name="EARFCN" type="text"
+                                    placeholder="EARFCN">
+                            </div>
+                            <button type="submit" class="btn"
+                                style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">锁基站!</button>
+                        </form>
+                        <button onclick="unlockAllCell()" class="btn"
+                            style="margin-top: 6px;;width: 100%;padding: 8px;font-size: 14px;">解除锁定基站</button>
+                    </div>
                 </div>
             </div>
             <!-- 登录模态框 -->
@@ -340,7 +366,8 @@
                         <li draggable="true"> <label><input type="checkbox" data-name="network_type">蜂窝状态</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="QORS_MESSAGE">QCI等级</label></li>
                         <li draggable="true"> <label><input type="checkbox"
-                                    data-name="wifi_access_sta_num">WIFI设备数</label></li>
+                                    data-name="wifi_access_sta_num">WIFI设备数</label>
+                        </li>
                         <li draggable="true"> <label><input type="checkbox" data-name="battery">剩余电量</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="rssi">蜂窝信号强度</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="cpu_temp">CPU温度</label></li>
@@ -369,7 +396,7 @@
                         <li draggable="true"> <label><input type="checkbox" data-name="Nr_pci">5G PCI</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="nr_rsrq">5G RSRQ</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="nr_rssi">5G RSSI</label></li>
-                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_cell_id">5G 小区ID</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Nr_cell_id">5G 基站ID</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="lte_rsrp">4G接收功率</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="Lte_snr">4G SINR</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="Lte_bands">4G 注册频段</label></li>
@@ -379,7 +406,7 @@
                         <li draggable="true"> <label><input type="checkbox" data-name="Lte_pci">4G PCI</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="lte_rsrq">4G RSRQ</label></li>
                         <li draggable="true"> <label><input type="checkbox" data-name="lte_rssi">4G RSSI</label></li>
-                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_cell_id">4G 小区ID</label></li>
+                        <li draggable="true"> <label><input type="checkbox" data-name="Lte_cell_id">4G 基站ID</label></li>
                     </ul>
                     <div class="title" style="margin: 10px 0;">设备属性</div>
                     <ul class="drag" id="draggable_props">
@@ -802,7 +829,8 @@
                             src="https://kanokano.cn/wp-content/uploads/2025/05/BFEE3DCE16FE04E6EF4EC52396E618B1.webp"
                             alt="">
                     </div>
-                    <div class="content" style="overflow-y: hidden;padding: 15px;width: 66vw;max-width: 400px;max-height:fit-content;">
+                    <div class="content"
+                        style="overflow-y: hidden;padding: 15px;width: 66vw;max-width: 400px;max-height:fit-content;">
                         <div class="item" style="margin: 10px auto;">
                             <img style="width: 100%;border-radius: 20px;"
                                 src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp" alt="">

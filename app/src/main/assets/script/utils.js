@@ -242,11 +242,13 @@ function hsvToRgb(h, s, v) {
 }
 
 // 创建一个开关
-function createSwitch({ text, value, className = '', onChange }) {
+function createSwitch({ text, value, className = '', onChange, fontSize = 14 }) {
     const container = document.createElement('div');
     container.className = 'Switch';
+    container.style.fontSize = fontSize + 'px'
 
     const label = document.createElement('label');
+    label.style.display = "flex"
     label.className = `outer ${className}`;
 
     const span = document.createElement('span');
@@ -281,4 +283,58 @@ function createSwitch({ text, value, className = '', onChange }) {
     container.appendChild(label);
 
     return container;
+}
+
+
+const createCollapseObserver = (boxEl = null) => {
+    if (!boxEl) return
+    const box = boxEl.querySelector('.collapse_box')
+    const resizeObserver = new ResizeObserver(() => {
+        const value = boxEl.getAttribute('data-name');
+        if (!box || value != 'open') return
+        boxEl.style.height = box.getBoundingClientRect().height + 'px'
+    });
+    resizeObserver.observe(box);
+    const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (
+                mutation.type === 'attributes' &&
+                mutation.attributeName === 'data-name'
+            ) {
+                const newValue = boxEl.getAttribute('data-name');
+                if (!box) return
+                if (newValue == 'open') {
+                    boxEl.style.height = box.getBoundingClientRect().height + 'px'
+                    boxEl.style.overflow = 'hidden'
+                } else {
+                    boxEl.style.height = '0'
+                    boxEl.style.overflow = 'hidden'
+                }
+            }
+        }
+    })
+    observer.observe(boxEl, {
+        attributes: true, // 监听属性变化
+        attributeFilter: ['data-name'], // 只监听 data-name 属性
+    });
+    return {
+        el: boxEl
+    }
+}
+
+const collapseGen = (btn_id, collapse_id, storName) => {
+    const { el: collapseMenuEl } = createCollapseObserver(document.querySelector(collapse_id))
+    collapseMenuEl.dataset.name = localStorage.getItem(storName) || 'open'
+    const collapseBtn = document.querySelector(btn_id)
+    const switchComponent = createSwitch({
+        value: collapseMenuEl.dataset.name == 'open',
+        className: storName,
+        onChange: (newVal) => {
+            if (collapseMenuEl && collapseMenuEl.dataset) {
+                collapseMenuEl.dataset.name = newVal ? 'open' : 'close'
+                localStorage.setItem(storName, collapseMenuEl.dataset.name)
+            }
+        }
+    });
+    collapseBtn.appendChild(switchComponent);
 }

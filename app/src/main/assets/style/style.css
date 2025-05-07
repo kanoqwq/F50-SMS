@@ -87,7 +87,6 @@ input::placeholder {
     border-radius: 10px;
     background-color: var(--dark-card-bg);
     padding: 4px;
-    margin-bottom: 10px;
 }
 
 .deviceList li p,
@@ -135,6 +134,9 @@ input::placeholder {
 }
 
 .title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 0;
     padding-left: 10px;
     border-left: 6px solid skyblue;
@@ -305,7 +307,6 @@ input {
     font-size: 12px;
     border-radius: 10px;
     padding: 4px;
-    margin-bottom: 10px;
 }
 
 .deviceList li p {
@@ -561,10 +562,10 @@ li.dragging {
 .Switch {
     width: 100%;
     display: inline-block;
+    vertical-align: top;
 }
 
 .Switch .outer {
-    overflow: hidden;
     user-select: none;
 }
 
@@ -575,7 +576,6 @@ li.dragging {
     text-overflow: ellipsis;
     padding-right: 4px;
     line-height: 24px;
-    font-size: 14px;
 }
 
 .Switch .switch {
@@ -864,7 +864,7 @@ li.dragging {
     }
 }
 
-#toastContainer{
+#toastContainer {
     position: fixed;
     display: flex;
     flex-direction: column;
