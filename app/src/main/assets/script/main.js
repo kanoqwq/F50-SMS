@@ -314,7 +314,7 @@ const onTokenConfirm = debounce(async () => {
         initATBtn()
         initChangePassData()
         initSimCardType()
-        atCommand("AT+CGEQOSRDP=1")
+        QOSRDPCommand("AT+CGEQOSRDP=1")
     }
     catch {
         createToast('登录失败，请检查网络！', 'red')
@@ -559,7 +559,7 @@ let handlerStatusRender = async (flag = false) => {
             cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
             mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
             realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长(月): ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
-            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && res.data_volume_limit_switch == '1' ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
+            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && (res.flux_data_volume_limit_switch == '1' || res.data_volume_limit_switch == '1') ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
                 const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
                 if (!limit_size) return ''
                 return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
@@ -813,7 +813,7 @@ clearBtn.onclick = () => {
     initATBtn()
     initChangePassData()
     initSimCardType()
-    atCommand("AT+CGEQOSRDP=1")
+    QOSRDPCommand("AT+CGEQOSRDP=1")
     //退出登录请求
     try {
         login().finally(cookie => {
@@ -845,10 +845,10 @@ let initNetworktype = async () => {
             item.selected = true
         }
     })
-    atCommand("AT+CGEQOSRDP=1")
+    QOSRDPCommand("AT+CGEQOSRDP=1")
     let interCount = 0
     let temp_inte = requestInterval(async () => {
-        let res = await atCommand("AT+CGEQOSRDP=1")
+        let res = await QOSRDPCommand("AT+CGEQOSRDP=1")
         if (interCount == 20) return temp_inte && temp_inte()
         if (res && !res.includes("ERROR")) {
             return temp_inte && temp_inte()
@@ -2060,7 +2060,7 @@ let handlerCecullarStatus = async () => {
                 setTimeout(async () => {
                     await handlerCecullarStatus()
                     createToast('操作成功！', 'green')
-                    atCommand("AT+CGEQOSRDP=1")
+                    QOSRDPCommand("AT+CGEQOSRDP=1")
                 }, 2000);
             } else {
                 createToast('操作失败！', 'red')
@@ -2230,6 +2230,8 @@ let handleScheduleRebootFormSubmit = async (e) => {
 }
 
 // U30AIR用关机指令
+let shutDownBtnCount = 1
+let shutDownBtnTimer = null
 let initShutdownBtn = async () => {
     const btn = document.querySelector('#SHUTDOWN')
     if (!btn) return
@@ -2258,13 +2260,24 @@ let initShutdownBtn = async () => {
             btn.style.backgroundColor = '#80808073'
             return null
         }
+        shutDownBtnCount++
+        btn.innerHTML = "确认关机？"
+        shutDownBtnTimer && clearTimeout(shutDownBtnTimer)
+        shutDownBtnTimer = setTimeout(() => {
+            shutDownBtnCount = 0
+            btn.innerHTML = '关机'
+        }, 3000)
+        if (shutDownBtnCount < 3) {
+            return
+        } else {
+            btn.innerHTML = '正在关机'
+        }
         try {
             const cookie = await login()
             try {
                 const res = await (await postData(cookie, {
                     goformId: 'SHUTDOWN_DEVICE'
                 })).json()
-
                 if (res?.result == 'success') {
                     createToast('关机成功！', 'green')
                 } else {
@@ -2357,27 +2370,42 @@ function parseCGEQOSRDP(input) {
 }
 
 
-const executeATCommand = async (command) => {
+const executeATCommand = async (command, slot = null) => {
     let at_slot_value = document.querySelector("#AT_SLOT")?.value
-    if (isNaN(Number(at_slot_value?.trim())) || at_slot_value == undefined || at_slot_value == null) {
-        at_slot_value = 0
+    if (slot == null || slot == undefined) {
+        if (isNaN(Number(at_slot_value?.trim())) || at_slot_value == undefined || at_slot_value == null) {
+            slot = 0
+        } else {
+            slot = at_slot_value.trim()
+        }
     }
     try {
         const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}&slot=${at_slot_value.trim()}`, { headers: common_headers })).json()
+        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}&slot=${slot}`, { headers: common_headers })).json()
         return res
     } catch (e) {
         return null
     }
 }
 
-async function atCommand(cmd) {
+async function QOSRDPCommand(cmd) {
     if (!cmd) return QORS_MESSAGE = null
-    let res = await executeATCommand(cmd)
+    // 获取当前卡槽
+    let { sim_slot } = await getData(new URLSearchParams({
+        cmd: 'sim_slot'
+    }))
+    //获取是否支持双sim卡
+    const { dual_sim_support } = await getData(new URLSearchParams({
+        cmd: 'dual_sim_support'
+    }))
+    if (!sim_slot || dual_sim_support != '1') {
+        sim_slot = 0
+    }
+    let res = await executeATCommand(cmd, sim_slot)
     if (res.result) return QORS_MESSAGE = parseCGEQOSRDP(res.result)
     return QORS_MESSAGE = null
 }
-atCommand("AT+CGEQOSRDP=1")
+QOSRDPCommand("AT+CGEQOSRDP=1")
 
 let initATBtn = () => {
     const el = document.querySelector('#AT')
@@ -2675,7 +2703,7 @@ let initSimCardType = async () => {
             item.selected = true
         }
     })
-    atCommand("AT+CGEQOSRDP=1")
+    QOSRDPCommand("AT+CGEQOSRDP=1")
 }
 initSimCardType()
 
