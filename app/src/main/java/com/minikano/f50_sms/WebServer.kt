@@ -1,6 +1,5 @@
 package com.minikano.f50_sms
 
-import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
@@ -34,20 +33,23 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     private val targetServerIP = gatewayIp  // 目标服务器地址
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_LOGIN_TOKEN = "login_token"
+    private val PREF_TOKEN_ENABLED = "login_token_enabled"
 
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
         val sharedPrefsForToken = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val auth_token = sharedPrefsForToken.getString(PREF_LOGIN_TOKEN,"admin")
+        val token_enabled = sharedPrefsForToken.getString(PREF_TOKEN_ENABLED,true.toString())
         try {
-
-            if(session?.uri != null && session.uri.contains("/api")){
-                // 获取请求头
-                val headers = session.headers ?: throw Exception("401")
-                val authHeader = headers["authorization"]
-                if (authHeader != auth_token) {
-                   throw Exception("401")
+            if(token_enabled == "true"){
+                if(session?.uri != null && session.uri.contains("/api")){
+                    // 获取请求头
+                    val headers = session.headers ?: throw Exception("401")
+                    val authHeader = headers["authorization"]
+                    if (authHeader != auth_token) {
+                       throw Exception("401")
+                    }
                 }
             }
         } catch (e:Exception){

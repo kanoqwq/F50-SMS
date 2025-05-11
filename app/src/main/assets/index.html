@@ -74,7 +74,7 @@
                 <div class="title" style="margin: 6px 0;">
                     <strong>基本状态</strong>
                     <div style="display: inline-block;" id="collapse_status_btn"></div>
-                    <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段显示</button>
+                    <button id="DICTIONARY" class="btn" style="padding: 4px;margin-left: 10px;">管理字段</button>
                     <button id="REFRESH" class="btn" style="padding: 4px;margin-left: 10px;">停止刷新</button>
                 </div>
                 <div class="collapse" id="collapse_status">
@@ -315,9 +315,9 @@
                         style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
                         <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
                             style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
-                        <input id="TOKEN" placeholder="APP设置的口令" type="password"
+                        <input id="TOKEN" placeholder="请在后台App查看" type="password"
                             style="text-indent: .5em;margin:0 4px;margin-bottom: 10px;height: 30px;">
-                        <input id="tokenInput" placeholder="管理密码" type="password"
+                        <input id="tokenInput" placeholder="设备的WEB管理密码" type="password"
                             style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
                     </div>
                     <div class="btn" style="text-align: right;">
@@ -827,13 +827,14 @@
                         </div>
                         <img style="max-width: 80px;flex:1; animation: a 5s infinite ease-in-out;border-radius: 8px;"
                             src="https://kanokano.cn/wp-content/uploads/2025/05/BFEE3DCE16FE04E6EF4EC52396E618B1.webp"
+                            onerror="this.onerror=null; this.src='/img/hn.webp'"
                             alt="">
                     </div>
                     <div class="content"
                         style="overflow-y: hidden;padding: 15px;width: 66vw;max-width: 400px;max-height:fit-content;">
                         <div class="item" style="margin: 10px auto;">
                             <img style="width: 100%;border-radius: 20px;"
-                                src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp" alt="">
+                                src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp" onerror="this.onerror=null; this.src='/img/zsm.webp'" alt="">
                         </div>
                     </div>
                     <div class="btn" style="text-align: right;">
@@ -851,6 +852,7 @@
     <script src="/script/utils.js"></script>
     <script src="/script/theme.js"></script>
     <script src="/script/requests.js"></script>
+    <script src="/script/preload.js"></script>
     <script src="/script/main.js"></script>
 </body>
 

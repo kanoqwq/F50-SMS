@@ -1,4 +1,29 @@
+let isNeedToken = true
 const MODEL = document.querySelector("#MODEL")
+let QORS_MESSAGE = null
+let smsSender = null
+
+//判断一下是否需要token
+const needToken = async () => {
+    //获取设备型号与电量，整合（如果有）
+    try {
+        let res = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: { ...common_headers } })).json()
+        if (!res.model) {
+            isNeedToken = true
+        } else {
+            isNeedToken = false
+        }
+    } catch {
+        isNeedToken = true
+    }
+    let tkInput = document.querySelector('#TOKEN')
+    if (isNeedToken) {
+        tkInput && (tkInput.style.display = "")
+    } else {
+        tkInput && (tkInput.style.display = "none")
+    }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
         let container = document.querySelector('.container')
@@ -7,296 +32,275 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
 })
 
-let QORS_MESSAGE = null
+needToken().finally(() => {
+    main_func()
+})
 
-//读取展示列表
-const _stor = localStorage.getItem('showList')
-const showList = _stor != null ? JSON.parse(_stor) : {
-    statusShowList: [
-        {
-            "name": "network_type",
-            "isShow": true
-        },
-        {
-            "name": "QORS_MESSAGE",
-            "isShow": true
-        },
-        {
-            "name": "wifi_access_sta_num",
-            "isShow": true
-        },
-        {
-            "name": "battery",
-            "isShow": true
-        },
-        {
-            "name": "rssi",
-            "isShow": true
-        },
-        {
-            "name": "cpu_temp",
-            "isShow": true
-        },
-        {
-            "name": "cpu_usage",
-            "isShow": true
-        },
-        {
-            "name": "mem_usage",
-            "isShow": true
-        },
-        {
-            "name": "realtime_time",
-            "isShow": true
-        },
-        {
-            "name": "monthly_tx_bytes",
-            "isShow": true
-        },
-        {
-            "name": "daily_data",
-            "isShow": true
-        },
-        {
-            "name": "internal_available_storage",
-            "isShow": true
-        },
-        {
-            "name": "external_available_storage",
-            "isShow": true
-        },
-        {
-            "name": "realtime_rx_thrpt",
-            "isShow": true
-        }],
-    signalShowList: [
-        {
-            "name": "Z5g_rsrp",
-            "isShow": true
-        },
-        {
-            "name": "Nr_snr",
-            "isShow": true
-        },
-        {
-            "name": "Nr_bands",
-            "isShow": true
-        },
-        {
-            "name": "Nr_fcn",
-            "isShow": true
-        },
-        {
-            "name": "Nr_bands_widths",
-            "isShow": true
-        },
-        {
-            "name": "Nr_pci",
-            "isShow": true
-        },
-        {
-            "name": "nr_rsrq",
-            "isShow": true
-        },
-        {
-            "name": "nr_rssi",
-            "isShow": true
-        },
-        {
-            "name": "Nr_cell_id",
-            "isShow": true
-        },
-        {
-            "name": "lte_rsrp",
-            "isShow": true
-        },
-        {
-            "name": "Lte_snr",
-            "isShow": true
-        },
-        {
-            "name": "Lte_bands",
-            "isShow": true
-        },
-        {
-            "name": "Lte_fcn",
-            "isShow": true
-        },
-        {
-            "name": "Lte_bands_widths",
-            "isShow": true
-        },
-        {
-            "name": "Lte_pci",
-            "isShow": true
-        },
-        {
-            "name": "lte_rsrq",
-            "isShow": true
-        },
-        {
-            "name": "lte_rssi",
-            "isShow": true
-        },
-        {
-            "name": "Lte_cell_id",
-            "isShow": true
-        }],
-    propsShowList: [
-        {
-            "name": "model",
-            "isShow": true
-        },
-        {
-            "name": "cr_version",
-            "isShow": true
-        },
-        {
-            "name": "iccid",
-            "isShow": true
-        },
-        {
-            "name": "imei",
-            "isShow": true
-        },
-        {
-            "name": "imsi",
-            "isShow": true
-        },
-        {
-            "name": "ipv6_wan_ipaddr",
-            "isShow": true
-        },
-        {
-            "name": "lan_ipaddr",
-            "isShow": true
-        },
-        {
-            "name": "mac_address",
-            "isShow": true
-        },
-        {
-            "name": "msisdn",
-            "isShow": true
-        }
-    ]
+function main_func() {
+    //读取展示列表
+    const _stor = localStorage.getItem('showList')
+    const showList = _stor != null ? JSON.parse(_stor) : {
+        statusShowList: [
+            {
+                "name": "network_type",
+                "isShow": true
+            },
+            {
+                "name": "QORS_MESSAGE",
+                "isShow": true
+            },
+            {
+                "name": "wifi_access_sta_num",
+                "isShow": true
+            },
+            {
+                "name": "battery",
+                "isShow": true
+            },
+            {
+                "name": "rssi",
+                "isShow": true
+            },
+            {
+                "name": "cpu_temp",
+                "isShow": true
+            },
+            {
+                "name": "cpu_usage",
+                "isShow": true
+            },
+            {
+                "name": "mem_usage",
+                "isShow": true
+            },
+            {
+                "name": "realtime_time",
+                "isShow": true
+            },
+            {
+                "name": "monthly_tx_bytes",
+                "isShow": true
+            },
+            {
+                "name": "daily_data",
+                "isShow": true
+            },
+            {
+                "name": "internal_available_storage",
+                "isShow": true
+            },
+            {
+                "name": "external_available_storage",
+                "isShow": true
+            },
+            {
+                "name": "realtime_rx_thrpt",
+                "isShow": true
+            }],
+        signalShowList: [
+            {
+                "name": "Z5g_rsrp",
+                "isShow": true
+            },
+            {
+                "name": "Nr_snr",
+                "isShow": true
+            },
+            {
+                "name": "nr_rsrq",
+                "isShow": true
+            },
+            {
+                "name": "Nr_bands",
+                "isShow": true
+            },
+            {
+                "name": "Nr_fcn",
+                "isShow": true
+            },
+            {
+                "name": "Nr_bands_widths",
+                "isShow": true
+            },
+            {
+                "name": "Nr_pci",
+                "isShow": true
+            },
+            {
+                "name": "nr_rssi",
+                "isShow": true
+            },
+            {
+                "name": "Nr_cell_id",
+                "isShow": true
+            },
+            {
+                "name": "lte_rsrp",
+                "isShow": true
+            },
+            {
+                "name": "Lte_snr",
+                "isShow": true
+            },
+            {
+                "name": "lte_rsrq",
+                "isShow": true
+            },
+            {
+                "name": "Lte_bands",
+                "isShow": true
+            },
+            {
+                "name": "Lte_fcn",
+                "isShow": true
+            },
+            {
+                "name": "Lte_bands_widths",
+                "isShow": true
+            },
+            {
+                "name": "Lte_pci",
+                "isShow": true
+            },
+            {
+                "name": "lte_rssi",
+                "isShow": true
+            },
+            {
+                "name": "Lte_cell_id",
+                "isShow": true
+            }],
+        propsShowList: [
+            {
+                "name": "model",
+                "isShow": true
+            },
+            {
+                "name": "cr_version",
+                "isShow": true
+            },
+            {
+                "name": "iccid",
+                "isShow": true
+            },
+            {
+                "name": "imei",
+                "isShow": true
+            },
+            {
+                "name": "imsi",
+                "isShow": true
+            },
+            {
+                "name": "ipv6_wan_ipaddr",
+                "isShow": true
+            },
+            {
+                "name": "lan_ipaddr",
+                "isShow": true
+            },
+            {
+                "name": "mac_address",
+                "isShow": true
+            },
+            {
+                "name": "msisdn",
+                "isShow": true
+            }
+        ]
 
-}
+    }
 
-let smsSender = null
+    // #拖动管理 list为当前最新正确顺序
+    const saveDragListData = (list, callback) => {
+        //拖动状态更改
+        const children = Array.from(list.querySelectorAll('input'))
+        let id = null
+        if (list.id == 'draggable_status') id = 'statusShowList'
+        if (list.id == 'draggable_signal') id = 'signalShowList'
+        if (list.id == 'draggable_props') id = 'propsShowList'
+        if (!id) return
+        //遍历
+        showList[id] = children.map((item) => ({
+            name: item.dataset.name,
+            isShow: item.checked
+        }))
+        localStorage.setItem('showList', JSON.stringify(showList))
+        //保存
+        callback && callback(list)
+    }
 
-// #拖动管理 list为当前最新正确顺序
-const saveDragListData = (list, callback) => {
-    //拖动状态更改
-    const children = Array.from(list.querySelectorAll('input'))
-    let id = null
-    if (list.id == 'draggable_status') id = 'statusShowList'
-    if (list.id == 'draggable_signal') id = 'signalShowList'
-    if (list.id == 'draggable_props') id = 'propsShowList'
-    if (!id) return
-    //遍历
-    showList[id] = children.map((item) => ({
-        name: item.dataset.name,
-        isShow: item.checked
+    //初始化drag触发器
+    DragList("#draggable_status", (list) => saveDragListData(list, (d_list) => {
+        localStorage.setItem('statusShowListDOM', d_list.innerHTML)
     }))
-    localStorage.setItem('showList', JSON.stringify(showList))
-    //保存
-    callback && callback(list)
-}
+    DragList("#draggable_signal", (list) => saveDragListData(list, (d_list) => {
+        localStorage.setItem('signalShowListDOM', d_list.innerHTML)
+    }))
+    DragList("#draggable_props", (list) => saveDragListData(list, (d_list) => {
+        localStorage.setItem('propsShowListDOM', d_list.innerHTML)
+    }))
 
-//初始化drag触发器
-DragList("#draggable_status", (list) => saveDragListData(list, (d_list) => {
-    localStorage.setItem('statusShowListDOM', d_list.innerHTML)
-}))
-DragList("#draggable_signal", (list) => saveDragListData(list, (d_list) => {
-    localStorage.setItem('signalShowListDOM', d_list.innerHTML)
-}))
-DragList("#draggable_props", (list) => saveDragListData(list, (d_list) => {
-    localStorage.setItem('propsShowListDOM', d_list.innerHTML)
-}))
+    //渲染listDOM
+    const listDOM_STATUS = document.querySelector("#draggable_status")
+    const listDOM_SIGNAL = document.querySelector("#draggable_signal")
+    const listDOM_PROPS = document.querySelector("#draggable_props")
+    const statusDOMStor = localStorage.getItem('statusShowListDOM')
+    const signalDOMStor = localStorage.getItem('signalShowListDOM')
+    const propsDOMStor = localStorage.getItem('propsShowListDOM')
+    statusDOMStor && (listDOM_STATUS.innerHTML = statusDOMStor)
+    signalDOMStor && (listDOM_SIGNAL.innerHTML = signalDOMStor)
+    propsDOMStor && (listDOM_PROPS.innerHTML = propsDOMStor)
 
-//渲染listDOM
-const listDOM_STATUS = document.querySelector("#draggable_status")
-const listDOM_SIGNAL = document.querySelector("#draggable_signal")
-const listDOM_PROPS = document.querySelector("#draggable_props")
-const statusDOMStor = localStorage.getItem('statusShowListDOM')
-const signalDOMStor = localStorage.getItem('signalShowListDOM')
-const propsDOMStor = localStorage.getItem('propsShowListDOM')
-statusDOMStor && (listDOM_STATUS.innerHTML = statusDOMStor)
-signalDOMStor && (listDOM_SIGNAL.innerHTML = signalDOMStor)
-propsDOMStor && (listDOM_PROPS.innerHTML = propsDOMStor)
-
-//按照showList初始化排序模态框
-listDOM_STATUS.querySelectorAll('input').forEach((item) => {
-    let name = item.dataset.name
-    let foundItem = showList.statusShowList.find(i => i.name == name)
-    if (foundItem) {
-        item.checked = foundItem.isShow
-    }
-})
-listDOM_SIGNAL.querySelectorAll('input').forEach((item) => {
-    let name = item.dataset.name
-    let foundItem = showList.signalShowList.find(i => i.name == name)
-    if (foundItem) {
-        item.checked = foundItem.isShow
-    }
-})
-listDOM_PROPS.querySelectorAll('input').forEach((item) => {
-    let name = item.dataset.name
-    let foundItem = showList.propsShowList.find(i => i.name == name)
-    if (foundItem) {
-        item.checked = foundItem.isShow
-    }
-})
-const isNullOrUndefiend = (obj) => {
-    let isNumber = typeof obj === 'number'
-    if (isNumber) {
-        //如果是数字类型，直接返回
-        return true
-    }
-    return obj != undefined || obj != null
-}
-
-let isIncludeInShowList = (dicName) => (
-    showList.statusShowList.find(i => i.name == dicName)
-    || showList.propsShowList.find(i => i.name == dicName)
-    || showList.signalShowList.find(i => i.name == dicName)
-)
-
-function notNullOrundefinedOrIsShow(obj, dicName, flag = false) {
-    let isNumber = typeof obj[dicName] === 'number'
-    if (isNumber) {
-        return isIncludeInShowList(dicName) || flag
-    }
-    let isReadable = obj[dicName] != null && obj[dicName] != undefined && obj[dicName] != ''
-    //这里需要遍历一下是否显示的字段
-    return isReadable && isIncludeInShowList(dicName)
-}
-
-const onTokenConfirm = debounce(async () => {
-    try {
-        let tkInput = document.querySelector('#tokenInput')
-        let tokenInput = document.querySelector('#TOKEN')
-        let password = tkInput && (tkInput.value)
-        let token = tokenInput && (tokenInput.value)
-        if (!password || !password?.trim()) return createToast('请输入密码！', 'red')
-        if (!token || !token?.trim()) return createToast('请输入token！', 'red')
-        KANO_PASSWORD = password.trim()
-        KANO_TOKEN = token.trim()
-        common_headers.authorization = KANO_TOKEN
-        const cookie = await login()
-        if (!cookie) {
-            createToast(`登录失败，请检查token密码和网络！`, 'red')
-            tkInput.value = ''
-            tokenInput.value = ''
-            out()
-            return null
+    //按照showList初始化排序模态框
+    listDOM_STATUS.querySelectorAll('input').forEach((item) => {
+        let name = item.dataset.name
+        let foundItem = showList.statusShowList.find(i => i.name == name)
+        if (foundItem) {
+            item.checked = foundItem.isShow
         }
-        createToast('登录成功！', 'green')
-        localStorage.setItem('kano_sms_pwd', password.trim())
-        localStorage.setItem('kano_sms_token', token.trim())
+    })
+    listDOM_SIGNAL.querySelectorAll('input').forEach((item) => {
+        let name = item.dataset.name
+        let foundItem = showList.signalShowList.find(i => i.name == name)
+        if (foundItem) {
+            item.checked = foundItem.isShow
+        }
+    })
+    listDOM_PROPS.querySelectorAll('input').forEach((item) => {
+        let name = item.dataset.name
+        let foundItem = showList.propsShowList.find(i => i.name == name)
+        if (foundItem) {
+            item.checked = foundItem.isShow
+        }
+    })
+    const isNullOrUndefiend = (obj) => {
+        let isNumber = typeof obj === 'number'
+        if (isNumber) {
+            //如果是数字类型，直接返回
+            return true
+        }
+        return obj != undefined || obj != null
+    }
 
-        closeModal('#tokenModal')
+    let isIncludeInShowList = (dicName) => (
+        showList.statusShowList.find(i => i.name == dicName)
+        || showList.propsShowList.find(i => i.name == dicName)
+        || showList.signalShowList.find(i => i.name == dicName)
+    )
+
+    function notNullOrundefinedOrIsShow(obj, dicName, flag = false) {
+        let isNumber = typeof obj[dicName] === 'number'
+        if (isNumber) {
+            return isIncludeInShowList(dicName) || flag
+        }
+        let isReadable = obj[dicName] != null && obj[dicName] != undefined && obj[dicName] != ''
+        //这里需要遍历一下是否显示的字段
+        return isReadable && isIncludeInShowList(dicName)
+    }
+
+    //初始化所有按钮
+    const initRenderMethod = async () => {
         handlerADBStatus()
         handlerADBNetworkStatus()
         handlerPerformaceStatus()
@@ -316,160 +320,191 @@ const onTokenConfirm = debounce(async () => {
         initSimCardType()
         QOSRDPCommand("AT+CGEQOSRDP=1")
     }
-    catch {
-        createToast('登录失败，请检查网络！', 'red')
-    }
-}, 200)
 
-let timer_out = null
-function out() {
-    smsSender && smsSender()
-    localStorage.removeItem('kano_sms_pwd')
-    closeModal('#smsList')
-    clearTimeout(timer_out)
-    timer_out = setTimeout(() => {
-        showModal('#tokenModal')
-    }, 320);
-}
+    const onTokenConfirm = debounce(async () => {
+        try {
+            await needToken()
+            let tkInput = document.querySelector('#tokenInput')
+            let tokenInput = document.querySelector('#TOKEN')
+            let password = tkInput && (tkInput.value)
+            let token = tokenInput && (tokenInput.value)
+            if (!password || !password?.trim()) return createToast('请输入密码！', 'red')
+            KANO_PASSWORD = password.trim()
+            if (isNeedToken) {
+                if (!token || !token?.trim()) return createToast('请输入token！', 'red')
+            }
+            KANO_TOKEN = token.trim()
+            common_headers.authorization = KANO_TOKEN
+            const cookie = await login()
+            if (!cookie) {
+                createToast(`登录失败，请检查token密码和网络！`, 'red')
+                tkInput.value = ''
+                tokenInput.value = ''
+                out()
+                return null
+            }
+            createToast('登录成功！', 'green')
+            localStorage.setItem('kano_sms_pwd', password.trim())
+            localStorage.setItem('kano_sms_token', token.trim())
+            closeModal('#tokenModal')
+            initRenderMethod()
+        }
+        catch {
+            createToast('登录失败，请检查网络！', 'red')
+        }
+    }, 200)
 
-let initRequestData = () => {
-    const PWD = localStorage.getItem('kano_sms_pwd')
-    const TOKEN = localStorage.getItem('kano_sms_token')
-    if (!PWD || !TOKEN) {
-        return false
+    let timer_out = null
+    function out() {
+        smsSender && smsSender()
+        localStorage.removeItem('kano_sms_pwd')
+        localStorage.removeItem('kano_sms_token')
+        closeModal('#smsList')
+        clearTimeout(timer_out)
+        timer_out = setTimeout(() => {
+            showModal('#tokenModal')
+        }, 320);
     }
-    KANO_TOKEN = TOKEN
-    common_headers.authorization = KANO_TOKEN
-    KANO_PASSWORD = PWD
-    return true
-}
 
-let getSms = async () => {
-    if (!initRequestData()) {
-        out()
-        return null
+    let initRequestData = async () => {
+        const PWD = localStorage.getItem('kano_sms_pwd')
+        const TOKEN = localStorage.getItem('kano_sms_token')
+        if (!PWD) {
+            return false
+        }
+        if (isNeedToken && !TOKEN) {
+            return false
+        }
+        KANO_TOKEN = TOKEN
+        common_headers.authorization = KANO_TOKEN
+        KANO_PASSWORD = PWD
+        return true
     }
-    try {
-        let res = await getSmsInfo()
-        if (!res) {
+
+    let getSms = async () => {
+        if (!(await initRequestData())) {
             out()
-            createToast(res.error, 'red')
             return null
         }
-        return res.messages
-    } catch {
-        out()
-        return null
-    }
-}
-
-let isDisabledSendSMS = false
-let sendSMS = async () => {
-    const SMSInput = document.querySelector('#SMSInput')
-    const PhoneInput = document.querySelector('#PhoneInput')
-    if (SMSInput && SMSInput.value && SMSInput.value.trim()
-        && PhoneInput && PhoneInput.value && Number(PhoneInput.value.trim())
-    ) {
         try {
-            if (isDisabledSendSMS) return createToast('请不要频繁发送！', 'red')
-            const content = SMSInput.value.trim()
-            const number = PhoneInput.value.trim()
-            isDisabledSendSMS = true
-            const res = await sendSms_UFI({ content, number })
-            if (res && res.result == 'success') {
-                SMSInput.value = ''
-                createToast('发送成功！', 'green')
-                handleSmsRender()
+            let res = await getSmsInfo()
+            if (!res) {
+                out()
+                createToast(res.error, 'red')
+                return null
+            }
+            return res.messages
+        } catch {
+            out()
+            return null
+        }
+    }
+
+    let isDisabledSendSMS = false
+    let sendSMS = async () => {
+        const SMSInput = document.querySelector('#SMSInput')
+        const PhoneInput = document.querySelector('#PhoneInput')
+        if (SMSInput && SMSInput.value && SMSInput.value.trim()
+            && PhoneInput && PhoneInput.value && Number(PhoneInput.value.trim())
+        ) {
+            try {
+                if (isDisabledSendSMS) return createToast('请不要频繁发送！', 'red')
+                const content = SMSInput.value.trim()
+                const number = PhoneInput.value.trim()
+                isDisabledSendSMS = true
+                const res = await sendSms_UFI({ content, number })
+                if (res && res.result == 'success') {
+                    SMSInput.value = ''
+                    createToast('发送成功！', 'green')
+                    handleSmsRender()
+                } else {
+                    createToast((res && res.message) ? res.message : '发送失败', 'red')
+                }
+            } catch {
+                createToast('发送失败，请检查网络和密码', 'red')
+                out()
+            }
+            isDisabledSendSMS = false
+        } else {
+            createToast('请输入手机号和内容', 'red')
+        }
+    }
+
+    const deleteState = new Map();
+    const deleteSMS = async (id) => {
+        const message = document.querySelector(`#message${id}`);
+        if (!message) return;
+        // 获取当前 id 的删除状态
+        let state = deleteState.get(id) || { confirmCount: 0, timer: null, isDeleting: false };
+
+        if (state.isDeleting) return; // 正在删除时禁止操作
+
+        state.confirmCount += 1;
+        message.style.display = '';
+
+        // 清除之前的计时器，重新设置 2 秒后重置状态
+        clearTimeout(state.timer);
+        state.timer = setTimeout(() => {
+            state.confirmCount = 0;
+            message.style.display = 'none';
+            deleteState.set(id, state);
+        }, 2000);
+
+        deleteState.set(id, state);
+
+        if (state.confirmCount < 2) return; // 第一次点击时仅提示
+
+        // 进入删除状态，防止重复点击
+        state.isDeleting = true;
+        deleteState.set(id, state);
+
+        try {
+            const res = await removeSmsById(id);
+            if (res?.result === 'success') {
+                createToast('删除成功！', 'green');
+                handleSmsRender();
             } else {
-                createToast((res && res.message) ? res.message : '发送失败', 'red')
+                createToast(res?.message || '删除失败', 'red');
             }
         } catch {
-            createToast('发送失败，请检查网络和密码', 'red')
-            out()
+            createToast('操作失败，请检查网络和密码', 'red');
         }
-        isDisabledSendSMS = false
-    } else {
-        createToast('请输入手机号和内容', 'red')
-    }
-}
 
-const deleteState = new Map();
-const deleteSMS = async (id) => {
-    const message = document.querySelector(`#message${id}`);
+        // 删除完成后，清理状态
+        deleteState.delete(id);
+    };
 
-    if (!message) return;
-
-    // 获取当前 id 的删除状态
-    let state = deleteState.get(id) || { confirmCount: 0, timer: null, isDeleting: false };
-
-    if (state.isDeleting) return; // 正在删除时禁止操作
-
-    state.confirmCount += 1;
-    message.style.display = '';
-
-    // 清除之前的计时器，重新设置 2 秒后重置状态
-    clearTimeout(state.timer);
-    state.timer = setTimeout(() => {
-        state.confirmCount = 0;
-        message.style.display = 'none';
-        deleteState.set(id, state);
-    }, 2000);
-
-    deleteState.set(id, state);
-
-    if (state.confirmCount < 2) return; // 第一次点击时仅提示
-
-    // 进入删除状态，防止重复点击
-    state.isDeleting = true;
-    deleteState.set(id, state);
-
-    try {
-        const res = await removeSmsById(id);
-        if (res?.result === 'success') {
-            createToast('删除成功！', 'green');
-            handleSmsRender();
-        } else {
-            createToast(res?.message || '删除失败', 'red');
+    let isFirstRender = true
+    let lastRequestSmsIds = null
+    let handleSmsRender = async () => {
+        let list = document.querySelector('#sms-list')
+        if (!list) createToast('没有找到短信列表节点', 'red')
+        if (isFirstRender) {
+            list.innerHTML = ` <li><h2 style="padding: 30px;text-align:center;height:100vh">Loading...</h2></li>`
         }
-    } catch {
-        createToast('操作失败，请检查网络和密码', 'red');
-    }
-
-    // 删除完成后，清理状态
-    deleteState.delete(id);
-};
-
-let isFirstRender = true
-let lastRequestSmsIds = null
-let handleSmsRender = async () => {
-    let list = document.querySelector('#sms-list')
-    if (!list) createToast('没有找到短信列表节点', 'red')
-    if (isFirstRender) {
-        list.innerHTML = ` <li><h2 style="padding: 30px;text-align:center;height:100vh">Loading...</h2></li>`
-    }
-    isFirstRender = false
-    showModal('#smsList')
-    let res = await getSms()
-    if (res && res.length) {
-        //防止重复渲染
-        let ids = res.map(item => item.id).join('')
-        if (ids === lastRequestSmsIds) return
-        lastRequestSmsIds = ids
-        const dateStrArr = ['年', '月', '日', ':', ':', '']
-        res.sort((a, b) => {
-            let date_a = a.date.split(',')
-            let date_b = b.date.split(',')
-            date_a.pop()
-            date_b.pop()
-            return Number(date_b.join('')) - Number(date_a.join(''))
-        })
-        list.innerHTML = res.map(item => {
-            let date = item.date.split(',')
-            date.pop()
-            date = date.map((item, index) => {
-                return item + dateStrArr[index]
-            }).join('')
-            return `<li class="sms-item" style="${item.tag != '2' ? 'background-color:#0880001f;margin-left:15px' : 'background-color:#ffc0cb63;margin-right:15px'}">
+        isFirstRender = false
+        showModal('#smsList')
+        let res = await getSms()
+        if (res && res.length) {
+            //防止重复渲染
+            let ids = res.map(item => item.id).join('')
+            if (ids === lastRequestSmsIds) return
+            lastRequestSmsIds = ids
+            const dateStrArr = ['年', '月', '日', ':', ':', '']
+            res.sort((a, b) => {
+                let date_a = a.date.split(',')
+                let date_b = b.date.split(',')
+                date_a.pop()
+                date_b.pop()
+                return Number(date_b.join('')) - Number(date_a.join(''))
+            })
+            list.innerHTML = res.map(item => {
+                let date = item.date.split(',')
+                date.pop()
+                date = date.map((item, index) => {
+                    return item + dateStrArr[index]
+                }).join('')
+                return `<li class="sms-item" style="${item.tag != '2' ? 'background-color:#0880001f;margin-left:15px' : 'background-color:#ffc0cb63;margin-right:15px'}">
                                         <div class="arrow" style="${item.tag == '2' ? 'right:-30px;border-color: transparent transparent transparent #ffc0cb63' : 'left:-30px;border-color: transparent #0880001f transparent transparent'}"></div>
                                         <div class="icon" onclick="deleteSMS(${item.id})">
                                             <span id="message${item.id}" style="display:none;color:red;position: absolute;width: 100px;top: 6px;right: 20px;">确定要删除吗？</span>
@@ -479,59 +514,59 @@ let handleSmsRender = async () => {
                                         <p>${decodeBase64(item.content)}</p>
                                         <p style="text-align:right;color:#adadad;margin-top:4px">${date}</p >
                                     </li > `
-        }).join('')
-    } else {
-        if (!res) {
-            out()
+            }).join('')
+        } else {
+            if (!res) {
+                out()
+            }
+            list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center;">没有短信</h2></li >`
         }
-        list.innerHTML = ` <li> <h2 style="padding: 30px;text-align:center;">没有短信</h2></li >`
     }
-}
 
 
-let StopStatusRenderTimer = null
-let isNotLoginOnce = true
-let handlerStatusRender = async (flag = false) => {
-    const status = document.querySelector('#STATUS')
-    if (flag) {
-        const TOKEN = localStorage.getItem('kano_sms_token')
-        if (!TOKEN) {
-            return false
-        }
-        KANO_TOKEN = TOKEN
-        common_headers.authorization = KANO_TOKEN
-        status.innerHTML = `
+    let StopStatusRenderTimer = null
+    let isNotLoginOnce = true
+    let handlerStatusRender = async (flag = false) => {
+        const status = document.querySelector('#STATUS')
+        if (flag) {
+            const TOKEN = localStorage.getItem('kano_sms_token')
+            if (!TOKEN && isNeedToken) {
+                return false
+            }
+            KANO_TOKEN = TOKEN
+            common_headers.authorization = KANO_TOKEN
+            status.innerHTML = `
         <li style="padding-top: 15px;">
             <strong class="green" style="margin: 10px auto;margin-top: 0; display: flex;flex-direction: column;padding: 40px;">
                 <span style="font-size: 50px;" class="spin">🌀</span>
                 <span style="font-size: 16px;padding-top: 10px;">loading...</span>
             </strong>
         </li>`
-    }
-    let res = await getUFIData()
-    if (!res) {
-        MODEL.innerHTML = " 设备："
-        // out()
-        if (flag) {
-            status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
-            createToast('获取数据失败，请检查网络和密码！', 'red')
         }
-        if ((!KANO_TOKEN || !common_headers.authorization) && isNotLoginOnce) {
-            status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
-            createToast('登录后获取数据', 'pink')
+        let res = await getUFIData()
+        if (!res) {
+            MODEL.innerHTML = " 设备："
+            // out()
+            if (flag) {
+                status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
+                createToast('获取数据失败，请检查网络和密码！', 'red')
+            }
+            if ((!KANO_TOKEN || !common_headers.authorization) && isNotLoginOnce) {
+                status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
+                createToast('登录后获取数据', 'pink')
+                isNotLoginOnce = false
+            }
+            return
+        }
+        if (res) {
+            MODEL.innerHTML = " 设备：" + res.model
             isNotLoginOnce = false
-        }
-        return
-    }
-    if (res) {
-        MODEL.innerHTML = " 设备：" + res.model
-        isNotLoginOnce = false
-        const current_cell = document.querySelector('#CURRENT_CELL')
-        let html = ''
+            const current_cell = document.querySelector('#CURRENT_CELL')
+            let html = ''
 
-        if (current_cell) {
-            current_cell.innerHTML = '<i>当前连接</i><br/>'
-            current_cell.innerHTML += `
+            if (current_cell) {
+                current_cell.innerHTML = '<i>当前连接</i><br/>'
+                current_cell.innerHTML += `
             ${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<span>频率: ${res.Lte_fcn}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<span>&nbsp;PCI: ${res.Lte_pci}</span>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<div style="display: flex;padding-bottom:2px;align-items: center;">RSRP:&nbsp; ${kano_parseSignalBar(res.lte_rsrp)}</div>` : ''}
@@ -543,695 +578,682 @@ let handlerStatusRender = async (flag = false) => {
             ${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<div style="display: flex;align-items: center;width: 114px;justify-content: space-between"><span>SINR:</span>${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</div>` : ''}
             ${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<div style="display: flex;padding-top:2px;align-items: center;width: 114px;justify-content: space-between"><span>RSRQ:</span>${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</div>` : ''}
             `
-        }
-
-        if (QORS_MESSAGE) {
-            res['QORS_MESSAGE'] = QORS_MESSAGE
-        }
-
-        let statusHtml_base = {
-            network_type: `${notNullOrundefinedOrIsShow(res, 'network_type') ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}`,
-            QORS_MESSAGE: `${notNullOrundefinedOrIsShow(res, "QORS_MESSAGE") ? `<strong onclick="copyText(event)"  class="green">${QORS_MESSAGE}</strong>` : ''}`,
-            wifi_access_sta_num: `${notNullOrundefinedOrIsShow(res, 'wifi_access_sta_num') ? `<strong onclick="copyText(event)"  class="blue">WIFI设备数：${res.wifi_access_sta_num}</strong>` : ''}`,
-            battery: `${notNullOrundefinedOrIsShow(res, 'battery') ? `<strong onclick="copyText(event)"  class="green">剩余电量：${res.battery} %</strong>` : ''}`,
-            rssi: `${notNullOrundefinedOrIsShow(res, 'rssi') || notNullOrundefinedOrIsShow(res, 'network_signalbar', true) ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(notNullOrundefinedOrIsShow(res, 'rssi') ? res.rssi : res.network_signalbar)}</strong>` : ''}`,
-            cpu_temp: `${notNullOrundefinedOrIsShow(res, 'cpu_temp') ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}`,
-            cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
-            mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
-            realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长: ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
-            monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && (res.flux_data_volume_limit_switch == '1' || res.data_volume_limit_switch == '1') ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
-                const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
-                if (!limit_size) return ''
-                return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
-            })()) : ''}</strong>` : ''}`,
-            daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${formatBytes(res.daily_data)}</strong>` : ''}`,
-            internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)" class="blue">内部存储：${formatBytes(res.internal_used_storage)} 已用 / ${formatBytes(res.internal_total_storage)} 总容量</strong>` : ''}`,
-            external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)" class="blue">SD卡：${formatBytes(res.external_used_storage)} 已用 / ${formatBytes(res.external_total_storage)} 总容量</strong>` : ''}`,
-            realtime_rx_thrpt: `${notNullOrundefinedOrIsShow(res, 'realtime_tx_thrpt') || notNullOrundefinedOrIsShow(res, 'realtime_rx_thrpt') ? `<strong onclick="copyText(event)" class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}`,
-        }
-        let statusHtml_net = {
-            lte_rsrp: `${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${kano_parseSignalBar(res.lte_rsrp)}</strong>` : ''}`,
-            Lte_snr: `${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</strong>` : ''}`,
-            Lte_bands: `${notNullOrundefinedOrIsShow(res, 'Lte_bands') ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}`,
-            Lte_fcn: `${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<strong onclick="copyText(event)"  class="green">4G 频率：${res.Lte_fcn}</strong>` : ''}`,
-            Lte_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Lte_bands_widths') ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}`,
-            Lte_pci: `${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}`,
-            lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
-            lte_rssi: `${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}`,
-            Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 基站ID：${res.Lte_cell_id}</strong>` : ''}`,
-            Z5g_rsrp: `${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${kano_parseSignalBar(res.Z5g_rsrp)}</strong>` : ''}`,
-            Nr_snr: `${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</strong>` : ''}`,
-            Nr_bands: `${notNullOrundefinedOrIsShow(res, 'Nr_bands') ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}`,
-            Nr_fcn: `${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<strong onclick="copyText(event)"  class="blue">5G 频率：${res.Nr_fcn}</strong>` : ''}`,
-            Nr_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Nr_bands_widths') ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}`,
-            Nr_pci: `${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}`,
-            nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
-            nr_rssi: `${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}`,
-            Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 基站ID：${res.Nr_cell_id}</strong>` : ''}`,
-        }
-
-        let statusHtml_other = {
-            model: `${notNullOrundefinedOrIsShow(res, 'model') ? `<strong onclick="copyText(event)"  class="blue">设备型号：${res.model}</strong>` : ''}`,
-            cr_version: `${notNullOrundefinedOrIsShow(res, 'cr_version') ? `<strong onclick="copyText(event)"  class="blue">版本号：${res.cr_version}</strong>` : ''}`,
-            iccid: `${notNullOrundefinedOrIsShow(res, 'iccid') ? `<strong onclick="copyText(event)"  class="blue">ICCID：${res.iccid}</strong>` : ''}`,
-            imei: `${notNullOrundefinedOrIsShow(res, 'imei') ? `<strong onclick="copyText(event)"  class="blue">IMEI：${res.imei}</strong>` : ''}`,
-            imsi: `${notNullOrundefinedOrIsShow(res, 'imsi') ? `<strong onclick="copyText(event)"  class="blue">IMSI：${res.imsi}</strong>` : ''}`,
-            ipv6_wan_ipaddr: `${notNullOrundefinedOrIsShow(res, 'ipv6_wan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">IPV6地址：${res.ipv6_wan_ipaddr}</strong>` : ''}`,
-            lan_ipaddr: `${notNullOrundefinedOrIsShow(res, 'lan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">本地网关：${res.lan_ipaddr}</strong>` : ''}`,
-            mac_address: `${notNullOrundefinedOrIsShow(res, 'mac_address') ? `<strong onclick="copyText(event)"  class="blue">MAC地址：${res.mac_address}</strong>` : ''}`,
-            msisdn: `${notNullOrundefinedOrIsShow(res, 'msisdn') ? `<strong onclick="copyText(event)"  class="blue">手机号：${res.msisdn}</strong>` : ''}`,
-        }
-
-        html += `<li style="padding-top: 15px;"><p>`
-        showList.statusShowList.forEach(item => {
-            if (statusHtml_base[item.name] && item.isShow) {
-                html += statusHtml_base[item.name]
             }
-        })
-        html += `</p></li>`
-        html += `<div class="title" style="margin: 6px 0;"><b>信号参数</b></div>`
 
-        html += `<li style="padding-top: 15px;"><p>`
-        showList.signalShowList.forEach(item => {
-            if (statusHtml_net[item.name] && item.isShow) {
-                html += statusHtml_net[item.name]
+            if (QORS_MESSAGE) {
+                res['QORS_MESSAGE'] = QORS_MESSAGE
             }
-        })
-        html += `</p></li>`
-        html += `<div class="title" style="margin: 6px 0;"><b>设备属性</b></div>`
 
-        html += `<li style="padding-top: 15px;"><p>`
-        showList.propsShowList.forEach(item => {
-            if (statusHtml_other[item.name] && item.isShow) {
-                html += statusHtml_other[item.name]
+            let statusHtml_base = {
+                network_type: `${notNullOrundefinedOrIsShow(res, 'network_type') ? `<strong onclick="copyText(event)"  class="green">蜂窝状态：${res.network_provider} ${res.network_type == '20' ? '5G' : res.network_type == '13' ? '4G' : res.network_type}</strong>` : ''}`,
+                QORS_MESSAGE: `${notNullOrundefinedOrIsShow(res, "QORS_MESSAGE") ? `<strong onclick="copyText(event)"  class="green">${QORS_MESSAGE}</strong>` : ''}`,
+                wifi_access_sta_num: `${notNullOrundefinedOrIsShow(res, 'wifi_access_sta_num') ? `<strong onclick="copyText(event)"  class="blue">WIFI设备数：${res.wifi_access_sta_num}</strong>` : ''}`,
+                battery: `${notNullOrundefinedOrIsShow(res, 'battery') ? `<strong onclick="copyText(event)"  class="green">剩余电量：${res.battery} %</strong>` : ''}`,
+                rssi: `${notNullOrundefinedOrIsShow(res, 'rssi') || notNullOrundefinedOrIsShow(res, 'network_signalbar', true) ? `<strong onclick="copyText(event)"  class="green">蜂窝信号强度：${kano_getSignalEmoji(notNullOrundefinedOrIsShow(res, 'rssi') ? res.rssi : res.network_signalbar)}</strong>` : ''}`,
+                cpu_temp: `${notNullOrundefinedOrIsShow(res, 'cpu_temp') ? `<strong onclick="copyText(event)"  class="blue">CPU温度：${Number(res.cpu_temp / 1000).toFixed(2)} ℃</strong>` : ''}`,
+                cpu_usage: `${notNullOrundefinedOrIsShow(res, 'cpu_usage') ? `<strong onclick="copyText(event)"  class="blue">CPU使用率：${Number(res.cpu_usage).toFixed(2)} %</strong>` : ''}`,
+                mem_usage: `${notNullOrundefinedOrIsShow(res, 'mem_usage') ? `<strong onclick="copyText(event)"  class="blue">内存使用率：${Number(res.mem_usage).toFixed(2)} %</strong>` : ''}`,
+                realtime_time: `${notNullOrundefinedOrIsShow(res, 'realtime_time') ? `<strong onclick="copyText(event)"  class="blue">连接时长：${kano_formatTime(Number(res.realtime_time))}${res.monthly_time ? '&nbsp;<span style="color:white">/</span>&nbsp;总时长: ' + kano_formatTime(Number(res.monthly_time)) : ''}</strong>` : ''}`,
+                monthly_tx_bytes: `${notNullOrundefinedOrIsShow(res, 'monthly_tx_bytes') || notNullOrundefinedOrIsShow(res, 'monthly_rx_bytes') ? `<strong onclick="copyText(event)"  class="blue">已用流量：<span class="red">${formatBytes(Number((res.monthly_tx_bytes + res.monthly_rx_bytes)))}</span>${(res.data_volume_limit_size || res.flux_data_volume_limit_size) && (res.flux_data_volume_limit_switch == '1' || res.data_volume_limit_switch == '1') ? '&nbsp;<span style="color:white">/</span>&nbsp;总流量：' + formatBytes((() => {
+                    const limit_size = res.data_volume_limit_size ? res.data_volume_limit_size : res.flux_data_volume_limit_size
+                    if (!limit_size) return ''
+                    return limit_size.split('_')[0] * limit_size.split('_')[1] * Math.pow(1024, 2)
+                })()) : ''}</strong>` : ''}`,
+                daily_data: `${notNullOrundefinedOrIsShow(res, 'daily_data') ? `<strong onclick="copyText(event)"  class="blue">当日流量：${formatBytes(res.daily_data)}</strong>` : ''}`,
+                internal_available_storage: `${notNullOrundefinedOrIsShow(res, 'internal_available_storage') || notNullOrundefinedOrIsShow(res, 'internal_total_storage') ? `<strong onclick="copyText(event)" class="blue">内部存储：${formatBytes(res.internal_used_storage)} 已用 / ${formatBytes(res.internal_total_storage)} 总容量</strong>` : ''}`,
+                external_available_storage: `${notNullOrundefinedOrIsShow(res, 'external_available_storage') || notNullOrundefinedOrIsShow(res, 'external_total_storage') ? `<strong onclick="copyText(event)" class="blue">SD卡：${formatBytes(res.external_used_storage)} 已用 / ${formatBytes(res.external_total_storage)} 总容量</strong>` : ''}`,
+                realtime_rx_thrpt: `${notNullOrundefinedOrIsShow(res, 'realtime_tx_thrpt') || notNullOrundefinedOrIsShow(res, 'realtime_rx_thrpt') ? `<strong onclick="copyText(event)" class="blue">当前网速: ⬇️ ${formatBytes(Number((res.realtime_rx_thrpt)))}/S ⬆️ ${formatBytes(Number((res.realtime_tx_thrpt)))}/S</strong>` : ''}`,
             }
-        })
-        html += `</p></li>`
-        status && (status.innerHTML = html)
-    }
-}
-handlerStatusRender(true)
-StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
-
-//检查usb调试状态
-let handlerADBStatus = async () => {
-    const btn = document.querySelector('#ADB')
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'usb_port_switch'
-    }))
-    btn.onclick = async () => {
-        try {
-            if (!initRequestData()) {
-                return null
+            let statusHtml_net = {
+                lte_rsrp: `${notNullOrundefinedOrIsShow(res, 'lte_rsrp') ? `<strong onclick="copyText(event)"  class="green">4G接收功率：${kano_parseSignalBar(res.lte_rsrp)}</strong>` : ''}`,
+                Lte_snr: `${notNullOrundefinedOrIsShow(res, 'Lte_snr') ? `<strong onclick="copyText(event)"  class="blue">4G SINR：${kano_parseSignalBar(res.Lte_snr, -10, 30, 13, 0)}</strong>` : ''}`,
+                Lte_bands: `${notNullOrundefinedOrIsShow(res, 'Lte_bands') ? `<strong onclick="copyText(event)"  class="blue">4G 注册频段：B${res.Lte_bands}</strong>` : ''}`,
+                Lte_fcn: `${notNullOrundefinedOrIsShow(res, 'Lte_fcn') ? `<strong onclick="copyText(event)"  class="green">4G 频率：${res.Lte_fcn}</strong>` : ''}`,
+                Lte_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Lte_bands_widths') ? `<strong onclick="copyText(event)"  class="green">4G 频宽：${res.Lte_bands_widths}</strong>` : ''}`,
+                Lte_pci: `${notNullOrundefinedOrIsShow(res, 'Lte_pci') ? `<strong onclick="copyText(event)"  class="blue">4G PCI：${res.Lte_pci}</strong>` : ''}`,
+                lte_rsrq: `${notNullOrundefinedOrIsShow(res, 'lte_rsrq') ? `<strong onclick="copyText(event)"  class="blue">4G RSRQ：${kano_parseSignalBar(res.lte_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
+                lte_rssi: `${notNullOrundefinedOrIsShow(res, 'lte_rssi') ? `<strong onclick="copyText(event)"  class="green">4G RSSI：${res.lte_rssi}</strong>` : ''}`,
+                Lte_cell_id: `${notNullOrundefinedOrIsShow(res, 'Lte_cell_id') ? `<strong onclick="copyText(event)"  class="green">4G 基站ID：${res.Lte_cell_id}</strong>` : ''}`,
+                Z5g_rsrp: `${notNullOrundefinedOrIsShow(res, 'Z5g_rsrp') ? `<strong onclick="copyText(event)"  class="green">5G接收功率：${kano_parseSignalBar(res.Z5g_rsrp)}</strong>` : ''}`,
+                Nr_snr: `${notNullOrundefinedOrIsShow(res, 'Nr_snr') ? `<strong onclick="copyText(event)"  class="green">5G SINR：${kano_parseSignalBar(res.Nr_snr, -10, 30, 13, 0)}</strong>` : ''}`,
+                Nr_bands: `${notNullOrundefinedOrIsShow(res, 'Nr_bands') ? `<strong onclick="copyText(event)"  class="green">5G 注册频段：N${res.Nr_bands}</strong>` : ''}`,
+                Nr_fcn: `${notNullOrundefinedOrIsShow(res, 'Nr_fcn') ? `<strong onclick="copyText(event)"  class="blue">5G 频率：${res.Nr_fcn}</strong>` : ''}`,
+                Nr_bands_widths: `${notNullOrundefinedOrIsShow(res, 'Nr_bands_widths') ? `<strong onclick="copyText(event)"  class="blue">5G 频宽：${res.Nr_bands_widths}</strong>` : ''}`,
+                Nr_pci: `${notNullOrundefinedOrIsShow(res, 'Nr_pci') ? `<strong onclick="copyText(event)"  class="green">5G PCI：${res.Nr_pci}</strong>` : ''}`,
+                nr_rsrq: `${notNullOrundefinedOrIsShow(res, 'nr_rsrq') ? `<strong onclick="copyText(event)"  class="green">5G RSRQ：${kano_parseSignalBar(res.nr_rsrq, -20, -3, -9, -12)}</strong>` : ''}`,
+                nr_rssi: `${notNullOrundefinedOrIsShow(res, 'nr_rssi') ? `<strong onclick="copyText(event)"  class="blue">5G RSSI：${res.nr_rssi}</strong>` : ''}`,
+                Nr_cell_id: `${notNullOrundefinedOrIsShow(res, 'Nr_cell_id') ? `<strong onclick="copyText(event)"  class="blue">5G 基站ID：${res.Nr_cell_id}</strong>` : ''}`,
             }
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
+
+            let statusHtml_other = {
+                model: `${notNullOrundefinedOrIsShow(res, 'model') ? `<strong onclick="copyText(event)"  class="blue">设备型号：${res.model}</strong>` : ''}`,
+                cr_version: `${notNullOrundefinedOrIsShow(res, 'cr_version') ? `<strong onclick="copyText(event)"  class="blue">版本号：${res.cr_version}</strong>` : ''}`,
+                iccid: `${notNullOrundefinedOrIsShow(res, 'iccid') ? `<strong onclick="copyText(event)"  class="blue">ICCID：${res.iccid}</strong>` : ''}`,
+                imei: `${notNullOrundefinedOrIsShow(res, 'imei') ? `<strong onclick="copyText(event)"  class="blue">IMEI：${res.imei}</strong>` : ''}`,
+                imsi: `${notNullOrundefinedOrIsShow(res, 'imsi') ? `<strong onclick="copyText(event)"  class="blue">IMSI：${res.imsi}</strong>` : ''}`,
+                ipv6_wan_ipaddr: `${notNullOrundefinedOrIsShow(res, 'ipv6_wan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">IPV6地址：${res.ipv6_wan_ipaddr}</strong>` : ''}`,
+                lan_ipaddr: `${notNullOrundefinedOrIsShow(res, 'lan_ipaddr') ? `<strong onclick="copyText(event)"  class="blue">本地网关：${res.lan_ipaddr}</strong>` : ''}`,
+                mac_address: `${notNullOrundefinedOrIsShow(res, 'mac_address') ? `<strong onclick="copyText(event)"  class="blue">MAC地址：${res.mac_address}</strong>` : ''}`,
+                msisdn: `${notNullOrundefinedOrIsShow(res, 'msisdn') ? `<strong onclick="copyText(event)"  class="blue">手机号：${res.msisdn}</strong>` : ''}`,
             }
-            let res1 = await (await postData(cookie, {
-                goformId: 'USB_PORT_SETTING',
-                usb_port_switch: res.usb_port_switch == '1' ? '0' : '1'
-            })).json()
 
-            if (res1.result == 'success') {
-                createToast('操作成功！', 'green')
-                await handlerADBStatus()
-            } else {
-                createToast('操作失败！', 'red')
-            }
-        } catch (e) {
-            console.error(e.message)
-        }
-    }
-    btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
-    btn.style.backgroundColor = res.usb_port_switch == '1' ? '#018ad8b0' : ''
-
-}
-handlerADBStatus()
-
-//检查usb网络调试状态
-let handlerADBNetworkStatus = async () => {
-    const btn = document.querySelector('#ADB_NET')
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
-
-    let res = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
-        method: 'GET',
-        headers: {
-            ...common_headers,
-            'Content-Type': 'application/json',
-        }
-    })).json()
-
-    btn.onclick = async () => {
-        try {
-            if (!initRequestData()) {
-                return null
-            }
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
-            }
-            let res1 = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
-                method: 'POST',
-                headers: {
-                    ...common_headers,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    enabled: res.enabled == "true" || res.enabled == true ? false : true,
-                    password: KANO_PASSWORD
-                })
-            })).json()
-            if (res1.result == 'success') {
-                createToast('操作成功！重启生效', 'green')
-                await handlerADBNetworkStatus()
-            } else {
-                createToast('操作失败！', 'red')
-            }
-        } catch (e) {
-            console.error(e.message)
-        }
-    }
-    btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
-    btn.style.backgroundColor = res.enabled == "true" || res.enabled == true ? '#018ad8b0' : ''
-
-}
-handlerADBNetworkStatus()
-
-//检查性能模式状态
-let handlerPerformaceStatus = async () => {
-    const btn = document.querySelector('#PERF')
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'performance_mode'
-    }))
-    btn.innerHTML = res.performance_mode == '1' ? '关闭性能模式' : '开启性能模式'
-    btn.style.backgroundColor = res.performance_mode == '1' ? '#018ad8b0' : ''
-    btn.onclick = async () => {
-        try {
-            if (!initRequestData()) {
-                return null
-            }
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
-            }
-            let res1 = await (await postData(cookie, {
-                goformId: 'PERFORMANCE_MODE_SETTING',
-                performance_mode: res.performance_mode == '1' ? '0' : '1'
-            })).json()
-            if (res1.result == 'success') {
-                createToast('操作成功，重启生效！', 'green')
-                await handlerPerformaceStatus()
-            } else {
-                createToast('操作失败！', 'red')
-            }
-        } catch (e) {
-            // createToast(e.message)
-        }
-    }
-}
-handlerPerformaceStatus()
-
-function init() {
-    smsSender && smsSender()
-    if (!localStorage.getItem('kano_sms_pwd')) {
-        showModal('#tokenModal')
-    } else {
-        isFirstRender = true
-        lastRequestSmsIds = null
-        handleSmsRender()
-        smsSender = requestInterval(() => handleSmsRender(), 2000)
-    }
-}
-
-// init()
-let smsBtn = document.querySelector('#SMS')
-smsBtn.onclick = init
-
-let clearBtn = document.querySelector('#CLEAR')
-clearBtn.onclick = () => {
-    isFirstRender = true
-    lastRequestSmsIds = null
-    localStorage.removeItem('kano_sms_pwd')
-    localStorage.removeItem('kano_sms_token')
-    KANO_TOKEN = null
-    common_headers.authorization = null
-    handlerADBStatus()
-    handlerADBNetworkStatus()
-    handlerPerformaceStatus()
-    initNetworktype()
-    initSMBStatus()
-    initROAMStatus()
-    initLightStatus()
-    initBandForm()
-    rebootDeviceBtnInit()
-    initUSBNetworkType()
-    initWIFISwitch()
-    handlerCecullarStatus()
-    initScheduleRebootStatus()
-    initShutdownBtn()
-    initATBtn()
-    initChangePassData()
-    initSimCardType()
-    QOSRDPCommand("AT+CGEQOSRDP=1")
-    //退出登录请求
-    try {
-        login().finally(cookie => {
-            logout(cookie)
-        })
-    } catch { }
-    createToast('您已退出登录', 'green')
-    showModal('#tokenModal')
-}
-
-let initNetworktype = async () => {
-    const selectEl = document.querySelector('#NET_TYPE')
-    if (!initRequestData() || !selectEl) {
-        selectEl.style.backgroundColor = '#80808073'
-        selectEl.disabled = true
-        return null
-    }
-    selectEl.style.backgroundColor = ''
-    selectEl.disabled = false
-    let res = await getData(new URLSearchParams({
-        cmd: 'net_select'
-    }))
-    if (!selectEl || !res || res.net_select == null || res.net_select == undefined) {
-        return
-    }
-
-    [...selectEl.children].forEach((item) => {
-        if (item.value == res.net_select) {
-            item.selected = true
-        }
-    })
-    QOSRDPCommand("AT+CGEQOSRDP=1")
-    let interCount = 0
-    let temp_inte = requestInterval(async () => {
-        let res = await QOSRDPCommand("AT+CGEQOSRDP=1")
-        if (interCount == 20) return temp_inte && temp_inte()
-        if (res && !res.includes("ERROR")) {
-            return temp_inte && temp_inte()
-        }
-        interCount++
-    }, 1000);
-}
-initNetworktype()
-
-const changeNetwork = async (e) => {
-    const value = e.target.value.trim()
-    if (!initRequestData() || !value) {
-        return null
-    }
-    createToast('更改中，请稍后', '#BF723F')
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            out()
-            return null
-        }
-        let res = await (await postData(cookie, {
-            goformId: 'SET_BEARER_PREFERENCE',
-            BearerPreference: value.trim()
-        })).json()
-        if (res.result == 'success') {
-            createToast('操作成功！', 'green')
-        } else {
-            createToast('操作失败！', 'red')
-        }
-        await initNetworktype()
-    } catch (e) {
-        // createToast(e.message)
-    }
-}
-
-let initUSBNetworkType = async () => {
-    const selectEl = document.querySelector('#USB_TYPE')
-    if (!initRequestData() || !selectEl) {
-        selectEl.style.backgroundColor = '#80808073'
-        selectEl.disabled = true
-        return null
-    }
-    selectEl.style.backgroundColor = ''
-    selectEl.disabled = false
-    let res = await getData(new URLSearchParams({
-        cmd: 'usb_network_protocal'
-    }))
-    if (!selectEl || !res || res.usb_network_protocal == null || res.usb_network_protocal == undefined) {
-        return
-    }
-    [...selectEl.children].forEach((item) => {
-        if (item.value == res.usb_network_protocal) {
-            item.selected = true
-        }
-    })
-}
-initUSBNetworkType()
-
-let changeUSBNetwork = async (e) => {
-    const value = e.target.value.trim()
-    if (!initRequestData() || !value) {
-        return null
-    }
-    createToast('更改中，请稍后', '#BF723F')
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            out()
-            return null
-        }
-        let res = await (await postData(cookie, {
-            goformId: 'SET_USB_NETWORK_PROTOCAL',
-            usb_network_protocal: value.trim()
-        })).json()
-        if (res.result == 'success') {
-            createToast('操作成功，请重启设备生效！', 'green')
-        } else {
-            createToast('操作失败！', 'red')
-        }
-        await initUSBNetworkType()
-    } catch (e) {
-        // createToast(e.message)
-    }
-}
-
-//WiFi开关切换_INIT
-let initWIFISwitch = async () => {
-    const selectEl = document.querySelector('#WIFI_SWITCH')
-    if (!initRequestData() || !selectEl) {
-        selectEl.style.backgroundColor = '#80808073'
-        selectEl.disabled = true
-        return null
-    }
-
-    selectEl.style.backgroundColor = ''
-    selectEl.disabled = false
-    let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
-        cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
-    }))
-
-    if (WiFiModuleSwitch == "1") {
-        if (ResponseList?.length) {
-            ResponseList.forEach(item => {
-                if (item.AccessPointSwitchStatus == '1') {
-                    selectEl.value = item.ChipIndex == "0" ? 'chip1' : 'chip2'
+            html += `<li style="padding-top: 15px;"><p>`
+            showList.statusShowList.forEach(item => {
+                if (statusHtml_base[item.name] && item.isShow) {
+                    html += statusHtml_base[item.name]
                 }
             })
-        }
-    } else {
-        selectEl.value = 0
-    }
-}
-initWIFISwitch()
+            html += `</p></li>`
+            html += `<div class="title" style="margin: 6px 0;"><b>信号参数</b></div>`
 
-//WiFi开关切换
-let changeWIFISwitch = async (e) => {
-    const value = e.target.value.trim()
-    if (!initRequestData() || !value) {
-        createToast('需要登录', 'red')
-        return null
+            html += `<li style="padding-top: 15px;"><p>`
+            showList.signalShowList.forEach(item => {
+                if (statusHtml_net[item.name] && item.isShow) {
+                    html += statusHtml_net[item.name]
+                }
+            })
+            html += `</p></li>`
+            html += `<div class="title" style="margin: 6px 0;"><b>设备属性</b></div>`
+
+            html += `<li style="padding-top: 15px;"><p>`
+            showList.propsShowList.forEach(item => {
+                if (statusHtml_other[item.name] && item.isShow) {
+                    html += statusHtml_other[item.name]
+                }
+            })
+            html += `</p></li>`
+            status && (status.innerHTML = html)
+        }
     }
-    createToast('更改中，请稍后', '#BF723F')
-    try {
+    handlerStatusRender(true)
+    StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
+
+    //检查usb调试状态
+    let handlerADBStatus = async () => {
+        const btn = document.querySelector('#ADB')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'usb_port_switch'
+        }))
+        btn.onclick = async () => {
+            try {
+                if (!(await initRequestData())) {
+                    return null
+                }
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await postData(cookie, {
+                    goformId: 'USB_PORT_SETTING',
+                    usb_port_switch: res.usb_port_switch == '1' ? '0' : '1'
+                })).json()
+
+                if (res1.result == 'success') {
+                    createToast('操作成功！', 'green')
+                    await handlerADBStatus()
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+            } catch (e) {
+                console.error(e.message)
+            }
+        }
+        btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
+        btn.style.backgroundColor = res.usb_port_switch == '1' ? '#018ad8b0' : ''
+
+    }
+    handlerADBStatus()
+
+    //检查usb网络调试状态
+    let handlerADBNetworkStatus = async () => {
+        const btn = document.querySelector('#ADB_NET')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+
+        let res = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
+            method: 'GET',
+            headers: {
+                ...common_headers,
+                'Content-Type': 'application/json',
+            }
+        })).json()
+
+        btn.onclick = async () => {
+            try {
+                if (!(await initRequestData())) {
+                    return null
+                }
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await fetch(`${KANO_baseURL}/adb_wifi_setting`, {
+                    method: 'POST',
+                    headers: {
+                        ...common_headers,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        enabled: res.enabled == "true" || res.enabled == true ? false : true,
+                        password: KANO_PASSWORD
+                    })
+                })).json()
+                if (res1.result == 'success') {
+                    createToast('操作成功！重启生效', 'green')
+                    await handlerADBNetworkStatus()
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+            } catch (e) {
+                console.error(e.message)
+            }
+        }
+        btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
+        btn.style.backgroundColor = res.enabled == "true" || res.enabled == true ? '#018ad8b0' : ''
+
+    }
+    handlerADBNetworkStatus()
+
+    //检查性能模式状态
+    let handlerPerformaceStatus = async () => {
+        const btn = document.querySelector('#PERF')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'performance_mode'
+        }))
+        btn.innerHTML = res.performance_mode == '1' ? '关闭性能模式' : '开启性能模式'
+        btn.style.backgroundColor = res.performance_mode == '1' ? '#018ad8b0' : ''
+        btn.onclick = async () => {
+            try {
+                if (!(await initRequestData())) {
+                    return null
+                }
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await postData(cookie, {
+                    goformId: 'PERFORMANCE_MODE_SETTING',
+                    performance_mode: res.performance_mode == '1' ? '0' : '1'
+                })).json()
+                if (res1.result == 'success') {
+                    createToast('操作成功，重启生效！', 'green')
+                    await handlerPerformaceStatus()
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+            } catch (e) {
+                // createToast(e.message)
+            }
+        }
+    }
+    handlerPerformaceStatus()
+
+    function init() {
+        smsSender && smsSender()
+        if (!localStorage.getItem('kano_sms_pwd')) {
+            showModal('#tokenModal')
+        } else {
+            isFirstRender = true
+            lastRequestSmsIds = null
+            handleSmsRender()
+            smsSender = requestInterval(() => handleSmsRender(), 2000)
+        }
+    }
+
+    // init()
+    let smsBtn = document.querySelector('#SMS')
+    smsBtn.onclick = init
+
+    let clearBtn = document.querySelector('#CLEAR')
+    clearBtn.onclick = () => {
+        isFirstRender = true
+        lastRequestSmsIds = null
+        localStorage.removeItem('kano_sms_pwd')
+        localStorage.removeItem('kano_sms_token')
+        KANO_TOKEN = null
+        common_headers.authorization = null
+        initRenderMethod()
+        //退出登录请求
+        try {
+            login().finally(cookie => {
+                logout(cookie)
+            })
+        } catch { }
+        createToast('您已退出登录', 'green')
+        showModal('#tokenModal')
+    }
+
+    let initNetworktype = async () => {
+        const selectEl = document.querySelector('#NET_TYPE')
+        if (!(await initRequestData()) || !selectEl) {
+            selectEl.style.backgroundColor = '#80808073'
+            selectEl.disabled = true
+            return null
+        }
+        selectEl.style.backgroundColor = ''
+        selectEl.disabled = false
+        let res = await getData(new URLSearchParams({
+            cmd: 'net_select'
+        }))
+        if (!selectEl || !res || res.net_select == null || res.net_select == undefined) {
+            return
+        }
+
+        [...selectEl.children].forEach((item) => {
+            if (item.value == res.net_select) {
+                item.selected = true
+            }
+        })
+        QOSRDPCommand("AT+CGEQOSRDP=1")
+        let interCount = 0
+        let temp_inte = requestInterval(async () => {
+            let res = await QOSRDPCommand("AT+CGEQOSRDP=1")
+            if (interCount == 20) return temp_inte && temp_inte()
+            if (res && !res.includes("ERROR")) {
+                return temp_inte && temp_inte()
+            }
+            interCount++
+        }, 1000);
+    }
+    initNetworktype()
+
+    const changeNetwork = async (e) => {
+        const value = e.target.value.trim()
+        if (!(await initRequestData()) || !value) {
+            return null
+        }
+        createToast('更改中，请稍后', '#BF723F')
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            let res = await (await postData(cookie, {
+                goformId: 'SET_BEARER_PREFERENCE',
+                BearerPreference: value.trim()
+            })).json()
+            if (res.result == 'success') {
+                createToast('操作成功！', 'green')
+            } else {
+                createToast('操作失败！', 'red')
+            }
+            await initNetworktype()
+        } catch (e) {
+            // createToast(e.message)
+        }
+    }
+
+    let initUSBNetworkType = async () => {
+        const selectEl = document.querySelector('#USB_TYPE')
+        if (!(await initRequestData()) || !selectEl) {
+            selectEl.style.backgroundColor = '#80808073'
+            selectEl.disabled = true
+            return null
+        }
+        selectEl.style.backgroundColor = ''
+        selectEl.disabled = false
+        let res = await getData(new URLSearchParams({
+            cmd: 'usb_network_protocal'
+        }))
+        if (!selectEl || !res || res.usb_network_protocal == null || res.usb_network_protocal == undefined) {
+            return
+        }
+        [...selectEl.children].forEach((item) => {
+            if (item.value == res.usb_network_protocal) {
+                item.selected = true
+            }
+        })
+    }
+    initUSBNetworkType()
+
+    let changeUSBNetwork = async (e) => {
+        const value = e.target.value.trim()
+        if (!(await initRequestData()) || !value) {
+            return null
+        }
+        createToast('更改中，请稍后', '#BF723F')
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            let res = await (await postData(cookie, {
+                goformId: 'SET_USB_NETWORK_PROTOCAL',
+                usb_network_protocal: value.trim()
+            })).json()
+            if (res.result == 'success') {
+                createToast('操作成功，请重启设备生效！', 'green')
+            } else {
+                createToast('操作失败！', 'red')
+            }
+            await initUSBNetworkType()
+        } catch (e) {
+            // createToast(e.message)
+        }
+    }
+
+    //WiFi开关切换_INIT
+    let initWIFISwitch = async () => {
+        const selectEl = document.querySelector('#WIFI_SWITCH')
+        if (!(await initRequestData()) || !selectEl) {
+            selectEl.style.backgroundColor = '#80808073'
+            selectEl.disabled = true
+            return null
+        }
+
+        selectEl.style.backgroundColor = ''
+        selectEl.disabled = false
+        let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
+            cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
+        }))
+
+        if (WiFiModuleSwitch == "1") {
+            if (ResponseList?.length) {
+                ResponseList.forEach(item => {
+                    if (item.AccessPointSwitchStatus == '1') {
+                        selectEl.value = item.ChipIndex == "0" ? 'chip1' : 'chip2'
+                    }
+                })
+            }
+        } else {
+            selectEl.value = 0
+        }
+    }
+    initWIFISwitch()
+
+    //WiFi开关切换
+    let changeWIFISwitch = async (e) => {
+        const value = e.target.value.trim()
+        if (!(await initRequestData()) || !value) {
+            createToast('需要登录', 'red')
+            return null
+        }
+        createToast('更改中，请稍后', '#BF723F')
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
+            let res = null
+            if (value == "0" || value == 0) {
+                res = await (await postData(cookie, {
+                    goformId: 'switchWiFiModule',
+                    SwitchOption: 0
+                })).json()
+            } else if (value == 'chip1' || value == 'chip2') {
+                res = await (await postData(cookie, {
+                    goformId: 'switchWiFiChip',
+                    ChipEnum: value,
+                    GuestEnable: 0
+                })).json()
+            } else {
+                return
+            }
+            if (res.result == 'success') {
+                createToast('操作成功，请重新连接WiFi！', 'green')
+                closeModal("#WIFIManagementModal")
+            } else {
+                createToast('操作失败！', 'red')
+            }
+            await initWIFISwitch()
+        } catch (e) {
+            // createToast(e.message)
+        }
+    }
+
+    let initSMBStatus = async () => {
+        const el = document.querySelector('#SMB')
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'samba_switch'
+        }))
+        if (!el || !res || res.samba_switch == null || res.samba_switch == undefined) return
+        el.onclick = async () => {
+            if (!(await initRequestData())) {
+                return null
+            }
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await postData(cookie, {
+                    goformId: 'SAMBA_SETTING',
+                    samba_switch: res.samba_switch == '1' ? '0' : '1'
+                })).json()
+                if (res1.result == 'success') {
+                    createToast('操作成功！', 'green')
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+                await initSMBStatus()
+            } catch (e) {
+                // createToast(e.message)
+            }
+        }
+        el.innerHTML = res.samba_switch == '1' ? '关闭SMB文件共享' : '开启SMB文件共享'
+        el.style.backgroundColor = res.samba_switch == '1' ? '#018ad8b0' : ''
+    }
+    initSMBStatus()
+
+    //检查网路漫游状态
+    let initROAMStatus = async () => {
+        const el = document.querySelector('#ROAM')
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'roam_setting_option,dial_roam_setting_option'
+        }))
+        if (res && res.dial_roam_setting_option) {
+            res.roam_setting_option = res.dial_roam_setting_option
+        }
+        if (!el || !res || res.roam_setting_option == null || res.roam_setting_option == undefined) return
+        el.onclick = async () => {
+            if (!(await initRequestData())) {
+                return null
+            }
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await postData(cookie, {
+                    goformId: 'SET_CONNECTION_MODE',
+                    ConnectionMode: "auto_dial",
+                    roam_setting_option: res.roam_setting_option == 'on' ? 'off' : 'on',
+                    dial_roam_setting_option: res.roam_setting_option == 'on' ? 'off' : 'on'
+                })).json()
+                if (res1.result == 'success') {
+                    createToast('操作成功！', 'green')
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+                await initROAMStatus()
+            } catch (e) {
+                // createToast(e.message)
+            }
+        }
+        el.innerHTML = res.roam_setting_option == 'on' ? '关闭网络漫游' : '开启网络漫游'
+        el.style.backgroundColor = res.roam_setting_option == 'on' ? '#018ad8b0' : ''
+    }
+    initROAMStatus()
+
+    let initLightStatus = async () => {
+        const el = document.querySelector('#LIGHT')
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'indicator_light_switch'
+        }))
+        if (!el || !res || res.indicator_light_switch == null || res.indicator_light_switch == undefined) return
+        el.onclick = async () => {
+            if (!(await initRequestData())) {
+                return null
+            }
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                let res1 = await (await postData(cookie, {
+                    goformId: 'INDICATOR_LIGHT_SETTING',
+                    indicator_light_switch: res.indicator_light_switch == '1' ? '0' : '1'
+                })).json()
+                if (res1.result == 'success') {
+                    createToast('操作成功！', 'green')
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+                await initLightStatus()
+            } catch (e) {
+                createToast(e.message, 'red')
+            }
+        }
+        el.innerHTML = res.indicator_light_switch == '1' ? '关闭指示灯' : '开启指示灯'
+        el.style.backgroundColor = res.indicator_light_switch == '1' ? '#018ad8b0' : ''
+    }
+    initLightStatus()
+
+    const initBandForm = async () => {
+        const el = document.querySelector('#bandsForm')
+        if (!(await initRequestData()) || !el) {
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'lte_band_lock,nr_band_lock'
+        }))
+
+        if (!res) return null
+
+        if (res['lte_band_lock']) {
+            const bands = res['lte_band_lock'].split(',')
+            if (bands && bands.length) {
+                for (let band of bands) {
+                    //  data-type="4G" data-band="5"
+                    const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="4G"]`)
+                    if (el) el.checked = true
+                }
+            }
+        }
+        if (res['nr_band_lock']) {
+            const bands = res['nr_band_lock'].split(',')
+            if (bands && bands.length) {
+                for (let band of bands) {
+                    //  data-type="5G" data-band="5"
+                    const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="5G"]`)
+                    if (el) el.checked = true
+                }
+            }
+        }
+    }
+    initBandForm()
+
+    const submitBandForm = async (e) => {
+        e.preventDefault()
+        if (!(await initRequestData())) {
+            out()
+            return null
+        }
+        const form = e.target
+        const bands = form.querySelectorAll('input[type="checkbox"]:checked')
+        const lte_bands = []
+        const nr_bands = []
+        //收集选中的数据
+        if (bands && bands.length) {
+            for (let band of bands) {
+                const type = band.getAttribute('data-type')
+                const b = band.getAttribute('data-band')
+                if (type && b) {
+                    if (type == '4G') lte_bands.push(b)
+                    if (type == '5G') nr_bands.push(b)
+                }
+            }
+        }
         const cookie = await login()
         if (!cookie) {
             createToast('登录失败，请检查密码', 'red')
             out()
             return null
         }
-        let res = null
-        if (value == "0" || value == 0) {
-            res = await (await postData(cookie, {
-                goformId: 'switchWiFiModule',
-                SwitchOption: 0
-            })).json()
-        } else if (value == 'chip1' || value == 'chip2') {
-            res = await (await postData(cookie, {
-                goformId: 'switchWiFiChip',
-                ChipEnum: value,
-                GuestEnable: 0
-            })).json()
-        } else {
-            return
-        }
-        if (res.result == 'success') {
-            createToast('操作成功，请重新连接WiFi！', 'green')
-            closeModal("#WIFIManagementModal")
-        } else {
-            createToast('操作失败！', 'red')
-        }
-        await initWIFISwitch()
-    } catch (e) {
-        // createToast(e.message)
-    }
-}
-
-let initSMBStatus = async () => {
-    const el = document.querySelector('#SMB')
-    if (!initRequestData() || !el) {
-        el.onclick = () => createToast('请登录', 'red')
-        el.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'samba_switch'
-    }))
-    if (!el || !res || res.samba_switch == null || res.samba_switch == undefined) return
-    el.onclick = async () => {
-        if (!initRequestData()) {
-            return null
-        }
         try {
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
+            const res = await (await Promise.all([
+                (await postData(cookie, {
+                    goformId: 'LTE_BAND_LOCK',
+                    lte_band_lock: lte_bands.join(',')
+                })).json(),
+                (await postData(cookie, {
+                    goformId: 'NR_BAND_LOCK',
+                    nr_band_lock: nr_bands.join(',')
+                })).json(),
+            ]))
+            if (res[0].result == 'success' || res[1].result == 'success') {
+                createToast('设置频段成功！', 'green')
             }
-            let res1 = await (await postData(cookie, {
-                goformId: 'SAMBA_SETTING',
-                samba_switch: res.samba_switch == '1' ? '0' : '1'
-            })).json()
-            if (res1.result == 'success') {
-                createToast('操作成功！', 'green')
-            } else {
-                createToast('操作失败！', 'red')
+            else {
+                createToast('设置频段失败', 'red')
             }
-            await initSMBStatus()
-        } catch (e) {
-            // createToast(e.message)
-        }
-    }
-    el.innerHTML = res.samba_switch == '1' ? '关闭SMB' : '开启SMB'
-    el.style.backgroundColor = res.samba_switch == '1' ? '#018ad8b0' : ''
-}
-initSMBStatus()
-
-//检查网路漫游状态
-let initROAMStatus = async () => {
-    const el = document.querySelector('#ROAM')
-    if (!initRequestData() || !el) {
-        el.onclick = () => createToast('请登录', 'red')
-        el.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'roam_setting_option'
-    }))
-    if (!el || !res || res.roam_setting_option == null || res.roam_setting_option == undefined) return
-    el.onclick = async () => {
-        if (!initRequestData()) {
-            return null
-        }
-        try {
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
-            }
-            let res1 = await (await postData(cookie, {
-                goformId: 'SET_CONNECTION_MODE',
-                ConnectionMode: "auto_dial",
-                roam_setting_option: res.roam_setting_option == 'on' ? 'off' : 'on'
-            })).json()
-            if (res1.result == 'success') {
-                createToast('操作成功！', 'green')
-            } else {
-                createToast('操作失败！', 'red')
-            }
-            await initROAMStatus()
-        } catch (e) {
-            // createToast(e.message)
-        }
-    }
-    el.innerHTML = res.roam_setting_option == 'on' ? '关闭网络漫游' : '开启网络漫游'
-    el.style.backgroundColor = res.roam_setting_option == 'on' ? '#018ad8b0' : ''
-}
-initROAMStatus()
-
-let initLightStatus = async () => {
-    const el = document.querySelector('#LIGHT')
-    if (!initRequestData() || !el) {
-        el.onclick = () => createToast('请登录', 'red')
-        el.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'indicator_light_switch'
-    }))
-    if (!el || !res || res.indicator_light_switch == null || res.indicator_light_switch == undefined) return
-    el.onclick = async () => {
-        if (!initRequestData()) {
-            return null
-        }
-        try {
-            const cookie = await login()
-            if (!cookie) {
-                createToast('登录失败，请检查密码', 'red')
-                out()
-                return null
-            }
-            let res1 = await (await postData(cookie, {
-                goformId: 'INDICATOR_LIGHT_SETTING',
-                indicator_light_switch: res.indicator_light_switch == '1' ? '0' : '1'
-            })).json()
-            if (res1.result == 'success') {
-                createToast('操作成功！', 'green')
-            } else {
-                createToast('操作失败！', 'red')
-            }
-            await initLightStatus()
-        } catch (e) {
-            createToast(e.message, 'red')
-        }
-    }
-    el.innerHTML = res.indicator_light_switch == '1' ? '关闭指示灯' : '开启指示灯'
-    el.style.backgroundColor = res.indicator_light_switch == '1' ? '#018ad8b0' : ''
-}
-initLightStatus()
-
-const initBandForm = async () => {
-    const el = document.querySelector('#bandsForm')
-    if (!initRequestData() || !el) {
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'lte_band_lock,nr_band_lock'
-    }))
-
-    if (!res) return null
-
-    if (res['lte_band_lock']) {
-        const bands = res['lte_band_lock'].split(',')
-        if (bands && bands.length) {
-            for (let band of bands) {
-                //  data-type="4G" data-band="5"
-                const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="4G"]`)
-                if (el) el.checked = true
-            }
-        }
-    }
-    if (res['nr_band_lock']) {
-        const bands = res['nr_band_lock'].split(',')
-        if (bands && bands.length) {
-            for (let band of bands) {
-                //  data-type="5G" data-band="5"
-                const el = document.querySelector(`#bandsForm input[type="checkbox"][data-band="${band}"][data-type="5G"]`)
-                if (el) el.checked = true
-            }
-        }
-    }
-}
-initBandForm()
-
-const submitBandForm = async (e) => {
-    e.preventDefault()
-    if (!initRequestData()) {
-        out()
-        return null
-    }
-    const form = e.target
-    const bands = form.querySelectorAll('input[type="checkbox"]:checked')
-    const lte_bands = []
-    const nr_bands = []
-    //收集选中的数据
-    if (bands && bands.length) {
-        for (let band of bands) {
-            const type = band.getAttribute('data-type')
-            const b = band.getAttribute('data-band')
-            if (type && b) {
-                if (type == '4G') lte_bands.push(b)
-                if (type == '5G') nr_bands.push(b)
-            }
-        }
-    }
-    const cookie = await login()
-    if (!cookie) {
-        createToast('登录失败，请检查密码', 'red')
-        out()
-        return null
-    }
-    try {
-        const res = await (await Promise.all([
-            (await postData(cookie, {
-                goformId: 'LTE_BAND_LOCK',
-                lte_band_lock: lte_bands.join(',')
-            })).json(),
-            (await postData(cookie, {
-                goformId: 'NR_BAND_LOCK',
-                nr_band_lock: nr_bands.join(',')
-            })).json(),
-        ]))
-        if (res[0].result == 'success' || res[1].result == 'success') {
-            createToast('设置频段成功！', 'green')
-        }
-        else {
+        } catch {
             createToast('设置频段失败', 'red')
+        } finally {
+            await initBandForm()
         }
-    } catch {
-        createToast('设置频段失败', 'red')
-    } finally {
-        await initBandForm()
     }
-}
 
-//锁基站
-let initCellInfo = async () => {
-    try {
-        //已锁基站信息
-        //基站信息
-        const { neighbor_cell_info, locked_cell_info } = await getData(new URLSearchParams({
-            cmd: 'neighbor_cell_info,locked_cell_info'
-        }))
+    //锁基站
+    let initCellInfo = async () => {
+        try {
+            //已锁基站信息
+            //基站信息
+            const { neighbor_cell_info, locked_cell_info } = await getData(new URLSearchParams({
+                cmd: 'neighbor_cell_info,locked_cell_info'
+            }))
 
-        if (neighbor_cell_info) {
-            const cellBodyEl = document.querySelector('#cellForm tbody')
-            cellBodyEl.innerHTML = neighbor_cell_info.map(item => {
-                const { band, earfcn, pci, rsrp, rsrq, sinr } = item
-                return `
+            if (neighbor_cell_info) {
+                const cellBodyEl = document.querySelector('#cellForm tbody')
+                cellBodyEl.innerHTML = neighbor_cell_info.map(item => {
+                    const { band, earfcn, pci, rsrp, rsrq, sinr } = item
+                    return `
                     <tr onclick="onSelectCellRow(${pci},${earfcn})">
                         <td>${band}</td>
                         <td>${earfcn}</td>
@@ -1241,132 +1263,94 @@ let initCellInfo = async () => {
                         <td>${kano_parseSignalBar(sinr, -10, 30, 13, 0)}</td>
                     </tr>
                 `
-            }).join('')
-        }
-        if (locked_cell_info) {
-            const lockedCellBodyEl = document.querySelector('#LOCKED_CELL_FORM tbody')
-            lockedCellBodyEl.innerHTML = locked_cell_info.map(item => {
-                const { earfcn, pci, rat } = item
-                return `
+                }).join('')
+            }
+            if (locked_cell_info) {
+                const lockedCellBodyEl = document.querySelector('#LOCKED_CELL_FORM tbody')
+                lockedCellBodyEl.innerHTML = locked_cell_info.map(item => {
+                    const { earfcn, pci, rat } = item
+                    return `
                     <tr>
                         <td>${rat == '12' ? '4G' : '5G'}</td>
                         <td>${pci}</td>
                         <td>${earfcn}</td>
                     </tr>
                 `
-            }).join('')
+                }).join('')
+            }
+        } catch (e) {
+            // createToast(e.message)
         }
-    } catch (e) {
-        // createToast(e.message)
     }
-}
 
-let cellInfoRequestTimer = null
-initCellInfo()
-cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
+    let cellInfoRequestTimer = null
+    initCellInfo()
+    cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
 
-let onSelectCellRow = (pci, earfcn) => {
-    let pci_t = document.querySelector('#PCI')
-    let earfcn_t = document.querySelector('#EARFCN')
-    if (pci_t && earfcn_t) {
-        pci_t.value = pci
-        earfcn_t.value = earfcn
-        createToast(`已选择: ${pci},${earfcn}`, 'green')
+    let onSelectCellRow = (pci, earfcn) => {
+        let pci_t = document.querySelector('#PCI')
+        let earfcn_t = document.querySelector('#EARFCN')
+        if (pci_t && earfcn_t) {
+            pci_t.value = pci
+            earfcn_t.value = earfcn
+            createToast(`已选择: ${pci},${earfcn}`, 'green')
+        }
     }
-}
 
-//锁基站
-const submitCellForm = async (e) => {
-    e.preventDefault()
-    if (!initRequestData()) {
-        out()
-        return null
-    }
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
+    //锁基站
+    const submitCellForm = async (e) => {
+        e.preventDefault()
+        if (!(await initRequestData())) {
             out()
             return null
         }
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                out()
+                return null
+            }
 
-        const ratEl = e.target.querySelector('input[name="RAT"]:checked')
-        const pciEl = e.target.querySelector('#PCI')
-        const earfcnEl = e.target.querySelector('#EARFCN')
+            const ratEl = e.target.querySelector('input[name="RAT"]:checked')
+            const pciEl = e.target.querySelector('#PCI')
+            const earfcnEl = e.target.querySelector('#EARFCN')
 
-        if (!ratEl || !pciEl || !earfcnEl) return
+            if (!ratEl || !pciEl || !earfcnEl) return
 
-        const form = {
-            pci: pciEl.value.trim(),
-            earfcn: earfcnEl.value.trim(),
-            rat: ratEl.value.trim()
+            const form = {
+                pci: pciEl.value.trim(),
+                earfcn: earfcnEl.value.trim(),
+                rat: ratEl.value.trim()
+            }
+
+            if (!form.pci || !form.earfcn) {
+                createToast('请填写完整数据', 'red')
+                return
+            }
+
+            const res = await (await postData(cookie, {
+                goformId: 'CELL_LOCK',
+                ...form
+            })).json()
+
+            if (res.result == 'success') {
+                pciEl.value = ''
+                earfcnEl.value = ''
+                createToast('设置基站成功！', 'green')
+            } else {
+                throw '设置基站失败'
+            }
+        } catch (e) {
+            createToast('设置基站失败', 'red')
         }
-
-        if (!form.pci || !form.earfcn) {
-            createToast('请填写完整数据', 'red')
-            return
-        }
-
-        const res = await (await postData(cookie, {
-            goformId: 'CELL_LOCK',
-            ...form
-        })).json()
-
-        if (res.result == 'success') {
-            pciEl.value = ''
-            earfcnEl.value = ''
-            createToast('设置基站成功！', 'green')
-        } else {
-            throw '设置基站失败'
-        }
-    } catch (e) {
-        createToast('设置基站失败', 'red')
     }
-}
 
-let unlockAllCell = async () => {
-    if (!initRequestData()) {
-        out()
-        return null
-    }
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
+    let unlockAllCell = async () => {
+        if (!(await initRequestData())) {
             out()
             return null
         }
-
-        const res = await (await postData(cookie, {
-            goformId: 'UNLOCK_ALL_CELL',
-        })).json()
-
-        if (res.result == 'success') {
-            createToast('解锁基站成功！', 'green')
-        } else {
-            throw '解锁基站失败'
-        }
-
-    } catch {
-        createToast('解锁基站失败', 'red')
-    }
-}
-
-let rebootBtnCount = 1
-let rebootTimer = null
-let rebootDevice = async (e) => {
-    let target = e.target
-    if (!initRequestData()) {
-        out()
-        target.style.backgroundColor = '#80808073'
-        return null
-    }
-    target.style.backgroundColor = ''
-    rebootTimer && clearTimeout(rebootTimer)
-    if (rebootBtnCount == 1) target.innerHTML = "确定重启？"
-    if (rebootBtnCount == 2) target.innerHTML = "那就重启咯？"
-    if (rebootBtnCount >= 3) {
-        target.innerHTML = "正在重启。。。"
         try {
             const cookie = await login()
             if (!cookie) {
@@ -1376,534 +1360,572 @@ let rebootDevice = async (e) => {
             }
 
             const res = await (await postData(cookie, {
-                goformId: 'REBOOT_DEVICE',
+                goformId: 'UNLOCK_ALL_CELL',
             })).json()
 
             if (res.result == 'success') {
-                createToast('重启成功!', 'green')
+                createToast('解锁基站成功！', 'green')
             } else {
-                throw '重启失败！请检查网络'
+                throw '解锁基站失败'
             }
 
         } catch {
-            createToast('重启失败！请检查网络', 'red')
+            createToast('解锁基站失败', 'red')
         }
     }
-    rebootBtnCount++
-    rebootTimer = setTimeout(() => {
-        rebootBtnCount = 1
-        target.innerHTML = '重启设备'
-    }, 3000);
-}
 
-rebootDeviceBtnInit = () => {
-    let target = document.querySelector('#REBOOT')
-    if (!initRequestData()) {
-        target.onclick = () => createToast('请登录', 'red')
-        target.style.backgroundColor = '#80808073'
-        return null
-    }
-    target.style.backgroundColor = ''
-    target.onclick = rebootDevice
-}
-rebootDeviceBtnInit()
+    let rebootBtnCount = 1
+    let rebootTimer = null
+    let rebootDevice = async (e) => {
+        let target = e.target
+        if (!(await initRequestData())) {
+            out()
+            target.style.backgroundColor = '#80808073'
+            return null
+        }
+        target.style.backgroundColor = ''
+        rebootTimer && clearTimeout(rebootTimer)
+        if (rebootBtnCount == 1) target.innerHTML = "确定重启？"
+        if (rebootBtnCount == 2) target.innerHTML = "那就重启咯？"
+        if (rebootBtnCount >= 3) {
+            target.innerHTML = "正在重启。。。"
+            try {
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
 
-//字段显示隐藏
-document.querySelector("#DICTIONARY").onclick = (e) => {
-    showModal('#dictionaryModal', 300, '.8')
-}
+                const res = await (await postData(cookie, {
+                    goformId: 'REBOOT_DEVICE',
+                })).json()
 
-document.querySelector('#DIC_LIST')?.addEventListener('click', (e) => {
-    let target = e.target
-    e.stopPropagation()
-    e.stopImmediatePropagation()
-    if (target.id == 'DIC_LIST') {
-        return
-    }
-    let inputEl = null
-    if ((target.tagName).toLowerCase() != 'input') {
-        return
-    } else {
-        inputEl = target
-    }
-    let id = inputEl.getAttribute('data-name')
-    //寻找这个id属于哪个dragList
-    const list_id = inputEl.closest("ul").id
-    let list_name = null
-    if (list_id == "draggable_status") list_name = 'statusShowList'
-    if (list_id == "draggable_signal") list_name = 'signalShowList'
-    if (list_id == "draggable_props") list_name = 'propsShowList'
+                if (res.result == 'success') {
+                    createToast('重启成功!', 'green')
+                } else {
+                    throw '重启失败！请检查网络'
+                }
 
-    if (list_name == null) return
-
-    let index = showList[list_name].findIndex(i => i.name == id)
-    if (index != -1) {
-        showList[list_name][index].isShow = inputEl.checked
+            } catch {
+                createToast('重启失败！请检查网络', 'red')
+            }
+        }
+        rebootBtnCount++
+        rebootTimer = setTimeout(() => {
+            rebootBtnCount = 1
+            target.innerHTML = '重启设备'
+        }, 3000);
     }
 
-    localStorage.setItem('showList', JSON.stringify(showList))
-}, false)
-
-let resetShowListBtnCount = 1
-let resetShowListTimer = null
-let resetShowList = (e) => {
-    const target = e.target
-    resetShowListTimer && clearTimeout(resetShowListTimer)
-    if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
-    if (resetShowListBtnCount >= 2) {
-        localStorage.removeItem('showList');
-        localStorage.removeItem('statusShowListDOM');
-        localStorage.removeItem('signalShowListDOM');
-        localStorage.removeItem('propsShowListDOM');
-        location.reload()
+    rebootDeviceBtnInit = async () => {
+        let target = document.querySelector('#REBOOT')
+        if (!(await initRequestData())) {
+            target.onclick = () => createToast('请登录', 'red')
+            target.style.backgroundColor = '#80808073'
+            return null
+        }
+        target.style.backgroundColor = ''
+        target.onclick = rebootDevice
     }
-    resetShowListBtnCount++
-    resetShowListTimer = setTimeout(() => {
-        resetShowListBtnCount = 1
-        target.innerHTML = '重置(全选)'
-    }, 3000);
-}
+    rebootDeviceBtnInit()
 
-
-//暂停开始刷新
-document.querySelector('#REFRESH').onclick = (e) => {
-    if (e.target.innerHTML == '开始刷新') {
-        e.target.innerHTML = '停止刷新'
-        createToast('已开始刷新', 'green')
-        cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
-        StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
-    } else {
-        e.target.innerHTML = '开始刷新'
-        createToast('已停止刷新', 'green')
-        StopStatusRenderTimer && StopStatusRenderTimer()
-        cellInfoRequestTimer && cellInfoRequestTimer()
-    }
-}
-
-//流量管理逻辑
-document.querySelector("#DataManagement").onclick = async () => {
-    if (!initRequestData()) {
-        createToast('请登录！', 'red')
-        out()
-        return null
-    }
-    // 查流量使用情况
-    let res = await getDataUsage()
-    if (!res) {
-        createToast('获取流量使用情况失败', 'red')
-        return null
+    //字段显示隐藏
+    document.querySelector("#DICTIONARY").onclick = (e) => {
+        showModal('#dictionaryModal', 300, '.8')
     }
 
-    res = {
-        ...res,
-        "wan_auto_clear_flow_data_switch": isNullOrUndefiend(res.wan_auto_clear_flow_data_switch) ? res.wan_auto_clear_flow_data_switch : res.flux_auto_clear_flow_data_switch,
-        "data_volume_limit_unit": isNullOrUndefiend(res.data_volume_limit_unit) ? res.data_volume_limit_unit : res.flux_data_volume_limit_unit,
-        "data_volume_limit_size": isNullOrUndefiend(res.data_volume_limit_size) ? res.data_volume_limit_size : res.flux_data_volume_limit_size,
-        "traffic_clear_date": isNullOrUndefiend(res.traffic_clear_date) ? res.traffic_clear_date : res.flux_clear_date,
-        "data_volume_alert_percent": isNullOrUndefiend(res.data_volume_alert_percent) ? res.data_volume_alert_percent : res.flux_data_volume_alert_percent,
-        "data_volume_limit_switch": isNullOrUndefiend(res.data_volume_limit_switch) ? res.data_volume_limit_switch : res.flux_data_volume_limit_switch,
-    }
-
-    // 预填充表单
-    const form = document.querySelector('#DataManagementForm')
-    if (!form) return null
-    let data_volume_limit_switch = form.querySelector('input[name="data_volume_limit_switch"]')
-    let wan_auto_clear_flow_data_switch = form.querySelector('input[name="wan_auto_clear_flow_data_switch"]')
-    let data_volume_limit_unit = form.querySelector('input[name="data_volume_limit_unit"]')
-    let traffic_clear_date = form.querySelector('input[name="traffic_clear_date"]')
-    let data_volume_alert_percent = form.querySelector('input[name="data_volume_alert_percent"]')
-    let data_volume_limit_size = form.querySelector('input[name="data_volume_limit_size"]')
-    let data_volume_limit_type = form.querySelector('select[name="data_volume_limit_type"]')
-    let data_volume_used_size = form.querySelector('input[name="data_volume_used_size"]')
-    let data_volume_used_type = form.querySelector('select[name="data_volume_used_type"]')
-
-    // (12094630728720/1024/1024)/1048576
-    let used_size_type = 1
-    const used_size = (() => {
-        const total_bytes = ((Number(res.monthly_rx_bytes) + Number(res.monthly_tx_bytes))) / Math.pow(1024, 2)
-
-        if (total_bytes < 1024) {
-            return total_bytes.toFixed(2)
-        } else if (total_bytes >= 1024 && total_bytes < Math.pow(1024, 2)) {
-            used_size_type = 1024
-            return (total_bytes / 1024).toFixed(2)
+    document.querySelector('#DIC_LIST')?.addEventListener('click', (e) => {
+        let target = e.target
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (target.id == 'DIC_LIST') {
+            return
+        }
+        let inputEl = null
+        if ((target.tagName).toLowerCase() != 'input') {
+            return
         } else {
-            used_size_type = Math.pow(1024, 2)
-            return (total_bytes / Math.pow(1024, 2)).toFixed(2)
+            inputEl = target
         }
-    })()
+        let id = inputEl.getAttribute('data-name')
+        //寻找这个id属于哪个dragList
+        const list_id = inputEl.closest("ul").id
+        let list_name = null
+        if (list_id == "draggable_status") list_name = 'statusShowList'
+        if (list_id == "draggable_signal") list_name = 'signalShowList'
+        if (list_id == "draggable_props") list_name = 'propsShowList'
 
-    data_volume_limit_switch && (data_volume_limit_switch.checked = res.data_volume_limit_switch.toString() == '1')
-    wan_auto_clear_flow_data_switch && (wan_auto_clear_flow_data_switch.checked = res.wan_auto_clear_flow_data_switch.toString() == 'on')
-    data_volume_limit_unit && (data_volume_limit_unit.checked = res.data_volume_limit_unit.toString() == 'data')
-    traffic_clear_date && (traffic_clear_date.value = res.traffic_clear_date.toString())
-    data_volume_alert_percent && (data_volume_alert_percent.value = res.data_volume_alert_percent.toString())
-    data_volume_limit_size && (data_volume_limit_size.value = res.data_volume_limit_size?.split('_')[0].toString())
-    data_volume_limit_type && (() => {
-        const val = Number(res.data_volume_limit_size?.split('_')[1])
-        const option = data_volume_limit_type.querySelector(`option[data-value="${val}"]`)
-        option && (option.selected = true)
-    })()
-    data_volume_used_size && (data_volume_used_size.value = used_size.toString())
-    data_volume_used_type && (() => {
-        const option = data_volume_used_type.querySelector(`option[data-value="${used_size_type.toFixed(0)}"]`)
-        option && (option.selected = true)
-    })()
-    showModal('#DataManagementModal')
-}
+        if (list_name == null) return
 
-//流量管理表单提交
-let handleDataManagementFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            closeModal('#DataManagementModal')
-            setTimeout(() => {
-                out()
-            }, 310);
+        let index = showList[list_name].findIndex(i => i.name == id)
+        if (index != -1) {
+            showList[list_name][index].isShow = inputEl.checked
+        }
+
+        localStorage.setItem('showList', JSON.stringify(showList))
+    }, false)
+
+    let resetShowListBtnCount = 1
+    let resetShowListTimer = null
+    let resetShowList = (e) => {
+        const target = e.target
+        resetShowListTimer && clearTimeout(resetShowListTimer)
+        if (resetShowListBtnCount == 1) target.innerHTML = "确定？"
+        if (resetShowListBtnCount >= 2) {
+            localStorage.removeItem('showList');
+            localStorage.removeItem('statusShowListDOM');
+            localStorage.removeItem('signalShowListDOM');
+            localStorage.removeItem('propsShowListDOM');
+            location.reload()
+        }
+        resetShowListBtnCount++
+        resetShowListTimer = setTimeout(() => {
+            resetShowListBtnCount = 1
+            target.innerHTML = '重置(全选)'
+        }, 3000);
+    }
+
+
+    //暂停开始刷新
+    document.querySelector('#REFRESH').onclick = (e) => {
+        if (e.target.innerHTML == '开始刷新') {
+            e.target.innerHTML = '停止刷新'
+            createToast('已开始刷新', 'green')
+            cellInfoRequestTimer = requestInterval(() => initCellInfo(), 1500)
+            StopStatusRenderTimer = requestInterval(() => handlerStatusRender(), 800)
+        } else {
+            e.target.innerHTML = '开始刷新'
+            createToast('已停止刷新', 'green')
+            StopStatusRenderTimer && StopStatusRenderTimer()
+            cellInfoRequestTimer && cellInfoRequestTimer()
+        }
+    }
+
+    //流量管理逻辑
+    document.querySelector("#DataManagement").onclick = async () => {
+        if (!(await initRequestData())) {
+            createToast('请登录！', 'red')
+            out()
+            return null
+        }
+        // 查流量使用情况
+        let res = await getDataUsage()
+        if (!res) {
+            createToast('获取流量使用情况失败', 'red')
             return null
         }
 
-        let form_data = {
-            "data_volume_limit_switch": "0",
-            "wan_auto_clear_flow_data_switch": "off",
-            "data_volume_limit_unit": "data",
-            "traffic_clear_date": "0",
-            "data_volume_alert_percent": "0",
-            "data_volume_limit_size": "0",
-            "data_volume_limit_type": "1", //MB GB TB
-            "data_volume_used_size": "0",
-            "data_volume_used_type": "1", //MB GB TB
-            // 时间
-            "notify_deviceui_enable": "0",
+        res = {
+            ...res,
+            "wan_auto_clear_flow_data_switch": isNullOrUndefiend(res.wan_auto_clear_flow_data_switch) ? res.wan_auto_clear_flow_data_switch : res.flux_auto_clear_flow_data_switch,
+            "data_volume_limit_unit": isNullOrUndefiend(res.data_volume_limit_unit) ? res.data_volume_limit_unit : res.flux_data_volume_limit_unit,
+            "data_volume_limit_size": isNullOrUndefiend(res.data_volume_limit_size) ? res.data_volume_limit_size : res.flux_data_volume_limit_size,
+            "traffic_clear_date": isNullOrUndefiend(res.traffic_clear_date) ? res.traffic_clear_date : res.flux_clear_date,
+            "data_volume_alert_percent": isNullOrUndefiend(res.data_volume_alert_percent) ? res.data_volume_alert_percent : res.flux_data_volume_alert_percent,
+            "data_volume_limit_switch": isNullOrUndefiend(res.data_volume_limit_switch) ? res.data_volume_limit_switch : res.flux_data_volume_limit_switch,
         }
 
-        const form = e.target; // 获取表单
-        const formData = new FormData(form);
+        // 预填充表单
+        const form = document.querySelector('#DataManagementForm')
+        if (!form) return null
+        let data_volume_limit_switch = form.querySelector('input[name="data_volume_limit_switch"]')
+        let wan_auto_clear_flow_data_switch = form.querySelector('input[name="wan_auto_clear_flow_data_switch"]')
+        let data_volume_limit_unit = form.querySelector('input[name="data_volume_limit_unit"]')
+        let traffic_clear_date = form.querySelector('input[name="traffic_clear_date"]')
+        let data_volume_alert_percent = form.querySelector('input[name="data_volume_alert_percent"]')
+        let data_volume_limit_size = form.querySelector('input[name="data_volume_limit_size"]')
+        let data_volume_limit_type = form.querySelector('select[name="data_volume_limit_type"]')
+        let data_volume_used_size = form.querySelector('input[name="data_volume_used_size"]')
+        let data_volume_used_type = form.querySelector('select[name="data_volume_used_type"]')
 
-        for (const [key, value] of formData.entries()) {
-            switch (key) {
-                case 'data_volume_limit_switch':
-                    form_data[key] = value.trim() == 'on' ? '1' : '0'
-                    form_data['flux_data_volume_limit_switch'] = value.trim() == 'on' ? '1' : '0'
-                    break;
-                case 'wan_auto_clear_flow_data_switch':
-                    form_data[key] = value.trim() == 'on' ? 'on' : '0'
-                    form_data['flux_auto_clear_flow_data_switch'] = value.trim() == 'on' ? 'on' : '0'
-                    break;
-                case 'data_volume_limit_unit':
-                    form_data[key] = value.trim() == 'on' ? 'data' : 'time'
-                    form_data['flux_data_volume_limit_unit'] = value.trim() == 'on' ? 'data' : 'time'
-                    break;
-                case 'traffic_clear_date':
-                    if (isNaN(Number(value.trim()))) {
-                        createToast('清零日期必须为数字', 'red')
-                        return
-                    }
-                    if (Number(value.trim()) < 0 || Number(value.trim()) > 31) {
-                        createToast('清零日期必须在0-31之间', 'red')
-                        return
-                    }
-                    form_data[key] = value.trim()
-                    form_data['flux_clear_date'] = value.trim()
-                    break;
-                case 'data_volume_alert_percent':
-                    if (isNaN(Number(value.trim()))) {
-                        createToast('提醒阈值必须为数字', 'red')
-                        return
-                    }
-                    if (Number(value.trim()) < 0 || Number(value.trim()) > 100) {
-                        createToast('提醒阈值必须在0-100之间', 'red')
-                        return
-                    }
-                    form_data[key] = value.trim()
-                    form_data['flux_data_volume_alert_percent'] = value.trim()
-                    break;
-                case 'data_volume_limit_size':
-                    if (isNaN(Number(value.trim()))) {
-                        createToast('流量套餐必须为数字', 'red')
-                        return
-                    }
-                    if (Number(value.trim()) <= 0) {
-                        createToast('流量套餐必须大于0', 'red')
-                        return
-                    }
-                    form_data[key] = value.trim()
-                    form_data['flux_data_volume_limit_size'] = value.trim()
-                    break;
-                case 'data_volume_limit_type':
-                    form_data[key] = '_' + value.trim()
-                    form_data['flux_data_volume_limit_type'] = '_' + value.trim()
-                    break;
-                case 'data_volume_used_size':
-                    if (isNaN(Number(value.trim()))) {
-                        createToast('已用流量必须为数字', 'red')
-                        return
-                    }
-                    if (Number(value.trim()) <= 0) {
-                        createToast('已用流量必须大于0', 'red')
-                        return
-                    }
-                    form_data[key] = value.trim()
-                    break;
-                case 'data_volume_used_type':
-                    form_data[key] = value.trim()
-                    break;
-            }
-        }
-        form_data['data_volume_limit_size'] = form_data['data_volume_limit_size'] + form_data['data_volume_limit_type']
-        form_data['flux_data_volume_limit_size'] = form_data['data_volume_limit_size']
-        const used_data = Number(form_data.data_volume_used_size) * Number(form_data['data_volume_used_type']) * Math.pow(1024, 2)
-        const clear_form_data = {
-            data_volume_limit_switch: form_data['data_volume_limit_switch'],
-            wan_auto_clear_flow_data_switch: 'on',
-            traffic_clear_date: '1',
-            notify_deviceui_enable: '0',
-            flux_data_volume_limit_switch: form_data['data_volume_limit_switch'],
-            flux_auto_clear_flow_data_switch: 'on',
-            flux_clear_date: '1',
-            flux_notify_deviceui_enable: '0'
-        }
-        delete form_data['data_volume_limit_type']
-        //发请求
-        try {
-            const tempData = form_data['data_volume_limit_switch'] == '0' ? clear_form_data : form_data
-            const res = await (await postData(cookie, {
-                goformId: 'DATA_LIMIT_SETTING',
-                ...tempData
-            })).json()
+        // (12094630728720/1024/1024)/1048576
+        let used_size_type = 1
+        const used_size = (() => {
+            const total_bytes = ((Number(res.monthly_rx_bytes) + Number(res.monthly_tx_bytes))) / Math.pow(1024, 2)
 
-            const res1 = await (await postData(cookie, {
-                goformId: 'FLOW_CALIBRATION_MANUAL',
-                calibration_way: form_data.data_volume_limit_unit,
-                time: 0,
-                data: used_data.toFixed(0)
-            })).json()
-
-            if (res.result == 'success' && res1.result == 'success') {
-                createToast('设置成功!', 'green')
-                closeModal('#DataManagementModal')
+            if (total_bytes < 1024) {
+                return total_bytes.toFixed(2)
+            } else if (total_bytes >= 1024 && total_bytes < Math.pow(1024, 2)) {
+                used_size_type = 1024
+                return (total_bytes / 1024).toFixed(2)
             } else {
-                throw '设置失败！请检查网络'
+                used_size_type = Math.pow(1024, 2)
+                return (total_bytes / Math.pow(1024, 2)).toFixed(2)
+            }
+        })()
+
+        data_volume_limit_switch && (data_volume_limit_switch.checked = res.data_volume_limit_switch.toString() == '1')
+        wan_auto_clear_flow_data_switch && (wan_auto_clear_flow_data_switch.checked = res.wan_auto_clear_flow_data_switch.toString() == 'on')
+        data_volume_limit_unit && (data_volume_limit_unit.checked = res.data_volume_limit_unit.toString() == 'data')
+        traffic_clear_date && (traffic_clear_date.value = res.traffic_clear_date.toString())
+        data_volume_alert_percent && (data_volume_alert_percent.value = res.data_volume_alert_percent.toString())
+        data_volume_limit_size && (data_volume_limit_size.value = res.data_volume_limit_size?.split('_')[0].toString())
+        data_volume_limit_type && (() => {
+            const val = Number(res.data_volume_limit_size?.split('_')[1])
+            const option = data_volume_limit_type.querySelector(`option[data-value="${val}"]`)
+            option && (option.selected = true)
+        })()
+        data_volume_used_size && (data_volume_used_size.value = used_size.toString())
+        data_volume_used_type && (() => {
+            const option = data_volume_used_type.querySelector(`option[data-value="${used_size_type.toFixed(0)}"]`)
+            option && (option.selected = true)
+        })()
+        showModal('#DataManagementModal')
+    }
+
+    //流量管理表单提交
+    let handleDataManagementFormSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                closeModal('#DataManagementModal')
+                setTimeout(() => {
+                    out()
+                }, 310);
+                return null
+            }
+
+            let form_data = {
+                "data_volume_limit_switch": "0",
+                "wan_auto_clear_flow_data_switch": "off",
+                "data_volume_limit_unit": "data",
+                "traffic_clear_date": "0",
+                "data_volume_alert_percent": "0",
+                "data_volume_limit_size": "0",
+                "data_volume_limit_type": "1", //MB GB TB
+                "data_volume_used_size": "0",
+                "data_volume_used_type": "1", //MB GB TB
+                // 时间
+                "notify_deviceui_enable": "0",
+            }
+
+            const form = e.target; // 获取表单
+            const formData = new FormData(form);
+
+            for (const [key, value] of formData.entries()) {
+                switch (key) {
+                    case 'data_volume_limit_switch':
+                        form_data[key] = value.trim() == 'on' ? '1' : '0'
+                        form_data['flux_data_volume_limit_switch'] = value.trim() == 'on' ? '1' : '0'
+                        break;
+                    case 'wan_auto_clear_flow_data_switch':
+                        form_data[key] = value.trim() == 'on' ? 'on' : '0'
+                        form_data['flux_auto_clear_flow_data_switch'] = value.trim() == 'on' ? 'on' : '0'
+                        break;
+                    case 'data_volume_limit_unit':
+                        form_data[key] = value.trim() == 'on' ? 'data' : 'time'
+                        form_data['flux_data_volume_limit_unit'] = value.trim() == 'on' ? 'data' : 'time'
+                        break;
+                    case 'traffic_clear_date':
+                        if (isNaN(Number(value.trim()))) {
+                            createToast('清零日期必须为数字', 'red')
+                            return
+                        }
+                        if (Number(value.trim()) < 0 || Number(value.trim()) > 31) {
+                            createToast('清零日期必须在0-31之间', 'red')
+                            return
+                        }
+                        form_data[key] = value.trim()
+                        form_data['flux_clear_date'] = value.trim()
+                        break;
+                    case 'data_volume_alert_percent':
+                        if (isNaN(Number(value.trim()))) {
+                            createToast('提醒阈值必须为数字', 'red')
+                            return
+                        }
+                        if (Number(value.trim()) < 0 || Number(value.trim()) > 100) {
+                            createToast('提醒阈值必须在0-100之间', 'red')
+                            return
+                        }
+                        form_data[key] = value.trim()
+                        form_data['flux_data_volume_alert_percent'] = value.trim()
+                        break;
+                    case 'data_volume_limit_size':
+                        if (isNaN(Number(value.trim()))) {
+                            createToast('流量套餐必须为数字', 'red')
+                            return
+                        }
+                        if (Number(value.trim()) <= 0) {
+                            createToast('流量套餐必须大于0', 'red')
+                            return
+                        }
+                        form_data[key] = value.trim()
+                        form_data['flux_data_volume_limit_size'] = value.trim()
+                        break;
+                    case 'data_volume_limit_type':
+                        form_data[key] = '_' + value.trim()
+                        form_data['flux_data_volume_limit_type'] = '_' + value.trim()
+                        break;
+                    case 'data_volume_used_size':
+                        if (isNaN(Number(value.trim()))) {
+                            createToast('已用流量必须为数字', 'red')
+                            return
+                        }
+                        if (Number(value.trim()) <= 0) {
+                            createToast('已用流量必须大于0', 'red')
+                            return
+                        }
+                        form_data[key] = value.trim()
+                        break;
+                    case 'data_volume_used_type':
+                        form_data[key] = value.trim()
+                        break;
+                }
+            }
+            form_data['data_volume_limit_size'] = form_data['data_volume_limit_size'] + form_data['data_volume_limit_type']
+            form_data['flux_data_volume_limit_size'] = form_data['data_volume_limit_size']
+            const used_data = Number(form_data.data_volume_used_size) * Number(form_data['data_volume_used_type']) * Math.pow(1024, 2)
+            const clear_form_data = {
+                data_volume_limit_switch: form_data['data_volume_limit_switch'],
+                wan_auto_clear_flow_data_switch: 'on',
+                traffic_clear_date: '1',
+                notify_deviceui_enable: '0',
+                flux_data_volume_limit_switch: form_data['data_volume_limit_switch'],
+                flux_auto_clear_flow_data_switch: 'on',
+                flux_clear_date: '1',
+                flux_notify_deviceui_enable: '0'
+            }
+            delete form_data['data_volume_limit_type']
+            //发请求
+            try {
+                const tempData = form_data['data_volume_limit_switch'] == '0' ? clear_form_data : form_data
+                const res = await (await postData(cookie, {
+                    goformId: 'DATA_LIMIT_SETTING',
+                    ...tempData
+                })).json()
+
+                const res1 = await (await postData(cookie, {
+                    goformId: 'FLOW_CALIBRATION_MANUAL',
+                    calibration_way: form_data.data_volume_limit_unit,
+                    time: 0,
+                    data: used_data.toFixed(0)
+                })).json()
+
+                if (res.result == 'success' && res1.result == 'success') {
+                    createToast('设置成功!', 'green')
+                    closeModal('#DataManagementModal')
+                } else {
+                    throw '设置失败！请检查网络'
+                }
+            } catch (e) {
+                createToast(e.message, 'red')
             }
         } catch (e) {
             createToast(e.message, 'red')
         }
-    } catch (e) {
-        createToast(e.message, 'red')
-    }
-};
+    };
 
 
-//WIFI管理逻辑
-let initWIFIManagementForm = async () => {
-    try {
-        let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
-            cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
-        }))
+    //WIFI管理逻辑
+    let initWIFIManagementForm = async () => {
+        try {
+            let { WiFiModuleSwitch, ResponseList } = await getData(new URLSearchParams({
+                cmd: 'queryWiFiModuleSwitch,queryAccessPointInfo'
+            }))
 
-        const WIFIManagementForm = document.querySelector('#WIFIManagementForm')
-        if (!WIFIManagementForm) return
+            const WIFIManagementForm = document.querySelector('#WIFIManagementForm')
+            if (!WIFIManagementForm) return
 
-        if (WiFiModuleSwitch == "1" && ResponseList?.length) {
-            for (let index in ResponseList) {
-                if (ResponseList[index].AccessPointSwitchStatus == '1') {
-                    let item = ResponseList[index]
-                    let apEl = WIFIManagementForm.querySelector('input[name="AccessPointIndex"]')
-                    let chipEl = WIFIManagementForm.querySelector('input[name="ChipIndex"]')
-                    let ApMaxStationNumberEl = WIFIManagementForm.querySelector('input[name="ApMaxStationNumber"]')
-                    let PasswordEl = WIFIManagementForm.querySelector('input[name="Password"]')
-                    let ApBroadcastDisabledEl = WIFIManagementForm.querySelector('input[name="ApBroadcastDisabled"]')
-                    let SSIDEl = WIFIManagementForm.querySelector('input[name="SSID"]')
-                    let QRCodeImg = document.querySelector("#QRCodeImg")
-                    let AuthModeEl = WIFIManagementForm.querySelector('select[name="AuthMode"]')
-                    apEl && (apEl.value = item.AccessPointIndex)
-                    chipEl && (chipEl.value = item.ChipIndex)
-                    ApMaxStationNumberEl && (ApMaxStationNumberEl.value = item.ApMaxStationNumber)
-                    PasswordEl && (PasswordEl.value = decodeBase64(item.Password))
-                    ApBroadcastDisabledEl && (ApBroadcastDisabledEl.checked = item.ApBroadcastDisabled.toString() == '0')
-                    SSIDEl && (SSIDEl.value = item.SSID)
-                    // 二维码
-                    QRCodeImg.src = KANO_baseURL + item.QrImageUrl
-                    const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
-                    AuthModeEl.value = item.AuthMode
-                    AuthModeEl.selected = item.AuthMode
-                    if (AuthModeEl && WIFI_FORM_SHOWABLE) {
-                        const option = AuthModeEl.querySelector(`option[data-value="${item.AuthMode}"]`)
-                        option && (option.selected = "selected")
-                        if (item.AuthMode == "OPEN") {
-                            WIFI_FORM_SHOWABLE.style.display = 'none'
-                        } else {
-                            WIFI_FORM_SHOWABLE.style.display = ''
+            if (WiFiModuleSwitch == "1" && ResponseList?.length) {
+                for (let index in ResponseList) {
+                    if (ResponseList[index].AccessPointSwitchStatus == '1') {
+                        let item = ResponseList[index]
+                        let apEl = WIFIManagementForm.querySelector('input[name="AccessPointIndex"]')
+                        let chipEl = WIFIManagementForm.querySelector('input[name="ChipIndex"]')
+                        let ApMaxStationNumberEl = WIFIManagementForm.querySelector('input[name="ApMaxStationNumber"]')
+                        let PasswordEl = WIFIManagementForm.querySelector('input[name="Password"]')
+                        let ApBroadcastDisabledEl = WIFIManagementForm.querySelector('input[name="ApBroadcastDisabled"]')
+                        let SSIDEl = WIFIManagementForm.querySelector('input[name="SSID"]')
+                        let QRCodeImg = document.querySelector("#QRCodeImg")
+                        let AuthModeEl = WIFIManagementForm.querySelector('select[name="AuthMode"]')
+                        apEl && (apEl.value = item.AccessPointIndex)
+                        chipEl && (chipEl.value = item.ChipIndex)
+                        ApMaxStationNumberEl && (ApMaxStationNumberEl.value = item.ApMaxStationNumber)
+                        PasswordEl && (PasswordEl.value = decodeBase64(item.Password))
+                        ApBroadcastDisabledEl && (ApBroadcastDisabledEl.checked = item.ApBroadcastDisabled.toString() == '0')
+                        SSIDEl && (SSIDEl.value = item.SSID)
+                        // 二维码
+                        QRCodeImg.src = KANO_baseURL + item.QrImageUrl
+                        const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
+                        AuthModeEl.value = item.AuthMode
+                        AuthModeEl.selected = item.AuthMode
+                        if (AuthModeEl && WIFI_FORM_SHOWABLE) {
+                            const option = AuthModeEl.querySelector(`option[data-value="${item.AuthMode}"]`)
+                            option && (option.selected = "selected")
+                            if (item.AuthMode == "OPEN") {
+                                WIFI_FORM_SHOWABLE.style.display = 'none'
+                            } else {
+                                WIFI_FORM_SHOWABLE.style.display = ''
+                            }
                         }
-                    }
 
+                    }
+                }
+            }
+        }
+        catch (e) {
+            console.error(e.message)
+            // createToast(e.message)
+        }
+    }
+
+    document.querySelector("#WIFIManagement").onclick = async () => {
+        if (!(await initRequestData())) {
+            createToast('请登录！', 'red')
+            out()
+            return null
+        }
+        await initWIFIManagementForm()
+        showModal("#WIFIManagementModal")
+    }
+
+    let handleWIFIManagementFormSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                closeModal('#WIFIManagementModal')
+                setTimeout(() => {
+                    out()
+                }, 310);
+                return null
+            }
+
+            const form = e.target; // 获取表单
+            const formData = new FormData(form);
+
+            let data = {
+                SSID: '',
+                AuthMode: '',
+                EncrypType: '',
+                Password: '',
+                ApMaxStationNumber: '',
+                ApBroadcastDisabled: 1,
+                ApIsolate: 0,
+                ChipIndex: 0,
+                AccessPointIndex: 0
+            }
+
+            for (const [key, value] of formData.entries()) {
+                switch (key) {
+                    case 'SSID':
+                        value.trim() && (data[key] = value.trim())
+                        break;
+                    case 'AuthMode':
+                        value == 'OPEN' ? data['EncrypType'] = "NONE" : data['EncrypType'] = "CCMP"
+                        value.trim() && (data[key] = value.trim())
+                        break;
+                    case 'ApBroadcastDisabled':
+                        data[key] = value == 'on' ? 0 : 1
+                        break;
+                    case 'Password':
+                        // if(!value.trim()) createToast('请输入密码！')
+                        value.trim() && (data[key] = encodeBase64(value.trim()))
+                        break;
+                    case 'ApIsolate':
+                    case 'ApMaxStationNumber':
+                    case 'AccessPointIndex':
+                    case 'ChipIndex':
+                        !isNaN(Number(value.trim())) && (data[key] = Number(value.trim()))
+                        break;
+                }
+            }
+
+            if (data.AuthMode == 'OPEN' || data.EncrypType == "NONE") {
+                delete data.Password
+            } else {
+                if (data.Password.length == 0) {
+                    return createToast('请输入密码', 'red')
+                }
+                if (data.Password.length < 8) {
+                    return createToast('密码至少8位数', 'red')
+                }
+                if (data.ApMaxStationNumber.length <= 0) {
+                    return createToast('最大接入必须大于0', 'red')
+                }
+            }
+
+            const res = await (await postData(cookie, {
+                goformId: 'setAccessPointInfo',
+                ...data
+            })).json()
+
+            if (res.result == 'success') {
+                createToast('设置成功! 请重新连接WIFI！', 'green')
+                closeModal('#WIFIManagementModal')
+            } else {
+                throw '设置失败！请检查网络'
+            }
+        }
+        catch (e) {
+            console.error(e.message)
+            // createToast(e.message)
+        }
+
+    }
+
+    let handleWifiEncodeChange = (event) => {
+        const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
+        const target = event.target
+        if (target) {
+            console.log(target.value);
+            if (WIFI_FORM_SHOWABLE) {
+                if (target.value == "OPEN") {
+                    WIFI_FORM_SHOWABLE.style.display = 'none'
+                } else {
+                    WIFI_FORM_SHOWABLE.style.display = ''
                 }
             }
         }
     }
-    catch (e) {
-        console.error(e.message)
-        // createToast(e.message)
-    }
-}
 
-document.querySelector("#WIFIManagement").onclick = async () => {
-    if (!initRequestData()) {
-        createToast('请登录！', 'red')
-        out()
-        return null
+    let handleShowPassword = (e) => {
+        const target = e.target
+        const WIFI_PASSWORD = document.querySelector('#WIFI_PASSWORD')
+        if (target && WIFI_PASSWORD) {
+            WIFI_PASSWORD.setAttribute('type', target.checked ? "text" : "password")
+        }
     }
-    await initWIFIManagementForm()
-    showModal("#WIFIManagementModal")
-}
 
-let handleWIFIManagementFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            closeModal('#WIFIManagementModal')
-            setTimeout(() => {
-                out()
-            }, 310);
+    document.querySelector('#tokenInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            onTokenConfirm()
+        }
+    });
+
+    //无线设备管理
+    document.querySelector('#ClientManagement').onclick = async () => {
+        if (!(await initRequestData())) {
+            createToast('请登录！', 'red')
+            out()
             return null
         }
-
-        const form = e.target; // 获取表单
-        const formData = new FormData(form);
-
-        let data = {
-            SSID: '',
-            AuthMode: '',
-            EncrypType: '',
-            Password: '',
-            ApMaxStationNumber: '',
-            ApBroadcastDisabled: 1,
-            ApIsolate: 0,
-            ChipIndex: 0,
-            AccessPointIndex: 0
-        }
-
-        for (const [key, value] of formData.entries()) {
-            switch (key) {
-                case 'SSID':
-                    value.trim() && (data[key] = value.trim())
-                    break;
-                case 'AuthMode':
-                    value == 'OPEN' ? data['EncrypType'] = "NONE" : data['EncrypType'] = "CCMP"
-                    value.trim() && (data[key] = value.trim())
-                    break;
-                case 'ApBroadcastDisabled':
-                    data[key] = value == 'on' ? 0 : 1
-                    break;
-                case 'Password':
-                    // if(!value.trim()) createToast('请输入密码！')
-                    value.trim() && (data[key] = encodeBase64(value.trim()))
-                    break;
-                case 'ApIsolate':
-                case 'ApMaxStationNumber':
-                case 'AccessPointIndex':
-                case 'ChipIndex':
-                    !isNaN(Number(value.trim())) && (data[key] = Number(value.trim()))
-                    break;
-            }
-        }
-
-        if (data.AuthMode == 'OPEN' || data.EncrypType == "NONE") {
-            delete data.Password
-        } else {
-            if (data.Password.length == 0) {
-                return createToast('请输入密码', 'red')
-            }
-            if (data.Password.length < 8) {
-                return createToast('密码至少8位数', 'red')
-            }
-            if (data.ApMaxStationNumber.length <= 0) {
-                return createToast('最大接入必须大于0', 'red')
-            }
-        }
-
-        const res = await (await postData(cookie, {
-            goformId: 'setAccessPointInfo',
-            ...data
-        })).json()
-
-        if (res.result == 'success') {
-            createToast('设置成功! 请重新连接WIFI！', 'green')
-            closeModal('#WIFIManagementModal')
-        } else {
-            throw '设置失败！请检查网络'
-        }
-    }
-    catch (e) {
-        console.error(e.message)
-        // createToast(e.message)
+        await initClientManagementModal()
+        showModal('#ClientManagementModal')
     }
 
-}
+    let initClientManagementModal = async () => {
+        try {
+            // 获取连接设备
+            const { station_list, lan_station_list, BlackMacList, BlackNameList, AclMode } = await getData(new URLSearchParams({
+                cmd: 'station_list,lan_station_list,queryDeviceAccessControlList'
+            }))
+            const blackMacList = BlackMacList ? BlackMacList.split(';') : []
+            const blackNameList = BlackNameList ? BlackNameList.split(';') : []
 
-let handleWifiEncodeChange = (event) => {
-    const WIFI_FORM_SHOWABLE = document.querySelector('#WIFI_FORM_SHOWABLE')
-    const target = event.target
-    if (target) {
-        console.log(target.value);
-        if (WIFI_FORM_SHOWABLE) {
-            if (target.value == "OPEN") {
-                WIFI_FORM_SHOWABLE.style.display = 'none'
-            } else {
-                WIFI_FORM_SHOWABLE.style.display = ''
-            }
-        }
-    }
-}
+            const CONN_CLIENT_LIST = document.querySelector('#CONN_CLIENT_LIST')
+            const BLACK_CLIENT_LIST = document.querySelector('#BLACK_CLIENT_LIST')
 
-let handleShowPassword = (e) => {
-    const target = e.target
-    const WIFI_PASSWORD = document.querySelector('#WIFI_PASSWORD')
-    if (target && WIFI_PASSWORD) {
-        WIFI_PASSWORD.setAttribute('type', target.checked ? "text" : "password")
-    }
-}
+            //渲染设备列表
+            let conn_client_html = ''
+            let black_list_html = ''
 
-document.querySelector('#tokenInput').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        onTokenConfirm()
-    }
-});
-
-//无线设备管理
-document.querySelector('#ClientManagement').onclick = async () => {
-    if (!initRequestData()) {
-        createToast('请登录！', 'red')
-        out()
-        return null
-    }
-    await initClientManagementModal()
-    showModal('#ClientManagementModal')
-}
-
-let initClientManagementModal = async () => {
-    try {
-        // 获取连接设备
-        const { station_list, lan_station_list, BlackMacList, BlackNameList, AclMode } = await getData(new URLSearchParams({
-            cmd: 'station_list,lan_station_list,queryDeviceAccessControlList'
-        }))
-        const blackMacList = BlackMacList ? BlackMacList.split(';') : []
-        const blackNameList = BlackNameList ? BlackNameList.split(';') : []
-
-        const CONN_CLIENT_LIST = document.querySelector('#CONN_CLIENT_LIST')
-        const BLACK_CLIENT_LIST = document.querySelector('#BLACK_CLIENT_LIST')
-
-        //渲染设备列表
-        let conn_client_html = ''
-        let black_list_html = ''
-
-        if (station_list && station_list.length) {
-            conn_client_html += station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            if (station_list && station_list.length) {
+                conn_client_html += station_list.map(({ hostname, ip_addr, mac_addr }) => (`
             <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
                 class="card-item">
                 <div style="margin-right: 10px;">
@@ -1928,9 +1950,9 @@ let initClientManagementModal = async () => {
                     <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList('${[mac_addr, ...blackMacList].join(';')}','${[hostname, ...blackNameList].join(';')}','${AclMode}')">🚫 拉黑</button>
                 </div>
             </div>`)).join('')
-        }
-        if (lan_station_list && lan_station_list.length) {
-            conn_client_html += lan_station_list.map(({ hostname, ip_addr, mac_addr }) => (`
+            }
+            if (lan_station_list && lan_station_list.length) {
+                conn_client_html += lan_station_list.map(({ hostname, ip_addr, mac_addr }) => (`
             <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
                 class="card-item">
                 <div style="margin-right: 10px;">
@@ -1955,14 +1977,14 @@ let initClientManagementModal = async () => {
                     <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList('${[mac_addr, ...blackMacList].join(';')}','${[hostname, ...blackNameList].join(';')}','${AclMode}')">🚫 拉黑</button>
                 </div>
             </div>`)).join('')
-        }
-        if (blackMacList.length && blackNameList.length) {
-            black_list_html += blackMacList.map((item, index) => {
-                if (item) {
-                    let params = `'${blackMacList.filter(i => item != i).join(';')}'` + ","
-                        + `'${blackMacList.filter(i => blackNameList[index] != i).join(';')}'` + ","
-                        + `'${AclMode}'`
-                    return `
+            }
+            if (blackMacList.length && blackNameList.length) {
+                black_list_html += blackMacList.map((item, index) => {
+                    if (item) {
+                        let params = `'${blackMacList.filter(i => item != i).join(';')}'` + ","
+                            + `'${blackMacList.filter(i => blackNameList[index] != i).join(';')}'` + ","
+                            + `'${AclMode}'`
+                        return `
                     <div style="display: flex;width: 100%;margin: 10px 0;overflow: auto;"
                         class="card-item">
                         <div style="margin-right: 10px;">
@@ -1979,870 +2001,924 @@ let initClientManagementModal = async () => {
                             <button class="btn" style="padding: 20px 4px;" onclick="setOrRemoveDeviceFromBlackList(${params})">✅ 解封</button>
                         </div>
                     </div>`
+                    }
+                }).join('')
+            }
+
+            if (conn_client_html == '') conn_client_html = '<p>暂无设备</p>'
+            if (black_list_html == '') black_list_html = '<p>暂无设备</p>'
+            CONN_CLIENT_LIST && (CONN_CLIENT_LIST.innerHTML = conn_client_html)
+            BLACK_CLIENT_LIST && (BLACK_CLIENT_LIST.innerHTML = black_list_html)
+        } catch (e) {
+            console.error(e);
+            createToast('获取数据失败，请检查网络连接', 'red')
+        }
+    }
+
+    let setOrRemoveDeviceFromBlackList = async (BlackMacList, BlackNameList, AclMode) => {
+        try {
+            const cookie = await login()
+            if (!cookie) {
+                createToast('登录失败，请检查密码', 'red')
+                closeModal('#ClientManagementModal')
+                setTimeout(() => {
+                    out()
+                }, 310);
+                return null
+            }
+            const res = await postData(cookie, {
+                goformId: "setDeviceAccessControlList",
+                AclMode: AclMode.trim(),
+                WhiteMacList: "",
+                BlackMacList: BlackMacList.trim(),
+                WhiteNameList: "",
+                BlackNameList: BlackNameList.trim()
+            })
+            const { result } = await res.json()
+            if (result && result == 'success') {
+                createToast('设置成功', 'green')
+            } else {
+                createToast('设置失败', 'red')
+            }
+            await initClientManagementModal()
+        }
+        catch (e) {
+            console.error(e);
+            createToast('请求数据失败，请检查网络连接', 'red')
+        }
+    }
+
+    let closeClientManager = () => {
+        closeModal('#ClientManagementModal')
+    }
+
+    //开关蜂窝数据
+    let handlerCecullarStatus = async () => {
+        const btn = document.querySelector('#CECULLAR')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        let res = await getData(new URLSearchParams({
+            cmd: 'ppp_status'
+        }))
+        btn.onclick = async () => {
+            try {
+                if (!(await initRequestData())) {
+                    return null
                 }
-            }).join('')
+                const cookie = await login()
+                if (!cookie) {
+                    createToast('登录失败，请检查密码', 'red')
+                    out()
+                    return null
+                }
+                btn.innerHTML = '正在更改...'
+                let res1 = await (await postData(cookie, {
+                    goformId: res.ppp_status == 'ppp_disconnected' ? 'CONNECT_NETWORK' : 'DISCONNECT_NETWORK',
+                })).json()
+                if (res1.result == 'success') {
+                    setTimeout(async () => {
+                        await handlerCecullarStatus()
+                        createToast('操作成功！', 'green')
+                        QOSRDPCommand("AT+CGEQOSRDP=1")
+                    }, 2000);
+                } else {
+                    createToast('操作失败！', 'red')
+                }
+            } catch (e) {
+                // createToast(e.message)
+            }
+        }
+        btn.innerHTML = res.ppp_status == 'ppp_disconnected' ? '开启蜂窝数据' : '关闭蜂窝数据'
+        btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018ad8b0'
+    }
+    handlerCecullarStatus()
+
+    // title
+    const loadTitle = async () => {
+        try {
+            const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
+            document.querySelector('#TITLE').innerHTML = `ZTE-UFI-TOOLS-WEB Ver: ${app_ver}`
+            document.querySelector('#MAIN_TITLE').innerHTML = `ZTE-UFI管理工具 <span style="font-size:14px">Ver: ${app_ver}</span>`
+        } catch {/*没有，不处理*/ }
+    }
+    loadTitle()
+
+    //设置背景图片
+    document.querySelector('#BG_SETTING').onclick = () => {
+        showModal('#bgSettingModal')
+    }
+
+    let handleSubmitBg = () => {
+        const imgUrl = document.querySelector('#BG_INPUT')?.value
+        const bg_checked = document.querySelector('#isCheckedBG')?.checked
+        const BG = document.querySelector('#BG')
+        const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
+        if (!BG || bg_checked == undefined || !BG_OVERLAY) return
+        if (!bg_checked) {
+            BG.style.backgroundImage = 'unset'
+            // BG_OVERLAY.style.background = 'transparent'
+            localStorage.removeItem('backgroundUrl')
+        } else {
+            imgUrl.trim() && (BG.style.backgroundImage = `url(${imgUrl})`)
+            // BG_OVERLAY.style.background = 'var(--dark-bgi-color)'
+            // 保存
+            imgUrl.trim() && localStorage.setItem('backgroundUrl', imgUrl)
+        }
+        createToast('保存成功~', 'green')
+        document.querySelector('#fileUploader').value = ''
+        closeModal('#bgSettingModal')
+    }
+
+    //初始化背景图片
+    (() => {
+        const BG = document.querySelector('#BG')
+        const imgUrl = localStorage.getItem('backgroundUrl')
+        const isCheckedBG = document.querySelector('#isCheckedBG')
+        const BG_INPUT = document.querySelector('#BG_INPUT')
+        if (!BG || !isCheckedBG || !BG_INPUT) return
+        isCheckedBG.checked = imgUrl ? true : false
+        if (imgUrl?.length < 9999) {
+            BG_INPUT.value = imgUrl
+        }
+        if (!imgUrl) {
+            const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
+            // BG_OVERLAY && (BG_OVERLAY.style.background = 'transparent')
+            return
+        }
+        BG.style.backgroundImage = `url(${imgUrl})`
+    })()
+
+    //重置主题
+    let resetThemeBtnTimer = 1
+    let isConfirmResetTheme = false
+    const resetTheme = (e) => {
+        e.target.innerHTML = "确定？"
+        if (!isConfirmResetTheme) {
+            isConfirmResetTheme = true
+            return
+        }
+        resetThemeBtnTimer && clearTimeout(resetThemeBtnTimer)
+        resetThemeBtnTimer = setTimeout(() => {
+            isConfirmResetTheme = false
+            e.target.disabled = false
+            e.target.innerHTML = '重置主题'
+        }, 2000)
+        localStorage.removeItem('themeColor')
+        localStorage.removeItem('textColorPer')
+        localStorage.removeItem('textColor')
+        localStorage.removeItem('saturationPer')
+        localStorage.removeItem('opacityPer')
+        localStorage.removeItem('colorPer')
+        localStorage.removeItem('brightPer')
+        initTheme && initTheme()
+        createToast('重置成功！', 'green')
+        e.target.innerHTML = '重置主题'
+        e.target.disabled = true
+    }
+
+    //定时重启模态框
+    let initScheduleRebootStatus = async () => {
+        const btn = document.querySelector('#SCHEDULE_REBOOT')
+        const SCHEDULE_TIME = document.querySelector('#SCHEDULE_TIME')
+        const SCHEDULE_ENABLED = document.querySelector('#SCHEDULE_ENABLED')
+        if (!btn) return
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
         }
 
-        if (conn_client_html == '') conn_client_html = '<p>暂无设备</p>'
-        if (black_list_html == '') black_list_html = '<p>暂无设备</p>'
-        CONN_CLIENT_LIST && (CONN_CLIENT_LIST.innerHTML = conn_client_html)
-        BLACK_CLIENT_LIST && (BLACK_CLIENT_LIST.innerHTML = black_list_html)
-    } catch (e) {
-        console.error(e);
-        createToast('获取数据失败，请检查网络连接', 'red')
-    }
-}
+        const { restart_schedule_switch, restart_time } = await getData(new URLSearchParams({
+            cmd: 'restart_schedule_switch,restart_time'
+        }))
 
-let setOrRemoveDeviceFromBlackList = async (BlackMacList, BlackNameList, AclMode) => {
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            closeModal('#ClientManagementModal')
+        SCHEDULE_ENABLED.checked = restart_schedule_switch == '1'
+        SCHEDULE_TIME.value = restart_time
+        btn.style.backgroundColor = restart_schedule_switch == '1' ? '#018ad8b0' : ''
+
+        btn.onclick = async () => {
+            if (!(await initRequestData())) {
+                btn.onclick = () => createToast('请登录', 'red')
+                btn.style.backgroundColor = '#80808073'
+                return null
+            }
+            showModal('#scheduleRebootModal')
+        }
+    }
+    initScheduleRebootStatus()
+
+    let handleScheduleRebootFormSubmit = async (e) => {
+        e.preventDefault()
+        const data = {
+            restart_schedule_switch: "0",
+            restart_time: '00:00'
+        }
+        const form = e.target; // 获取表单
+        const formData = new FormData(form);
+        let regx = /^(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9])$/
+        for ([key, value] of formData.entries()) {
+            switch (key) {
+                case 'restart_time':
+                    if (!regx.exec(value.trim()) || !value.trim()) return createToast('请输入正确的重启时间 (00:00-23:59)', 'red')
+                    data.restart_time = value.trim()
+                    break;
+                case 'restart_schedule_switch':
+                    data.restart_schedule_switch = value == 'on' ? '1' : '0'
+            }
+        }
+        try {
+            const cookie = await login()
+            try {
+                const res = await (await postData(cookie, {
+                    goformId: 'RESTART_SCHEDULE_SETTING',
+                    restart_time: data.restart_time,
+                    restart_schedule_switch: data.restart_schedule_switch
+                })).json()
+                if (res?.result == 'success') {
+                    createToast('设置成功！', 'green')
+                    closeModal('#scheduleRebootModal')
+                } else {
+                    throw '设置失败'
+                }
+            } catch {
+                createToast('设置失败！', 'red')
+            }
+        } catch {
+            createToast('登录失败，请检查密码和网络连接', 'red')
+        }
+    }
+
+    // U30AIR用关机指令
+    let shutDownBtnCount = 1
+    let shutDownBtnTimer = null
+    let initShutdownBtn = async () => {
+        const btn = document.querySelector('#SHUTDOWN')
+        if (!btn) return
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+
+        const { battery_value, battery_vol_percent } = await getData(new URLSearchParams({
+            cmd: 'battery_value,battery_vol_percent'
+        }))
+
+        if (battery_value && battery_vol_percent && (battery_value != '' && battery_vol_percent != '')) {
+            // 显示按钮
+            btn.style.display = ''
+
+        } else {
+            //没电池的不显示此按钮
+            btn.style.display = 'none'
+        }
+        btn.style.backgroundColor = '#018ad8b0'
+        btn.onclick = async () => {
+            if (!(await initRequestData())) {
+                btn.onclick = () => createToast('请登录', 'red')
+                btn.style.backgroundColor = '#80808073'
+                return null
+            }
+            shutDownBtnCount++
+            btn.innerHTML = "确认关机？"
+            shutDownBtnTimer && clearTimeout(shutDownBtnTimer)
+            shutDownBtnTimer = setTimeout(() => {
+                shutDownBtnCount = 0
+                btn.innerHTML = '关机'
+            }, 3000)
+            if (shutDownBtnCount < 3) {
+                return
+            } else {
+                btn.innerHTML = '正在关机'
+            }
+            try {
+                const cookie = await login()
+                try {
+                    const res = await (await postData(cookie, {
+                        goformId: 'SHUTDOWN_DEVICE'
+                    })).json()
+                    if (res?.result == 'success') {
+                        createToast('关机成功！', 'green')
+                    } else {
+                        createToast('关机失败', 'red')
+                    }
+                } catch {
+                    createToast('关机失败', 'red')
+                }
+            } catch {
+                createToast('登录失败，请检查密码和网络连接', 'red')
+            }
+        }
+    }
+    initShutdownBtn()
+
+    // 启用TTYD（如果有）
+    let initTTYD = async () => {
+        const TTYD = document.querySelector('#TTYD')
+        if (!TTYD) return
+        const list = TTYD.querySelector('.deviceList')
+        if (!list) return
+        //fetch TTYD地址，如有，则显示
+        try {
+            const port = localStorage.getItem('ttyd_port')
+            if (!port) return
+            const TTYD_INPUT = document.querySelector('#TTYD_INPUT')
+            TTYD_INPUT && (TTYD_INPUT.value = port)
+            const res = await (await fetch(`${KANO_baseURL}/hasTTYD?port=${port}`, {
+                method: "get",
+                headers: common_headers
+            })).json()
+            if (res.code !== '200') {
+                TTYD.style.display = 'none'
+                list.innerHTML = ``
+                return
+            }
+            console.log('TTYD已找到，正在启用。。。')
+            TTYD.style.display = ''
+            list.innerHTML = `
+        <li style = "padding:10px">
+                    <iframe src="http://${res.ip}" style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
+        </li > `
+        } catch {
+            // console.log();
+        }
+    }
+    initTTYD()
+
+    let click_count_ttyd = 1
+    let ttyd_timer = null
+    let enableTTYD = () => {
+        click_count_ttyd++
+        if (click_count_ttyd == 4) {
+            // 启用ttyd弹窗
+            showModal('#TTYDModal')
+        }
+        ttyd_timer && clearInterval(ttyd_timer)
+        ttyd_timer = setTimeout(() => {
+            click_count_ttyd = 1
+        }, 1999)
+    }
+
+    let handleTTYDFormSubmit = (e) => {
+        e.preventDefault()
+        const form = e.target
+        const formData = new FormData(form);
+        const ttyd_port = formData.get('ttyd_port')
+        if (!ttyd_port || ttyd_port.trim() == '') return createToast('请填写端口', 'red')
+        let ttydNumber = Number(ttyd_port.trim())
+        if (isNaN(ttydNumber) || ttydNumber <= 0 || ttydNumber > 65535) return createToast('请填写正确的端口', 'red')
+        // 保存ttyd port
+        localStorage.setItem('ttyd_port', ttyd_port)
+        createToast('保存成功', 'green')
+        closeModal('#TTYDModal')
+        initTTYD()
+    }
+
+
+    function parseCGEQOSRDP(input) {
+        const match = input.match(/\+CGEQOSRDP:\s*(.+?)\s*OK/);
+        if (!match) {
+            return input
+        }
+
+        const parts = match[1].split(',').map(Number);
+        if (parts.length < 8) {
+            return input
+        }
+        return `QCI等级：${parts[1]} 🔽 ${+parts[6] / 1000}Mbps 🔼 ${+parts[7] / 1000}Mbps`
+    }
+
+
+    const executeATCommand = async (command, slot = null) => {
+        let at_slot_value = document.querySelector("#AT_SLOT")?.value
+        if (slot == null || slot == undefined) {
+            if (isNaN(Number(at_slot_value?.trim())) || at_slot_value == undefined || at_slot_value == null) {
+                slot = 0
+            } else {
+                slot = at_slot_value.trim()
+            }
+        }
+        try {
+            const command_enc = encodeURIComponent(command)
+            const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}&slot=${slot}`, { headers: common_headers })).json()
+            return res
+        } catch (e) {
+            return null
+        }
+    }
+
+    async function QOSRDPCommand(cmd) {
+        if (!cmd) return QORS_MESSAGE = null
+        // 获取当前卡槽
+        let { sim_slot } = await getData(new URLSearchParams({
+            cmd: 'sim_slot'
+        }))
+        //获取是否支持双sim卡
+        const { dual_sim_support } = await getData(new URLSearchParams({
+            cmd: 'dual_sim_support'
+        }))
+        if (!sim_slot || dual_sim_support != '1') {
+            sim_slot = 0
+        }
+        let res = await executeATCommand(cmd, sim_slot)
+        if (res.result) return QORS_MESSAGE = parseCGEQOSRDP(res.result)
+        return QORS_MESSAGE = null
+    }
+    QOSRDPCommand("AT+CGEQOSRDP=1")
+
+    let initATBtn = async () => {
+        const el = document.querySelector('#AT')
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        el.style.backgroundColor = ''
+        el.onclick = () => {
+            showModal('#ATModal')
+        }
+    }
+    initATBtn()
+
+
+    const handleATFormSubmit = async () => {
+        const AT_value = document.querySelector('#AT_INPUT')?.value;
+        if (!AT_value || AT_value.trim() === '') {
+            return createToast('请输入AT指令', 'red');
+        }
+
+        const AT_RESULT = document.querySelector('#AT_RESULT');
+        AT_RESULT.innerHTML = "执行中,请耐心等待...";
+
+        try {
+            const res = await executeATCommand(AT_value.trim());
+
+            if (res) {
+                if (res.error) {
+                    AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
+                    createToast('执行失败', 'red');
+                    return;
+                }
+                AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
+                createToast('执行成功', 'green');
+            } else {
+                createToast('执行失败', 'red');
+            }
+
+        } catch (err) {
+            const error = err?.error || '未知错误';
+            AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
+            createToast('执行失败', 'red');
+        }
+    };
+
+    const handleQosAT = async () => {
+        const AT_RESULT = document.querySelector('#AT_RESULT');
+        AT_RESULT.innerHTML = "执行中,请耐心等待...";
+
+        try {
+            const res = await executeATCommand('AT+CGEQOSRDP=1');
+
+            if (res) {
+                if (res.error) {
+                    AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
+                    createToast('执行失败', 'red');
+                    return;
+                }
+
+                AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
+                createToast('执行成功', 'green');
+            } else {
+                createToast('执行失败', 'red');
+            }
+
+        } catch (err) {
+            const error = err?.error || '未知错误';
+            AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
+            createToast('执行失败', 'red');
+        }
+    };
+
+    const handleAT = async (params) => {
+        if (!params) return
+        // 执行AT
+        const AT_RESULT = document.querySelector('#AT_RESULT')
+        AT_RESULT.innerHTML = "执行中,请耐心等待..."
+        try {
+            const res = await executeATCommand(params);
+            if (res) {
+                if (res.error) {
+                    AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
+                    createToast('执行失败', 'red');
+                    return;
+                }
+
+                AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${res.result}</p>`;
+                createToast('执行成功', 'green');
+            } else {
+                createToast('执行失败', 'red');
+            }
+        } catch (err) {
+            const error = err?.error || '未知错误';
+            AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
+            createToast('执行失败', 'red');
+        }
+    }
+
+    //执行时禁用按钮
+    const disableButtonWhenExecuteFunc = async (e, func) => {
+        const target = e.currentTarget
+
+        target.setAttribute("disabled", "true");
+        target.style.opacity = '.5'
+        try {
+            func && await func()
+        } finally {
+            target.removeAttribute("disabled");
+            target.style.opacity = ''
+        }
+    }
+
+    //执行smb目录更改
+    const handleSambaPath = async (command = '/') => {
+        const AT_RESULT = document.querySelector('#AT_RESULT')
+        AT_RESULT.innerHTML = "执行中,请耐心等待..."
+        try {
+            const command_enc = encodeURIComponent(command)
+            const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
+            if (res) {
+                if (res.error) {
+                    AT_RESULT.innerHTML = res.error;
+                    createToast('执行失败', 'red');
+                    return;
+                }
+                AT_RESULT.innerHTML = res.result;
+                createToast('执行完成', 'green');
+            } else {
+                AT_RESULT.innerHTML = '';
+                createToast('执行失败', 'red');
+            }
+        } catch (e) {
+            AT_RESULT.innerHTML = '';
+            createToast('执行失败', 'red');
+        }
+    }
+
+    //更改密码
+    initChangePassData = async () => {
+        const el = document.querySelector("#CHANGEPWD")
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        el.style.backgroundColor = '#87ceeb70'
+        el.onclick = async () => {
+            showModal('#changePassModal')
+        }
+    }
+    initChangePassData()
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault()
+        const form = e.target
+        const formData = new FormData(form);
+        const oldPassword = formData.get('oldPassword')
+        const newPassword = formData.get('newPassword')
+        const confirmPassword = formData.get('confirmPassword')
+        if (!oldPassword || oldPassword.trim() == '') return createToast('请输入旧密码', 'red')
+        if (!newPassword || newPassword.trim() == '') return createToast('请输入新密码', 'red')
+        if (!confirmPassword || confirmPassword.trim() == '') return createToast('请确认新密码', 'red')
+        if (newPassword != confirmPassword) return createToast('两次输入的新密码不一致', 'red')
+
+        try {
+            const cookie = await login()
+            try {
+                const res = await (await postData(cookie, {
+                    goformId: 'CHANGE_PASSWORD',
+                    oldPassword: SHA256(oldPassword),
+                    newPassword: SHA256(newPassword)
+                })).json()
+                if (res?.result == 'success') {
+                    createToast('修改成功！', 'green')
+                    form.reset()
+                    closeModal('#changePassModal')
+                } else {
+                    throw '修改失败'
+                }
+            } catch {
+                createToast('修改失败！', 'red')
+            }
+        } catch {
+            createToast('登录失败，请检查密码和网络连接', 'red')
+            closeModal('#changePassModal')
             setTimeout(() => {
                 out()
             }, 310);
+        }
+    }
+
+    const onCloseChangePassForm = () => {
+        const form = document.querySelector("#changePassForm")
+        form && form.reset()
+        closeModal("#changePassModal")
+    }
+
+    //sim卡切换
+    let initSimCardType = async () => {
+        const selectEl = document.querySelector('#SIM_CARD_TYPE')
+        //查询是否支持双卡
+        // const { dual_sim_support } = await getData(new URLSearchParams({
+        //     cmd: 'dual_sim_support'
+        // }))
+        // if (dual_sim_support && dual_sim_support == '0') {
+        //     return
+        // } else {
+        selectEl.style.display = ''
+        // }
+        if (!(await initRequestData()) || !selectEl) {
+            selectEl.style.backgroundColor = '#80808073'
+            selectEl.disabled = true
             return null
         }
-        const res = await postData(cookie, {
-            goformId: "setDeviceAccessControlList",
-            AclMode: AclMode.trim(),
-            WhiteMacList: "",
-            BlackMacList: BlackMacList.trim(),
-            WhiteNameList: "",
-            BlackNameList: BlackNameList.trim()
-        })
-        const { result } = await res.json()
-        if (result && result == 'success') {
-            createToast('设置成功', 'green')
-        } else {
-            createToast('设置失败', 'red')
+        selectEl.style.backgroundColor = ''
+        selectEl.disabled = false
+        let res = await getData(new URLSearchParams({
+            cmd: 'sim_slot'
+        }))
+        if (!selectEl || !res || res.sim_slot == null || res.sim_slot == undefined) {
+            return
         }
-        await initClientManagementModal()
-    }
-    catch (e) {
-        console.error(e);
-        createToast('请求数据失败，请检查网络连接', 'red')
-    }
-}
-
-let closeClientManager = () => {
-    closeModal('#ClientManagementModal')
-}
-
-//开关蜂窝数据
-let handlerCecullarStatus = async () => {
-    const btn = document.querySelector('#CECULLAR')
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
-    let res = await getData(new URLSearchParams({
-        cmd: 'ppp_status'
-    }))
-    btn.onclick = async () => {
-        try {
-            if (!initRequestData()) {
-                return null
+        [...selectEl.children].forEach((item) => {
+            if (item.value == res.sim_slot) {
+                item.selected = true
             }
+        })
+        QOSRDPCommand("AT+CGEQOSRDP=1")
+    }
+    initSimCardType()
+
+    let changeSimCard = async (e) => {
+        const value = e.target.value.trim()
+        if (!(await initRequestData()) || !value) {
+            return null
+        }
+        createToast('更改中，请稍后', '#BF723F')
+        try {
             const cookie = await login()
             if (!cookie) {
                 createToast('登录失败，请检查密码', 'red')
                 out()
                 return null
             }
-            btn.innerHTML = '正在更改...'
-            let res1 = await (await postData(cookie, {
-                goformId: res.ppp_status == 'ppp_disconnected' ? 'CONNECT_NETWORK' : 'DISCONNECT_NETWORK',
+            let res = await (await postData(cookie, {
+                goformId: 'SET_SIM_SLOT',
+                sim_slot: value.trim()
             })).json()
-            if (res1.result == 'success') {
-                setTimeout(async () => {
-                    await handlerCecullarStatus()
-                    createToast('操作成功！', 'green')
-                    QOSRDPCommand("AT+CGEQOSRDP=1")
-                }, 2000);
+            if (res.result == 'success') {
+                createToast('操作成功！', 'green')
             } else {
                 createToast('操作失败！', 'red')
             }
+            await initUSBNetworkType()
         } catch (e) {
             // createToast(e.message)
         }
     }
-    btn.innerHTML = res.ppp_status == 'ppp_disconnected' ? '开启蜂窝数据' : '关闭蜂窝数据'
-    btn.style.backgroundColor = res.ppp_status == 'ppp_disconnected' ? '' : '#018ad8b0'
-}
-handlerCecullarStatus()
 
-// title
-const loadTitle = async () => {
-    try {
-        const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
-        document.querySelector('#TITLE').innerHTML = `ZTE-UFI-TOOLS-WEB Ver: ${app_ver}`
-        document.querySelector('#MAIN_TITLE').innerHTML = `ZTE-UFI管理工具 <span style="font-size:14px">Ver: ${app_ver}</span>`
-    } catch {/*没有，不处理*/ }
-}
-loadTitle()
 
-//设置背景图片
-document.querySelector('#BG_SETTING').onclick = () => {
-    showModal('#bgSettingModal')
-}
+    // 控制测速请求的中断器
+    let speedFlag = false;
+    let speedController = null; // 可重置的变量
 
-let handleSubmitBg = () => {
-    const imgUrl = document.querySelector('#BG_INPUT')?.value
-    const bg_checked = document.querySelector('#isCheckedBG')?.checked
-    const BG = document.querySelector('#BG')
-    const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
-    if (!BG || bg_checked == undefined || !BG_OVERLAY) return
-    if (!bg_checked) {
-        BG.style.backgroundImage = 'unset'
-        // BG_OVERLAY.style.background = 'transparent'
-        localStorage.removeItem('backgroundUrl')
-    } else {
-        imgUrl.trim() && (BG.style.backgroundImage = `url(${imgUrl})`)
-        // BG_OVERLAY.style.background = 'var(--dark-bgi-color)'
-        // 保存
-        imgUrl.trim() && localStorage.setItem('backgroundUrl', imgUrl)
-    }
-    createToast('保存成功~', 'green')
-    document.querySelector('#fileUploader').value = ''
-    closeModal('#bgSettingModal')
-}
-
-//初始化背景图片
-(() => {
-    const BG = document.querySelector('#BG')
-    const imgUrl = localStorage.getItem('backgroundUrl')
-    const isCheckedBG = document.querySelector('#isCheckedBG')
-    const BG_INPUT = document.querySelector('#BG_INPUT')
-    if (!BG || !isCheckedBG || !BG_INPUT) return
-    isCheckedBG.checked = imgUrl ? true : false
-    if (imgUrl?.length < 9999) {
-        BG_INPUT.value = imgUrl
-    }
-    if (!imgUrl) {
-        const BG_OVERLAY = document.querySelector('#BG_OVERLAY')
-        // BG_OVERLAY && (BG_OVERLAY.style.background = 'transparent')
-        return
-    }
-    BG.style.backgroundImage = `url(${imgUrl})`
-})()
-
-//重置主题
-let resetThemeBtnTimer = 1
-let isConfirmResetTheme = false
-const resetTheme = (e) => {
-    e.target.innerHTML = "确定？"
-    if (!isConfirmResetTheme) {
-        isConfirmResetTheme = true
-        return
-    }
-    resetThemeBtnTimer && clearTimeout(resetThemeBtnTimer)
-    resetThemeBtnTimer = setTimeout(() => {
-        isConfirmResetTheme = false
-        e.target.disabled = false
-        e.target.innerHTML = '重置主题'
-    }, 2000)
-    localStorage.removeItem('themeColor')
-    localStorage.removeItem('textColorPer')
-    localStorage.removeItem('textColor')
-    localStorage.removeItem('saturationPer')
-    localStorage.removeItem('opacityPer')
-    localStorage.removeItem('colorPer')
-    localStorage.removeItem('brightPer')
-    initTheme && initTheme()
-    createToast('重置成功！', 'green')
-    e.target.innerHTML = '重置主题'
-    e.target.disabled = true
-}
-
-//定时重启模态框
-let initScheduleRebootStatus = async () => {
-    const btn = document.querySelector('#SCHEDULE_REBOOT')
-    const SCHEDULE_TIME = document.querySelector('#SCHEDULE_TIME')
-    const SCHEDULE_ENABLED = document.querySelector('#SCHEDULE_ENABLED')
-    if (!btn) return
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
-
-    const { restart_schedule_switch, restart_time } = await getData(new URLSearchParams({
-        cmd: 'restart_schedule_switch,restart_time'
-    }))
-
-    SCHEDULE_ENABLED.checked = restart_schedule_switch == '1'
-    SCHEDULE_TIME.value = restart_time
-    btn.style.backgroundColor = restart_schedule_switch == '1' ? '#018ad8b0' : ''
-
-    btn.onclick = () => {
-        if (!initRequestData()) {
-            btn.onclick = () => createToast('请登录', 'red')
-            btn.style.backgroundColor = '#80808073'
+    async function startTest(e) {
+        if (!(await initRequestData())) {
+            createToast('请登录', 'red')
             return null
         }
-        showModal('#scheduleRebootModal')
-    }
-}
-initScheduleRebootStatus()
-
-let handleScheduleRebootFormSubmit = async (e) => {
-    e.preventDefault()
-    const data = {
-        restart_schedule_switch: "0",
-        restart_time: '00:00'
-    }
-    const form = e.target; // 获取表单
-    const formData = new FormData(form);
-    let regx = /^(0?[0-9]|1[0-9]|2[0-3]):(0?[0-9]|[1-5][0-9])$/
-    for ([key, value] of formData.entries()) {
-        switch (key) {
-            case 'restart_time':
-                if (!regx.exec(value.trim()) || !value.trim()) return createToast('请输入正确的重启时间 (00:00-23:59)', 'red')
-                data.restart_time = value.trim()
-                break;
-            case 'restart_schedule_switch':
-                data.restart_schedule_switch = value == 'on' ? '1' : '0'
+        if (speedFlag) {
+            speedController.abort();
+            createToast('测速已取消');
+            return;
         }
-    }
-    try {
-        const cookie = await login()
+
+        speedFlag = true;
+        speedController = new AbortController();
+        const speedSignal = speedController.signal;
+
+        e.target.style.backgroundColor = '#80808073';
+        e.target.innerHTML = '停止测速';
+
+        const serverUrl = `${KANO_baseURL}/speedtest`;
+        const ckSize = document.querySelector('#speedTestModal #ckSize').value;
+        const chunkSize = !isNaN(Number(ckSize)) ? Number(ckSize) : 1000;
+        const resultDiv = document.getElementById('speedtestResult');
+
+        const url = `${serverUrl}?ckSize=${chunkSize}&cors`;
+        resultDiv.textContent = `测速中...`;
+
+        let totalBytes = 0;
+        let startTime = performance.now();
+        let lastUpdateTime = startTime;
+        let lastBytes = 0;
+
         try {
-            const res = await (await postData(cookie, {
-                goformId: 'RESTART_SCHEDULE_SETTING',
-                restart_time: data.restart_time,
-                restart_schedule_switch: data.restart_schedule_switch
-            })).json()
-            if (res?.result == 'success') {
-                createToast('设置成功！', 'green')
-                closeModal('#scheduleRebootModal')
-            } else {
-                throw '设置失败'
-            }
-        } catch {
-            createToast('设置失败！', 'red')
-        }
-    } catch {
-        createToast('登录失败，请检查密码和网络连接', 'red')
-    }
-}
+            const res = await fetch(url, { signal: speedSignal, headers: { ...common_headers } });
+            const reader = res.body.getReader();
 
-// U30AIR用关机指令
-let shutDownBtnCount = 1
-let shutDownBtnTimer = null
-let initShutdownBtn = async () => {
-    const btn = document.querySelector('#SHUTDOWN')
-    if (!btn) return
-    if (!initRequestData()) {
-        btn.onclick = () => createToast('请登录', 'red')
-        btn.style.backgroundColor = '#80808073'
-        return null
-    }
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-    const { battery_value, battery_vol_percent } = await getData(new URLSearchParams({
-        cmd: 'battery_value,battery_vol_percent'
-    }))
+                totalBytes += value.length;
+                const now = performance.now();
 
-    if (battery_value && battery_vol_percent && (battery_value != '' && battery_vol_percent != '')) {
-        // 显示按钮
-        btn.style.display = ''
+                if (now - lastUpdateTime >= 50) {
+                    const elapsed = (now - lastUpdateTime) / 1000;
+                    const speed = ((totalBytes - lastBytes) * 8 / 1024 / 1024) / elapsed;
 
-    } else {
-        //没电池的不显示此按钮
-        btn.style.display = 'none'
-    }
-    btn.style.backgroundColor = '#018ad8b0'
-    btn.onclick = async () => {
-        if (!initRequestData()) {
-            btn.onclick = () => createToast('请登录', 'red')
-            btn.style.backgroundColor = '#80808073'
-            return null
-        }
-        shutDownBtnCount++
-        btn.innerHTML = "确认关机？"
-        shutDownBtnTimer && clearTimeout(shutDownBtnTimer)
-        shutDownBtnTimer = setTimeout(() => {
-            shutDownBtnCount = 0
-            btn.innerHTML = '关机'
-        }, 3000)
-        if (shutDownBtnCount < 3) {
-            return
-        } else {
-            btn.innerHTML = '正在关机'
-        }
-        try {
-            const cookie = await login()
-            try {
-                const res = await (await postData(cookie, {
-                    goformId: 'SHUTDOWN_DEVICE'
-                })).json()
-                if (res?.result == 'success') {
-                    createToast('关机成功！', 'green')
-                } else {
-                    createToast('关机失败', 'red')
-                }
-            } catch {
-                createToast('关机失败', 'red')
-            }
-        } catch {
-            createToast('登录失败，请检查密码和网络连接', 'red')
-        }
-    }
-}
-initShutdownBtn()
-
-// 启用TTYD（如果有）
-let initTTYD = async () => {
-    const TTYD = document.querySelector('#TTYD')
-    if (!TTYD) return
-    const list = TTYD.querySelector('.deviceList')
-    if (!list) return
-    //fetch TTYD地址，如有，则显示
-    try {
-        const port = localStorage.getItem('ttyd_port')
-        if (!port) return
-        const TTYD_INPUT = document.querySelector('#TTYD_INPUT')
-        TTYD_INPUT && (TTYD_INPUT.value = port)
-        const res = await (await fetch(`${KANO_baseURL}/hasTTYD?port=${port}`, {
-            method: "get",
-            headers: common_headers
-        })).json()
-        if (res.code !== '200') {
-            TTYD.style.display = 'none'
-            list.innerHTML = ``
-            return
-        }
-        console.log('TTYD已找到，正在启用。。。')
-        TTYD.style.display = ''
-        list.innerHTML = `
-        <li style = "padding:10px">
-                    <iframe src="http://${res.ip}" style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
-        </li > `
-    } catch {
-        // console.log();
-    }
-}
-initTTYD()
-
-let click_count_ttyd = 1
-let ttyd_timer = null
-let enableTTYD = () => {
-    click_count_ttyd++
-    if (click_count_ttyd == 4) {
-        // 启用ttyd弹窗
-        showModal('#TTYDModal')
-    }
-    ttyd_timer && clearInterval(ttyd_timer)
-    ttyd_timer = setTimeout(() => {
-        click_count_ttyd = 1
-    }, 1999)
-}
-
-let handleTTYDFormSubmit = (e) => {
-    e.preventDefault()
-    const form = e.target
-    const formData = new FormData(form);
-    const ttyd_port = formData.get('ttyd_port')
-    if (!ttyd_port || ttyd_port.trim() == '') return createToast('请填写端口', 'red')
-    let ttydNumber = Number(ttyd_port.trim())
-    if (isNaN(ttydNumber) || ttydNumber <= 0 || ttydNumber > 65535) return createToast('请填写正确的端口', 'red')
-    // 保存ttyd port
-    localStorage.setItem('ttyd_port', ttyd_port)
-    createToast('保存成功', 'green')
-    closeModal('#TTYDModal')
-    initTTYD()
-}
-
-
-function parseCGEQOSRDP(input) {
-    const match = input.match(/\+CGEQOSRDP:\s*(.+?)\s*OK/);
-    if (!match) {
-        return input
-    }
-
-    const parts = match[1].split(',').map(Number);
-    if (parts.length < 8) {
-        return input
-    }
-    return `QCI等级：${parts[1]} 🔽 ${+parts[6] / 1000}Mbps 🔼 ${+parts[7] / 1000}Mbps`
-}
-
-
-const executeATCommand = async (command, slot = null) => {
-    let at_slot_value = document.querySelector("#AT_SLOT")?.value
-    if (slot == null || slot == undefined) {
-        if (isNaN(Number(at_slot_value?.trim())) || at_slot_value == undefined || at_slot_value == null) {
-            slot = 0
-        } else {
-            slot = at_slot_value.trim()
-        }
-    }
-    try {
-        const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/AT?command=${command_enc}&slot=${slot}`, { headers: common_headers })).json()
-        return res
-    } catch (e) {
-        return null
-    }
-}
-
-async function QOSRDPCommand(cmd) {
-    if (!cmd) return QORS_MESSAGE = null
-    // 获取当前卡槽
-    let { sim_slot } = await getData(new URLSearchParams({
-        cmd: 'sim_slot'
-    }))
-    //获取是否支持双sim卡
-    const { dual_sim_support } = await getData(new URLSearchParams({
-        cmd: 'dual_sim_support'
-    }))
-    if (!sim_slot || dual_sim_support != '1') {
-        sim_slot = 0
-    }
-    let res = await executeATCommand(cmd, sim_slot)
-    if (res.result) return QORS_MESSAGE = parseCGEQOSRDP(res.result)
-    return QORS_MESSAGE = null
-}
-QOSRDPCommand("AT+CGEQOSRDP=1")
-
-let initATBtn = () => {
-    const el = document.querySelector('#AT')
-    if (!initRequestData() || !el) {
-        el.onclick = () => createToast('请登录', 'red')
-        el.style.backgroundColor = '#80808073'
-        return null
-    }
-    el.style.backgroundColor = ''
-    el.onclick = () => {
-        showModal('#ATModal')
-    }
-}
-initATBtn()
-
-
-const handleATFormSubmit = async () => {
-    const AT_value = document.querySelector('#AT_INPUT')?.value;
-    if (!AT_value || AT_value.trim() === '') {
-        return createToast('请输入AT指令', 'red');
-    }
-
-    const AT_RESULT = document.querySelector('#AT_RESULT');
-    AT_RESULT.innerHTML = "执行中,请耐心等待...";
-
-    try {
-        const res = await executeATCommand(AT_value.trim());
-
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
-                createToast('执行失败', 'red');
-                return;
-            }
-            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
-            createToast('执行成功', 'green');
-        } else {
-            createToast('执行失败', 'red');
-        }
-
-    } catch (err) {
-        const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
-        createToast('执行失败', 'red');
-    }
-};
-
-const handleQosAT = async () => {
-    const AT_RESULT = document.querySelector('#AT_RESULT');
-    AT_RESULT.innerHTML = "执行中,请耐心等待...";
-
-    try {
-        const res = await executeATCommand('AT+CGEQOSRDP=1');
-
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
-                createToast('执行失败', 'red');
-                return;
-            }
-
-            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${parseCGEQOSRDP(res.result)}</p>`;
-            createToast('执行成功', 'green');
-        } else {
-            createToast('执行失败', 'red');
-        }
-
-    } catch (err) {
-        const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
-        createToast('执行失败', 'red');
-    }
-};
-
-const handleAT = async (params) => {
-    if (!params) return
-    // 执行AT
-    const AT_RESULT = document.querySelector('#AT_RESULT')
-    AT_RESULT.innerHTML = "执行中,请耐心等待..."
-    try {
-        const res = await executeATCommand(params);
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = `<p style="overflow: hidden;">${res.error}</p>`;
-                createToast('执行失败', 'red');
-                return;
-            }
-
-            AT_RESULT.innerHTML = `<p onclick="copyText(event)"  style="overflow: hidden;">${res.result}</p>`;
-            createToast('执行成功', 'green');
-        } else {
-            createToast('执行失败', 'red');
-        }
-    } catch (err) {
-        const error = err?.error || '未知错误';
-        AT_RESULT.innerHTML = `<p style="overflow: hidden;">${error}</p>`;
-        createToast('执行失败', 'red');
-    }
-}
-
-//执行时禁用按钮
-const disableButtonWhenExecuteFunc = async (e, func) => {
-    const target = e.currentTarget
-
-    target.setAttribute("disabled", "true");
-    target.style.opacity = '.5'
-    try {
-        func && await func()
-    } finally {
-        target.removeAttribute("disabled");
-        target.style.opacity = ''
-    }
-}
-
-//执行smb目录更改
-const handleSambaPath = async (command = '/') => {
-    const AT_RESULT = document.querySelector('#AT_RESULT')
-    AT_RESULT.innerHTML = "执行中,请耐心等待..."
-    try {
-        const command_enc = encodeURIComponent(command)
-        const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
-        if (res) {
-            if (res.error) {
-                AT_RESULT.innerHTML = res.error;
-                createToast('执行失败', 'red');
-                return;
-            }
-            AT_RESULT.innerHTML = res.result;
-            createToast('执行完成', 'green');
-        } else {
-            AT_RESULT.innerHTML = '';
-            createToast('执行失败', 'red');
-        }
-    } catch (e) {
-        AT_RESULT.innerHTML = '';
-        createToast('执行失败', 'red');
-    }
-}
-
-//更改密码
-initChangePassData = () => {
-    const el = document.querySelector("#CHANGEPWD")
-    if (!initRequestData() || !el) {
-        el.onclick = () => createToast('请登录', 'red')
-        el.style.backgroundColor = '#80808073'
-        return null
-    }
-    el.style.backgroundColor = '#87ceeb70'
-    el.onclick = async () => {
-        showModal('#changePassModal')
-    }
-}
-initChangePassData()
-
-const handleChangePassword = async (e) => {
-    e.preventDefault()
-    const form = e.target
-    const formData = new FormData(form);
-    const oldPassword = formData.get('oldPassword')
-    const newPassword = formData.get('newPassword')
-    const confirmPassword = formData.get('confirmPassword')
-    if (!oldPassword || oldPassword.trim() == '') return createToast('请输入旧密码', 'red')
-    if (!newPassword || newPassword.trim() == '') return createToast('请输入新密码', 'red')
-    if (!confirmPassword || confirmPassword.trim() == '') return createToast('请确认新密码', 'red')
-    if (newPassword != confirmPassword) return createToast('两次输入的新密码不一致', 'red')
-
-    try {
-        const cookie = await login()
-        try {
-            const res = await (await postData(cookie, {
-                goformId: 'CHANGE_PASSWORD',
-                oldPassword: SHA256(oldPassword),
-                newPassword: SHA256(newPassword)
-            })).json()
-            if (res?.result == 'success') {
-                createToast('修改成功！', 'green')
-                form.reset()
-                closeModal('#changePassModal')
-            } else {
-                throw '修改失败'
-            }
-        } catch {
-            createToast('修改失败！', 'red')
-        }
-    } catch {
-        createToast('登录失败，请检查密码和网络连接', 'red')
-        closeModal('#changePassModal')
-        setTimeout(() => {
-            out()
-        }, 310);
-    }
-}
-
-const onCloseChangePassForm = () => {
-    const form = document.querySelector("#changePassForm")
-    form && form.reset()
-    closeModal("#changePassModal")
-}
-
-//sim卡切换
-let initSimCardType = async () => {
-    const selectEl = document.querySelector('#SIM_CARD_TYPE')
-    //查询是否支持双卡
-    // const { dual_sim_support } = await getData(new URLSearchParams({
-    //     cmd: 'dual_sim_support'
-    // }))
-    // if (dual_sim_support && dual_sim_support == '0') {
-    //     return
-    // } else {
-    selectEl.style.display = ''
-    // }
-    if (!initRequestData() || !selectEl) {
-        selectEl.style.backgroundColor = '#80808073'
-        selectEl.disabled = true
-        return null
-    }
-    selectEl.style.backgroundColor = ''
-    selectEl.disabled = false
-    let res = await getData(new URLSearchParams({
-        cmd: 'sim_slot'
-    }))
-    if (!selectEl || !res || res.sim_slot == null || res.sim_slot == undefined) {
-        return
-    }
-    [...selectEl.children].forEach((item) => {
-        if (item.value == res.sim_slot) {
-            item.selected = true
-        }
-    })
-    QOSRDPCommand("AT+CGEQOSRDP=1")
-}
-initSimCardType()
-
-let changeSimCard = async (e) => {
-    const value = e.target.value.trim()
-    if (!initRequestData() || !value) {
-        return null
-    }
-    createToast('更改中，请稍后', '#BF723F')
-    try {
-        const cookie = await login()
-        if (!cookie) {
-            createToast('登录失败，请检查密码', 'red')
-            out()
-            return null
-        }
-        let res = await (await postData(cookie, {
-            goformId: 'SET_SIM_SLOT',
-            sim_slot: value.trim()
-        })).json()
-        if (res.result == 'success') {
-            createToast('操作成功！', 'green')
-        } else {
-            createToast('操作失败！', 'red')
-        }
-        await initUSBNetworkType()
-    } catch (e) {
-        // createToast(e.message)
-    }
-}
-
-
-// 控制测速请求的中断器
-let speedFlag = false;
-let speedController = null; // 可重置的变量
-
-async function startTest(e) {
-    if (!initRequestData()) {
-        createToast('请登录', 'red')
-        return null
-    }
-    if (speedFlag) {
-        speedController.abort();
-        createToast('测速已取消');
-        return;
-    }
-
-    speedFlag = true;
-    speedController = new AbortController();
-    const speedSignal = speedController.signal;
-
-    e.target.style.backgroundColor = '#80808073';
-    e.target.innerHTML = '停止测速';
-
-    const serverUrl = `${KANO_baseURL}/speedtest`;
-    const ckSize = document.querySelector('#speedTestModal #ckSize').value;
-    const chunkSize = !isNaN(Number(ckSize)) ? Number(ckSize) : 1000;
-    const resultDiv = document.getElementById('speedtestResult');
-
-    const url = `${serverUrl}?ckSize=${chunkSize}&cors`;
-    resultDiv.textContent = `测速中...`;
-
-    let totalBytes = 0;
-    let startTime = performance.now();
-    let lastUpdateTime = startTime;
-    let lastBytes = 0;
-
-    try {
-        const res = await fetch(url, { signal: speedSignal, headers: { ...common_headers } });
-        const reader = res.body.getReader();
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            totalBytes += value.length;
-            const now = performance.now();
-
-            if (now - lastUpdateTime >= 50) {
-                const elapsed = (now - lastUpdateTime) / 1000;
-                const speed = ((totalBytes - lastBytes) * 8 / 1024 / 1024) / elapsed;
-
-                resultDiv.innerHTML = `实时测速中...
+                    resultDiv.innerHTML = `实时测速中...
 下载总量：${(totalBytes / 1024 / 1024).toFixed(2)} MB
 当前速度：${speed.toFixed(2)} Mbps`;
 
-                lastUpdateTime = now;
-                lastBytes = totalBytes;
+                    lastUpdateTime = now;
+                    lastBytes = totalBytes;
+                }
             }
-        }
 
-        const totalTime = (performance.now() - startTime) / 1000;
-        const avgSpeed = ((totalBytes * 8) / 1024 / 1024) / totalTime;
+            const totalTime = (performance.now() - startTime) / 1000;
+            const avgSpeed = ((totalBytes * 8) / 1024 / 1024) / totalTime;
 
-        resultDiv.innerHTML += `<br/>✅ 测试完成
+            resultDiv.innerHTML += `<br/>✅ 测试完成
 总耗时：${totalTime.toFixed(2)} 秒
 平均速度：${avgSpeed.toFixed(2)} Mbps`;
-    } catch (err) {
-        if (err.name === 'AbortError') {
-            resultDiv.innerHTML += `<br/>⚠️ 已中止测速`;
-        } else {
-            resultDiv.innerHTML = `❌ 测试失败：${err.message}`;
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                resultDiv.innerHTML += `<br/>⚠️ 已中止测速`;
+            } else {
+                resultDiv.innerHTML = `❌ 测试失败：${err.message}`;
+            }
+        } finally {
+            speedFlag = false;
+            e.target.innerHTML = '开始测速';
+            e.target.style.backgroundColor = '';
         }
-    } finally {
-        speedFlag = false;
-        e.target.innerHTML = '开始测速';
-        e.target.style.backgroundColor = '';
     }
-}
 
-//无限测速
-let loopSpeedTestTimer = null
-const handleLoopMode = (e) => {
-    if (!initRequestData()) {
-        createToast('请登录', 'red')
-        return null
-    }
-    const speedTestButton = document.querySelector('#startSpeedBtn')
-    if (e.target.innerHTML == '循环测速') {
-        e.target.innerHTML = '停止循环'
-        loopSpeedTestTimer && loopSpeedTestTimer()
-        loopSpeedTestTimer = requestInterval(() => {
-            if (speedTestButton && speedTestButton.innerHTML == "开始测速") {
+    //无限测速
+    let loopSpeedTestTimer = null
+    const handleLoopMode = async (e) => {
+        if (!(await initRequestData())) {
+            createToast('请登录', 'red')
+            return null
+        }
+        const speedTestButton = document.querySelector('#startSpeedBtn')
+        if (e.target.innerHTML == '循环测速') {
+            e.target.innerHTML = '停止循环'
+            loopSpeedTestTimer && loopSpeedTestTimer()
+            loopSpeedTestTimer = requestInterval(() => {
+                if (speedTestButton && speedTestButton.innerHTML == "开始测速") {
+                    speedTestButton.click()
+                }
+            }, 10)
+        } else {
+            loopSpeedTestTimer && loopSpeedTestTimer()
+            if (speedTestButton && speedTestButton.innerHTML == "停止测速") {
                 speedTestButton.click()
             }
-        }, 10)
-    } else {
-        loopSpeedTestTimer && loopSpeedTestTimer()
-        if (speedTestButton && speedTestButton.innerHTML == "停止测速") {
-            speedTestButton.click()
+            e.target.innerHTML = '循环测速'
         }
-        e.target.innerHTML = '循环测速'
     }
-}
 
-//文件上传
-const handleFileUpload = (event) => {
-    return new Promise((resolve, reject) => {
-        const file = event.target.files[0];
-        if (file) {
-            // 检查文件大小
-            if (file.size > 3 * 1024 * 1024) {
-                // 3MB
-                createToast(`文件大小不能超过${3}MB！`, 'red')
-                reject({ msg: `文件大小不能超过${3}MB！`, data: null })
-            } else {
-                const reader = new FileReader();
-                reader.readAsDataURL(file); // 将文件读取为Data URL
-                reader.onload = (e) => {
-                    const base64String = e.target.result;
-                    if (!base64String.startsWith('data:image')) {
-                        createToast('请上传图片文件！', 'red')
-                        reject({ msg: '请上传图片文件！', data: null })
-                        return
-                    }
-                    document.querySelector("#BG_INPUT").value = ''
-                    BG.style.backgroundImage = `url(${base64String})`
-                    document.querySelector('#isCheckedBG').checked = true
-                    localStorage.setItem('backgroundUrl', base64String)
-                    resolve({ msg: 'ok' })
-                };
+    //文件上传
+    const handleFileUpload = (event) => {
+        return new Promise((resolve, reject) => {
+            const file = event.target.files[0];
+            if (file) {
+                // 检查文件大小
+                if (file.size > 3 * 1024 * 1024) {
+                    // 3MB
+                    createToast(`文件大小不能超过${3}MB！`, 'red')
+                    reject({ msg: `文件大小不能超过${3}MB！`, data: null })
+                } else {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file); // 将文件读取为Data URL
+                    reader.onload = (e) => {
+                        const base64String = e.target.result;
+                        if (!base64String.startsWith('data:image')) {
+                            createToast('请上传图片文件！', 'red')
+                            reject({ msg: '请上传图片文件！', data: null })
+                            return
+                        }
+                        document.querySelector("#BG_INPUT").value = ''
+                        BG.style.backgroundImage = `url(${base64String})`
+                        document.querySelector('#isCheckedBG').checked = true
+                        localStorage.setItem('backgroundUrl', base64String)
+                        resolve({ msg: 'ok' })
+                    };
+                }
             }
-        }
-    })
-}
+        })
+    }
 
-//打赏模态框设置
-const payModalState = localStorage.getItem('hidePayModal') || false
-!payModalState && showModal('#payModal')
-const onClosePayModal = () => {
-    closeModal('#payModal')
-    localStorage.setItem('hidePayModal', 'true')
-}
+    //打赏模态框设置
+    const payModalState = localStorage.getItem('hidePayModal') || false
+    !payModalState && showModal('#payModal')
+    const onClosePayModal = () => {
+        closeModal('#payModal')
+        localStorage.setItem('hidePayModal', 'true')
+    }
 
 
-//展开收起
-// 配置观察器_菜单
-(() => {
-    const { el: collapseMenuEl } = createCollapseObserver(document.querySelector(".collapse_menu"))
-    collapseMenuEl.dataset.name = localStorage.getItem('collapse_menu') || 'open'
-    const collapseBtn = document.querySelector('#collapseBtn_menu')
-    const switchComponent = createSwitch({
-        text: '功能列表',
-        value: collapseMenuEl.dataset.name == 'open',
-        className: 'collapse_menu',
-        onChange: (newVal) => {
-            if (collapseMenuEl && collapseMenuEl.dataset) {
-                collapseMenuEl.dataset.name = newVal ? 'open' : 'close'
-                localStorage.setItem('collapse_menu', collapseMenuEl.dataset.name)
+    //展开收起
+    // 配置观察器_菜单
+    (() => {
+        const { el: collapseMenuEl } = createCollapseObserver(document.querySelector(".collapse_menu"))
+        collapseMenuEl.dataset.name = localStorage.getItem('collapse_menu') || 'open'
+        const collapseBtn = document.querySelector('#collapseBtn_menu')
+        const switchComponent = createSwitch({
+            text: '功能列表',
+            value: collapseMenuEl.dataset.name == 'open',
+            className: 'collapse_menu',
+            onChange: (newVal) => {
+                if (collapseMenuEl && collapseMenuEl.dataset) {
+                    collapseMenuEl.dataset.name = newVal ? 'open' : 'close'
+                    localStorage.setItem('collapse_menu', collapseMenuEl.dataset.name)
+                }
             }
-        }
-    });
-    collapseBtn.appendChild(switchComponent);
-})();
+        });
+        collapseBtn.appendChild(switchComponent);
+    })();
 
-//展开收起
-// 配置观察器_基本状态
-collapseGen("#collapse_status_btn", "#collapse_status", "collapse_status")
+    //展开收起
+    // 配置观察器_基本状态
+    collapseGen("#collapse_status_btn", "#collapse_status", "collapse_status")
 
-//展开收起
-// 配置观察器_TTYD
-collapseGen("#collapse_ttyd_btn", "#collapse_ttyd", "collapse_ttyd")
+    //展开收起
+    // 配置观察器_TTYD
+    collapseGen("#collapse_ttyd_btn", "#collapse_ttyd", "collapse_ttyd")
 
-//展开收起
-// 配置观察器_锁频
-collapseGen("#collapse_lkband_btn", "#collapse_lkband", "collapse_lkband")
+    //展开收起
+    // 配置观察器_锁频
+    collapseGen("#collapse_lkband_btn", "#collapse_lkband", "collapse_lkband")
 
-//展开收起
-// 配置观察器_锁基站
-collapseGen("#collapse_lkcell_btn", "#collapse_lkcell", "collapse_lkcell")
+    //展开收起
+    // 配置观察器_锁基站
+    collapseGen("#collapse_lkcell_btn", "#collapse_lkcell", "collapse_lkcell")
+
+
+    //挂载方法到window
+    const methods = {
+        enableTTYD,
+        createToast,
+        changeNetwork,
+        changeUSBNetwork,
+        changeSimCard,
+        changeWIFISwitch,
+        unlockAllCell,
+        onTokenConfirm,
+        sendSMS,
+        deleteSMS,
+        resetShowList,
+        handleDataManagementFormSubmit,
+        handleWIFIManagementFormSubmit,
+        handleScheduleRebootFormSubmit,
+        handleWifiEncodeChange,
+        handleFileUpload,
+        handleATFormSubmit,
+        handleChangePassword,
+        handleShowPassword,
+        submitBandForm,
+        submitCellForm,
+        initClientManagementModal,
+        closeClientManager,
+        resetTheme,
+        handleSubmitBg,
+        disableButtonWhenExecuteFunc,
+        onCloseChangePassForm,
+        startTest,
+        handleLoopMode,
+        onClosePayModal,
+        showModal,
+        closeModal,
+        handleTTYDFormSubmit,
+        handleQosAT,
+        handleSambaPath,
+        handleAT,
+        setOrRemoveDeviceFromBlackList,
+        onSelectCellRow,
+    }
+
+    try {
+        Object.keys(methods).forEach((method) => {
+            window[method] = methods[method]
+        })
+        Object.keys(methods).forEach((method) => {
+            globalThis[method] = methods[method]
+        })
+    }
+    catch { }
+}

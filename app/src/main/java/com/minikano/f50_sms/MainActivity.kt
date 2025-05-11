@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
     private val PREF_LOGIN_TOKEN = "login_token"
+    private val PREF_TOKEN_ENABLED = "login_token_enabled"
     private val serverStatusLiveData = MutableLiveData<Boolean>()
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
@@ -125,6 +126,14 @@ class MainActivity : ComponentActivity() {
                     ) ?: "admin"
                 )
             }
+            var isTokenEnabled by remember {
+                mutableStateOf(
+                    sharedPrefs.getString(
+                        PREF_TOKEN_ENABLED,
+                        true.toString()
+                    ) ?: true.toString()
+                )
+            }
 //            val host = targetServerIP.substringBefore(":")
             if (isServerRunning) {
                 ServerUI(
@@ -144,10 +153,13 @@ class MainActivity : ComponentActivity() {
                     loginToken = loginToken,
                     versionName = versionName ?: "未知" ,
                     onLoginTokenChange = { loginToken = it },
+                    isTokenEnabled = isTokenEnabled == true.toString(),
+                    onTokenEnableChange = {isTokenEnabled = it.toString()},
                     onConfirm = {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
                         sharedPrefs.edit().putString(PREF_LOGIN_TOKEN, loginToken).apply()
+                        sharedPrefs.edit().putString(PREF_TOKEN_ENABLED, isTokenEnabled).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                         serverStatusLiveData.postValue(true)
                         Log.d("kano_ZTE_LOG", "user touched start btn")
@@ -198,20 +210,28 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit,
-            loginToken:String, onLoginTokenChange: (String) -> Unit,
-            onConfirm: () -> Unit,versionName:String
+fun InputUI(
+    gatewayIp: String,
+    onGatewayIpChange: (String) -> Unit,
+    loginToken: String,
+    onLoginTokenChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    versionName: String,
+    isTokenEnabled: Boolean,
+    onTokenEnableChange: (Boolean) -> Unit
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Card(
-            shape = RoundedCornerShape(16.dp), // 圆角
-            elevation = CardDefaults.cardElevation(8.dp), // 阴影
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp) // 外边距
+                .padding(16.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -219,6 +239,7 @@ fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit,
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("请输入路由器管理 IP", fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = gatewayIp,
                     onValueChange = onGatewayIpChange,
@@ -228,13 +249,27 @@ fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit,
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 开关：是否启用登录口令
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("启用登录口令")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(
+                        checked = isTokenEnabled,
+                        onCheckedChange = onTokenEnableChange
+                    )
+                }
+
                 // 登录口令输入框
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = loginToken,
+                    enabled = isTokenEnabled,
                     onValueChange = onLoginTokenChange,
                     label = { Text("登录口令(默认admin)") },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation() // 可隐藏口令
+                    visualTransformation = PasswordVisualTransformation()
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -242,7 +277,7 @@ fun InputUI(gatewayIp: String, onGatewayIpChange: (String) -> Unit,
                     Text("启动服务")
                 }
                 Spacer(modifier = Modifier.height(32.dp))
-                Text("Created by Minikano with ❤️ ver: ${versionName}", fontSize = 12.sp)
+                Text("Created by Minikano with ❤️ ver: $versionName", fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(10.dp))
                 HyperlinkText(
                     "View source code on Github(Minikano)",
