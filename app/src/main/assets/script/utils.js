@@ -164,8 +164,10 @@ function createToast(text, color, delay = 3000) {
     toastEl.style.color = color || 'while'
     toastEl.style.backgroundColor = 'var(--dark-card-bg)'
     toastEl.style.transform = `scale(1)`
-    toastEl.style.transition = `all .3s`
+    toastEl.style.transition = `all .3s ease-in-out`
     toastEl.style.opacity = `0`
+    toastEl.style.transform = `scale(0)`
+    toastEl.style.transformOrigin = 'top center'
     toastEl.style.boxShadow = '0 0 10px 0 #87ceeb70'
     toastEl.style.fontWeight = 'bold'
     toastEl.style.backdropFilter = 'blur(10px)'
@@ -176,7 +178,8 @@ function createToast(text, color, delay = 3000) {
     toastContainer.appendChild(toastEl)
     setTimeout(() => {
         toastEl.style.opacity = `1`
-    }, 0);
+        toastEl.style.transform = `scale(1)`
+    }, 50);
     let timer = null
     setTimeout(() => {
         toastEl.style.opacity = `0`

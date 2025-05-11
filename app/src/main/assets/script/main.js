@@ -2,6 +2,7 @@ let isNeedToken = true
 const MODEL = document.querySelector("#MODEL")
 let QORS_MESSAGE = null
 let smsSender = null
+let psw_fail_num = 0
 
 //判断一下是否需要token
 const needToken = async () => {
@@ -322,6 +323,7 @@ function main_func() {
     }
 
     const onTokenConfirm = debounce(async () => {
+        // psw_fail_num_str
         try {
             await needToken()
             let tkInput = document.querySelector('#tokenInput')
@@ -335,12 +337,20 @@ function main_func() {
             }
             KANO_TOKEN = token.trim()
             common_headers.authorization = KANO_TOKEN
+            let { psw_fail_num_str, login_lock_time } = await getData(new URLSearchParams({
+                cmd: 'psw_fail_num_str,login_lock_time'
+            }))
+            if (psw_fail_num_str == '0' && login_lock_time != '0') {
+                createToast(`密码错误次数已达上限，请等待${login_lock_time}秒后再试！`, 'red')
+                out()
+                await needToken()
+                return null
+            }
             const cookie = await login()
             if (!cookie) {
-                createToast(`登录失败，请检查token密码和网络！`, 'red')
-                tkInput.value = ''
-                tokenInput.value = ''
+                createToast(`登录失败,检查密码 ` + (psw_fail_num_str != undefined ? `剩余次数：${psw_fail_num_str}` : ''), 'red')
                 out()
+                await needToken()
                 return null
             }
             createToast('登录成功！', 'green')
@@ -350,7 +360,7 @@ function main_func() {
             initRenderMethod()
         }
         catch {
-            createToast('登录失败，请检查网络！', 'red')
+            createToast('登录失败！', 'red')
         }
     }, 200)
 
@@ -824,7 +834,7 @@ function main_func() {
     smsBtn.onclick = init
 
     let clearBtn = document.querySelector('#CLEAR')
-    clearBtn.onclick = () => {
+    clearBtn.onclick = async () => {
         isFirstRender = true
         lastRequestSmsIds = null
         localStorage.removeItem('kano_sms_pwd')
@@ -838,6 +848,7 @@ function main_func() {
                 logout(cookie)
             })
         } catch { }
+        await needToken()
         createToast('您已退出登录', 'green')
         showModal('#tokenModal')
     }

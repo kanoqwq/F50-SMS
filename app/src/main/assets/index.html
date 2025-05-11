@@ -308,17 +308,25 @@
                 </div>
             </div>
             <!-- 登录模态框 -->
-            <div class="mask" id="tokenModal" style="display: none;">
-                <div class="modal">
+            <div class="mask" id="tokenModal" style="display: none">
+                <div class="modal" style="width: 77%;max-width: 300px;">
                     <div class="title">请输入口令与密码</div>
+                    <div class="title" style="margin: 10px 0;">
+                        <p style="font-size: 12px;margin: 0;">
+                            <i>
+                                注：请在UFI-TOOLS_WEB
+                                <br>后台App查看口令(默认为admin)
+                                <br>密码为官方WEB管理密码
+                                <br>如果忘记了密码,请重置设备或联系作者
+                            </i>
+                        </p>
+                    </div>
                     <div class="content"
-                        style="padding-top: 15px;display: flex;flex-direction: column;align-items: center;">
-                        <input id="IPInput" placeholder="ip地址" value="localhost:8090" type="text"
-                            style="display: none;margin:0 4px;margin-bottom: 20px;height: 30px;">
+                        style="padding: 15px 4px 0 4px;display: flex;flex-direction: column;align-items: center;">
                         <input id="TOKEN" placeholder="请在后台App查看" type="password"
-                            style="text-indent: .5em;margin:0 4px;margin-bottom: 10px;height: 30px;">
+                            style="width: 100%;text-indent: .5em;margin:0 4px;margin-bottom: 10px;height: 30px;">
                         <input id="tokenInput" placeholder="设备的WEB管理密码" type="password"
-                            style="text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
+                            style="width: 100%;text-indent: .5em; margin:0 4px;margin-bottom: 20px;height: 30px;">
                     </div>
                     <div class="btn" style="text-align: right;">
                         <button onclick="onTokenConfirm()">确认</button>
@@ -827,14 +835,14 @@
                         </div>
                         <img style="max-width: 80px;flex:1; animation: a 5s infinite ease-in-out;border-radius: 8px;"
                             src="https://kanokano.cn/wp-content/uploads/2025/05/BFEE3DCE16FE04E6EF4EC52396E618B1.webp"
-                            onerror="this.onerror=null; this.src='/img/hn.webp'"
-                            alt="">
+                            onerror="this.onerror=null; this.src='/img/hn.webp'" alt="">
                     </div>
                     <div class="content"
                         style="overflow-y: hidden;padding: 15px;width: 66vw;max-width: 400px;max-height:fit-content;">
                         <div class="item" style="margin: 10px auto;">
                             <img style="width: 100%;border-radius: 20px;"
-                                src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp" onerror="this.onerror=null; this.src='/img/zsm.webp'" alt="">
+                                src="https://kanokano.cn/wp-content/uploads/2025/05/QQ20250506-140557.webp"
+                                onerror="this.onerror=null; this.src='/img/zsm.webp'" alt="">
                         </div>
                     </div>
                     <div class="btn" style="text-align: right;">
