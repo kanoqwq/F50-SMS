@@ -394,10 +394,6 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     } catch (e: Exception) {
                         jsonResult = """{"result":"执行失败"}"""
                     }
-                    //清理临时文件
-                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/kano_ui.xml", context_app)
-                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/${outFile_smb.name}", context_app)
-                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/${outFile_ttyd.name}", context_app)
                     writer.write(jsonResult)
                 } catch (e: Exception) {
                     writer.write("""{"error":"AT指令执行错误：${e.message}"}""")
@@ -897,9 +893,6 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                             jsonResult = """{"result":"null"}"""
                         }
                         //清理临时文件
-                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/kano_ui.xml", context_app)
-                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/ufi_tools_update.sh", context_app)
-                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/ufi_tools_latest.apk", context_app)
                         writer.write(jsonResult)
                     } catch (e: Exception) {
                         writer.write("""{"error":"adb安装apk执行错误：${e.message}"}""")
@@ -912,6 +905,18 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
 
             val response = newChunkedResponse(
                 Response.Status.OK, "application/json", pipedInput
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
+        }
+
+        //手动保活ADB
+        if (method == "GET" && uri == "/adb_keep_alive"){
+            val res = ShellKano.ensureAdbAlive(context_app)
+            val response = newFixedLengthResponse(
+                Response.Status.OK, "application/json", """{
+                "result":"$res",
+                }""".trimIndent()
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response

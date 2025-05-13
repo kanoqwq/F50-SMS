@@ -316,3 +316,16 @@ async function getDataUsage() {
         return null
     }
 }
+
+//adb保活
+async function adbKeepAlive() {
+    try {
+        const { result } = await (await fetch(`${KANO_baseURL}/adb_keep_alive`,{
+            headers:common_headers
+        })).json()
+        return result
+    } catch {
+        return false
+    }
+
+}

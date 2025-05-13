@@ -169,6 +169,7 @@ class ShellKano {
                         runShellCommand("$adbPath shell input keyevent KEYCODE_PASTE", context)
                         Log.d("kano_ZTE_LOG", "读取剪贴板，输入文本：$inputText")
                         inputClicked = true
+                        Thread.sleep(500) // 稍等输入完毕
                         break
                     }
                 }
@@ -380,7 +381,7 @@ class ShellKano {
         }
 
         //检测adb存活
-        fun ensureAdbAlive(context: Context) {
+        fun ensureAdbAlive(context: Context):Boolean {
             try {
                 val result = executeShellFromAssetsSubfolderWithArgs(
                     context, "shell/adb", "devices"
@@ -401,8 +402,10 @@ class ShellKano {
                         )}.start()
                     }
                 }
+                return true
             } catch (e: Exception) {
                 Log.e("kano_ZTE_LOG", "检测/启动ADB失败: ${e.message}")
+                return false
             }
         }
 

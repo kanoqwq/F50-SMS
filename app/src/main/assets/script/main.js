@@ -714,6 +714,8 @@ function main_func() {
                 }
             } catch (e) {
                 console.error(e.message)
+            } finally {
+                await adbKeepAlive()
             }
         }
         btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
@@ -769,6 +771,8 @@ function main_func() {
                 }
             } catch (e) {
                 console.error(e.message)
+            } finally {
+                await adbKeepAlive()
             }
         }
         btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
@@ -2557,6 +2561,7 @@ function main_func() {
     //执行smb目录更改
     const handleSambaPath = async (command = '/') => {
         const AT_RESULT = document.querySelector('#AT_RESULT')
+        await adbKeepAlive()
         AT_RESULT.innerHTML = "执行中,请耐心等待..."
         try {
             const command_enc = encodeURIComponent(command)
@@ -2888,6 +2893,7 @@ function main_func() {
             return null
         }
         try {
+            await adbKeepAlive()
             const res = await fetch(`${KANO_baseURL}/check_update`, {
                 method: 'get',
                 headers: common_headers
@@ -2909,6 +2915,7 @@ function main_func() {
     const requestInstallUpdate = async () => {
         const OTATextContent = document.querySelector('#OTATextContent')
         try {
+            await adbKeepAlive()
             OTATextContent.innerHTML = `<div>📦 安装中...</div>`
             const _res = await fetch(`${KANO_baseURL}/install_apk`, {
                 method: 'POST',
@@ -2934,6 +2941,7 @@ function main_func() {
     //立即更新
     let updateSoftwareInterval = null
     const handleUpdateSoftware = async (url) => {
+        await adbKeepAlive()
         updateSoftwareInterval && updateSoftwareInterval()
         if (!url || url.trim() == "") return
         const doUpdateEl = document.querySelector('#doUpdate')
