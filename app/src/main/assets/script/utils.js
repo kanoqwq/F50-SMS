@@ -103,7 +103,7 @@ function kano_parseSignalBar(val, min = -125, max = -81, green_low = -90, yellow
 
 function kano_getSignalEmoji(strength) {
     const signals = ["📶 ⬜⬜⬜⬜", "📶 🟨⬜⬜⬜", "📶 🟩🟨⬜⬜", "📶 🟩🟩🟨⬜", "📶 🟩🟩🟩🟨", "📶 🟩🟩🟩🟩"];
-    return signals[Math.max(0, Math.min(strength, 5))]; // 确保输入在 0-5 之间
+    return  `${strength} ${signals[Math.max(0, Math.min(strength, 5))]}`; // 确保输入在 0-5 之间
 }
 
 function kano_formatTime(seconds) {
