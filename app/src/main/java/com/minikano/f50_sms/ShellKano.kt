@@ -1,6 +1,9 @@
 package com.minikano.f50_sms
 
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.provider.DocumentsContract
 import android.util.Log
 import okio.Path
@@ -15,11 +18,6 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class ShellKano {
     companion object {
-
-        fun sha256(input: String): String {
-            val bytes = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
-            return bytes.joinToString("") { "%02x".format(it) }
-        }
 
         fun runShellCommand(command: String?, escaped: Boolean = false): String? {
             val output = StringBuilder()
@@ -128,10 +126,14 @@ class ShellKano {
             context: Context,
             resId: String,
             btnName: String,
-            needBack: Boolean = true
+            needBack: Boolean = true,
+            useClipBoard:Boolean = false
         ): String {
             val doc = getUiDoc(adbPath, context)
             val nodes = doc.getElementsByTagName("node")
+            val escapedInput = inputText.replace(" ", "%s")
+            //复制文本到剪贴板
+            KanoUtils.copyToClipboard(context,"sambaCommand",inputText)
 
             // 寻找输入框
             var inputClicked = false
@@ -153,17 +155,22 @@ class ShellKano {
                         Log.d("kano_ZTE_LOG", "点击输入框坐标：$tapX,$tapY")
                     }
 
-                    Thread.sleep(200) // 稍等软键盘弹出
-
                     // 输入文本
-                    val escapedInput = inputText.replace(" ", "%s")
-                    runShellCommand("$adbPath shell input text \"$escapedInput\"", context)
-                    Log.d("kano_ZTE_LOG", "输入文本：$inputText")
-                    inputClicked = true
-                    if (escapedInput.length > 20) {
-                        Thread.sleep(500) // 稍等输入完毕
+                    if(!useClipBoard) {
+                        Thread.sleep(200) // 稍等软键盘弹出
+                        runShellCommand("$adbPath shell input text \"$escapedInput\"", context)
+                        Log.d("kano_ZTE_LOG", "输入文本：$inputText")
+                        inputClicked = true
+                        if (escapedInput.length > 20) {
+                            Thread.sleep(500) // 稍等输入完毕
+                        }
+                        break
+                    } else {
+                        runShellCommand("$adbPath shell input keyevent KEYCODE_PASTE", context)
+                        Log.d("kano_ZTE_LOG", "读取剪贴板，输入文本：$inputText")
+                        inputClicked = true
+                        break
                     }
-                    break
                 }
             }
 
@@ -378,12 +385,20 @@ class ShellKano {
                 val result = executeShellFromAssetsSubfolderWithArgs(
                     context, "shell/adb", "devices"
                 )
+                Log.d("kano_ZTE_LOG", "adb device 执行状态：${result}")
                 if (result != null) {
-                    if (!result.contains("device")) {
+                    if (result.contains("emulator") || result.contains("5555") || result.contains("5554")) {
+                        Log.d("kano_ZTE_LOG", "adb存活，无需启动")
+                    }else{
                         Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
+                        Thread{
+                        executeShellFromAssetsSubfolderWithArgs(
+                            context, "shell/adb", "kill-server"
+                        )
+                        Thread.sleep(800)
                         executeShellFromAssetsSubfolderWithArgs(
                             context, "shell/adb", "start-server"
-                        )
+                        )}.start()
                     }
                 }
             } catch (e: Exception) {
@@ -421,10 +436,6 @@ class ShellKano {
             }
 
             return null
-        }
-
-        fun installAPK(context: Context, apkPath: Path) {
-
         }
     }
 }

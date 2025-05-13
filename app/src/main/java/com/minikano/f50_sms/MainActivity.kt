@@ -97,8 +97,8 @@ class MainActivity : ComponentActivity() {
 
         val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
 
-        val intent = Intent(this, WebService::class.java)
-        startForegroundService(intent)
+        startForegroundService(Intent(this, WebService::class.java))
+        startForegroundService(Intent(this, ADBService::class.java))
 
         // 注册广播
         registerReceiver(

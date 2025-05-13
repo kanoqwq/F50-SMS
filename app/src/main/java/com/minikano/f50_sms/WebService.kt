@@ -1,6 +1,5 @@
 package com.minikano.f50_sms
 
-import android.R.attr.start
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -52,7 +51,7 @@ class WebService : Service() {
                     ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
                     Log.d("kano_ZTE_LOG", "网络adb调试prop执行成功")
                 } catch (e: Exception) {
-                    Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
+                    Log.d("kano_ZTE_LOG", "网络adb调试prop执行出错： ${e.message}")
                 }
             }
             Thread.sleep(500)
@@ -97,10 +96,9 @@ class WebService : Service() {
             }
 
             Thread.sleep(5000)
-            val res_adb = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+            ShellKano.executeShellFromAssetsSubfolderWithArgs(
                 applicationContext, "shell/adb", "start-server"
             )
-            Log.d("kano_ZTE_LOG", "ADB-SERVER：${res_adb}")
             ShellKano.ensureAdbAlive(applicationContext)
         }.start()
     }

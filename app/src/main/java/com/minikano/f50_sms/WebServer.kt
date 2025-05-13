@@ -1,11 +1,6 @@
 package com.minikano.f50_sms
 
-import android.app.usage.NetworkStatsManager
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.net.ConnectivityManager
-import android.os.BatteryManager
 import android.os.Build
 import android.os.StatFs
 import android.util.Log
@@ -24,7 +19,6 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Calendar
 import java.util.Random
 import kotlin.concurrent.thread
 
@@ -102,10 +96,10 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             return try {
                 val stat1 =
                     ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat1没有数据")
-                val (total1, idle1) = parseCpuStat(stat1) ?: throw Exception("parseCpuStat执行失败")
+                val (total1, idle1) = KanoUtils.parseCpuStat(stat1) ?: throw Exception("parseCpuStat执行失败")
                 val stat2 =
                     ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat2没有数据")
-                val (total2, idle2) = parseCpuStat(stat2) ?: throw Exception("parseCpuStat执行失败")
+                val (total2, idle2) = KanoUtils.parseCpuStat(stat2) ?: throw Exception("parseCpuStat执行失败")
                 val totalDiff = total2 - total1
                 val idleDiff = idle2 - idle1
                 val usage = if (totalDiff > 0) (totalDiff - idleDiff).toFloat() / totalDiff else 0f
@@ -132,7 +126,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         if (method == "GET" && uri == "/mem") {
             return try {
                 val info = runShellCommand("cat /proc/meminfo") ?: throw Exception("没有info")
-                val usage = parseMeminfo(info)
+                val usage = KanoUtils.parseMeminfo(info)
                 Log.d("kano_ZTE_LOG", "内存使用率：%.2f%%".format(usage * 100))
                 val response = newFixedLengthResponse(
                     Response.Status.OK, "application/json", """{"mem":${usage * 100}}"""
@@ -395,11 +389,15 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 "\"", "\\\""
                             )
                         fillInputAndSend(
-                            escapedCommand, outFile_adb.absolutePath, context_app, "", "START"
+                            escapedCommand, outFile_adb.absolutePath, context_app, "", "START", useClipBoard = true
                         )
                     } catch (e: Exception) {
                         jsonResult = """{"result":"执行失败"}"""
                     }
+                    //清理临时文件
+                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/kano_ui.xml", context_app)
+                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/${outFile_smb.name}", context_app)
+                    runShellCommand("${outFile_adb.absolutePath} shell rm /sdcard/${outFile_ttyd.name}", context_app)
                     writer.write(jsonResult)
                 } catch (e: Exception) {
                     writer.write("""{"error":"AT指令执行错误：${e.message}"}""")
@@ -474,7 +472,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         if (method == "GET" && uri == "/battery_and_model") {
             return try {
                 val model = Build.MODEL // 设备型号
-                val batteryLevel: Int = getBatteryPercentage()// 充电状态
+                val batteryLevel: Int = KanoUtils.getBatteryPercentage(context_app)// 充电状态
                 val packageManager = context_app.packageManager
                 val packageName = context_app.packageName
                 val versionName = packageManager.getPackageInfo(packageName, 0).versionName
@@ -506,7 +504,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         if (method == "GET" && uri == "/speedtest") {
             return try {
                 val parms = session?.parameters ?: throw Exception("缺少 query 参数")
-                val ckSize = getChunkCount(parms["ckSize"]?.firstOrNull())
+                val ckSize = KanoUtils.getChunkCount(parms["ckSize"]?.firstOrNull())
                 val enableCors = parms.containsKey("cors")
 
                 // Headers
@@ -624,10 +622,10 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val availableSize = (statFs.blockSizeLong * statFs.availableBlocksLong)
                 val usedSize = totalSize - availableSize
 
-                val dailyData = (getTodayDataUsage(context_app))
+                val dailyData = (KanoUtils.getTodayDataUsage(context_app))
 
                 //外部存储
-                val ex_storage_info = getRemovableStorageInfo(context_app)
+                val ex_storage_info = KanoUtils.getRemovableStorageInfo(context_app)
                 var ex_storage_total_size = ex_storage_info?.totalBytes ?: 0
                 var ex_storage_avalible_size = ex_storage_info?.availableBytes ?: 0
                 var ex_storage_used_size = ex_storage_total_size - ex_storage_avalible_size
@@ -755,6 +753,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 response
             }
         }
+
         //下载进度
         if (method == "GET" && uri == "/download_apk_status") {
             val status = when {
@@ -773,6 +772,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response
         }
+
         //安装下载好的APK
         if (method == "POST" && uri == "/install_apk") {
             val pipedInput = PipedInputStream()
@@ -890,13 +890,17 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 )
                             fillInputAndSend(
                                 escapedCommand, outFile_adb.absolutePath, context_app, "", "START",
-                                needBack = false
+                                needBack = false,
+                                useClipBoard = true
                             )
                         } catch (e: Exception) {
                             jsonResult = """{"result":"null"}"""
                         }
+                        //清理临时文件
+                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/kano_ui.xml", context_app)
+                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/ufi_tools_update.sh", context_app)
+                        runShellCommand("${outFile_adb.absolutePath} shell rm -f /sdcard/ufi_tools_latest.apk", context_app)
                         writer.write(jsonResult)
-
                     } catch (e: Exception) {
                         writer.write("""{"error":"adb安装apk执行错误：${e.message}"}""")
                     } finally {
@@ -967,7 +971,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "Request Body: $requestBodyStr")
 
                     // 解析 URL 编码格式的请求体
-                    val params = parseUrlEncoded(requestBodyStr)
+                    val params = KanoUtils.parseUrlEncoded(requestBodyStr)
                     Log.d("kano_ZTE_LOG", "Parsed Body: $params")
 
                     // 发送请求体到目标服务器
@@ -1016,20 +1020,6 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         }
     }
 
-
-    private fun getChunkCount(param: String?): Int {
-        val default = 4
-        val max = 1024
-
-        return param?.toIntOrNull()?.let {
-            when {
-                it <= 0 -> default
-                it > max -> max
-                else -> it
-            }
-        } ?: default
-    }
-
     // 静态文件处理逻辑
     // 添加一个变量保存 context 的 assets
     private val assetManager = context.assets
@@ -1050,20 +1040,9 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         }
     }
 
-    //获取电池电量
-    private fun getBatteryPercentage(): Int {
-        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        val batteryStatus = context_app.registerReceiver(null, filter) ?: return -1
-
-        val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-        val scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-
-        return ((level / scale.toFloat()) * 100).toInt()
-    }
-
     private fun serveStaticFile(uri: String): Response {
         val path = if (uri == "/") "index.html" else uri.removePrefix("/")
-        val assetPath = "$path"
+        val assetPath = path
 
         return try {
             val inputStream = assetManager.open(assetPath)
@@ -1076,147 +1055,8 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         }
     }
 
-    // 解析 URL 编码的请求体
-    private fun parseUrlEncoded(data: String): Map<String, String> {
-        val params = mutableMapOf<String, String>()
-        val pairs = data.split("&")
-
-        for (pair in pairs) {
-            val keyValue = pair.split("=")
-            if (keyValue.size == 2) {
-                val key = keyValue[0]
-                val value = keyValue[1]
-                params[key] = java.net.URLDecoder.decode(value, Charsets.UTF_8.name())  // 解码
-            }
-        }
-
-        return params
-    }
-
-    //获取内存信息
-    private fun parseMeminfo(meminfo: String): Float {
-        val memMap = mutableMapOf<String, Long>()
-
-        meminfo.lines().forEach { line ->
-            val parts = line.split(Regex("\\s+"))
-            if (parts.size >= 2) {
-                val key = parts[0].removeSuffix(":")
-                val value = parts[1].toLongOrNull() ?: return@forEach
-                memMap[key] = value
-            }
-        }
-
-        val total = memMap["MemTotal"] ?: return 0f
-        val free = memMap["MemFree"] ?: 0
-        val cached = memMap["Cached"] ?: 0
-        val buffers = memMap["Buffers"] ?: 0
-
-        val used = total - free - cached - buffers
-        return used.toFloat() / total
-    }
-
-    private fun parseCpuStat(raw: String): Pair<Long, Long>? {
-        val line = raw.lines().firstOrNull { it.startsWith("cpu ") } ?: return null
-        val parts = line.trim().split(Regex("\\s+"))
-        if (parts.size < 8) return null
-
-        val user = parts[1].toLongOrNull() ?: return null
-        val nice = parts[2].toLongOrNull() ?: return null
-        val system = parts[3].toLongOrNull() ?: return null
-        val idle = parts[4].toLongOrNull() ?: return null
-        val iowait = parts[5].toLongOrNull() ?: 0
-        val irq = parts[6].toLongOrNull() ?: 0
-        val softirq = parts[7].toLongOrNull() ?: 0
-
-        val total = user + nice + system + idle + iowait + irq + softirq
-        val idleAll = idle + iowait
-        return Pair(total, idleAll)
-    }
-
-    fun getTodayDataUsage(
-        context: Context,
-    ): Long {
-        val networkStatsManager =
-            context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
-
-        val startTime = getStartOfDayMillis()
-        val endTime = System.currentTimeMillis()
-
-        var totalBytes = 0L
-
-        try {
-            val summary = networkStatsManager.querySummaryForDevice(
-                ConnectivityManager.TYPE_MOBILE, null, startTime, endTime
-            )
-//            val bucket = NetworkStats.Bucket()
-//            summary.getNextBucket(bucket)
-            totalBytes = summary.rxBytes + summary.txBytes
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        return totalBytes
-    }
-
-    private fun getStartOfDayMillis(): Long {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
-    }
-
     data class MyStorageInfo(
         val path: String, val totalBytes: Long, val availableBytes: Long
     )
 
-    fun getRemovableStorageInfo(context: Context): MyStorageInfo? {
-        val dirs = context.getExternalFilesDirs(null)
-        for (file in dirs) {
-            if (file != null) {
-                val path = file.absolutePath
-
-                // 判断不是内置路径
-                if (!path.contains("/storage/emulated/0")) {
-                    val statFs = StatFs(path)
-                    val total = statFs.blockSizeLong * statFs.blockCountLong
-                    val available = statFs.blockSizeLong * statFs.availableBlocksLong
-
-                    return MyStorageInfo(
-                        path = path, totalBytes = total, availableBytes = available
-                    )
-                }
-            }
-        }
-        return null
-    }
-
-    //超级低能代码，不建议使用
-    fun getMaxTemperature(): Int? {
-        val temperatures = mutableListOf<Int>()
-
-        // 遍历 zone0 到 zone30
-        for (i in 0..25) {
-            val zone = "/sys/class/thermal/thermal_zone$i/temp"
-            val temp = ShellKano.runShellCommand("cat $zone")
-
-            if (!temp.isNullOrEmpty()) {
-                try {
-                    temperatures.add(temp.toInt())  // 添加有效的温度值到列表
-                } catch (e: NumberFormatException) {
-                    // 如果温度值无法解析为整数，可以忽略该值
-                    continue
-                }
-            }
-        }
-
-        // 如果没有有效的温度值，返回 null
-        if (temperatures.isEmpty()) {
-            return null
-        }
-
-        // 对温度值排序并取最大值
-        return temperatures.sortedDescending().first()
-    }
 }
