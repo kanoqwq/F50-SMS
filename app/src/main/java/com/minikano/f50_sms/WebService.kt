@@ -38,35 +38,36 @@ class WebService : Service() {
         }
     }
 
-    private fun runADB(){
+    private fun runADB() {
         //网络adb
         //adb setprop service.adb.tcp.port 5555
         Thread {
             try {
                 ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
                 ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
-                Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
-            }catch(e:Exception) {
+                Log.d("kano_ZTE_LOG", "网络adb调试prop执行成功")
+            } catch (e: Exception) {
                 try {
                     ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
                     ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
-                    Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
-                }catch(e:Exception) {
+                    Log.d("kano_ZTE_LOG", "网络adb调试prop执行成功")
+                } catch (e: Exception) {
                     Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
                 }
             }
             Thread.sleep(500)
-            try{
-                val sharedPrefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            try {
+                val sharedPrefs =
+                    applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
                 val ADB_IP_ENABLED = sharedPrefs.getString("ADB_IP_ENABLED", "") ?: null
 
-                if(ADB_IP_ENABLED == "true") {
+                if (ADB_IP_ENABLED == "true") {
 
                     val ADB_IP =
                         sharedPrefs.getString("ADB_IP", "") ?: throw Exception("没有ADMIN_IP")
                     val ADMIN_PWD =
-                        sharedPrefs.getString("ADMIN_PWD", "") ?: throw Exception("没有ADMIN_IP")
+                        sharedPrefs.getString("ADMIN_PWD", "") ?: throw Exception("没有ADMIN_PWD")
 
                     Log.d(
                         "kano_ZTE_LOG", "读取网络ADB所需配置：ADB_IP:${
@@ -79,33 +80,28 @@ class WebService : Service() {
                     val adb_wifi = ShellKano.executeShellFromAssetsSubfolderWithArgs(
                         applicationContext,
                         "shell/adbPort",
-                        "-ip", ADB_IP,
-                        "-pwd", ADMIN_PWD,
-                        "-port", "5555"
+                        "-ip",
+                        ADB_IP,
+                        "-pwd",
+                        ADMIN_PWD,
+                        "-port",
+                        "5555"
                     )
                     Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行结果：$adb_wifi")
-                }else{
+                } else {
                     Log.d("kano_ZTE_LOG", "不需要自启动ADB_WIFI")
                 }
-            }catch (e:Exception){
+            } catch (e: Exception) {
                 Log.d("kano_ZTE_LOG", "ADB_WIFI自启动执行错误：${e.message}")
                 e.printStackTrace()
             }
 
             Thread.sleep(5000)
-
-            try{
-                Log.d("kano_ZTE_LOG", "adb服务正在启动。。。")
-                val res_adb = ShellKano.executeShellFromAssetsSubfolderWithArgs(
-                    applicationContext,
-                    "shell/adb",
-                    "devices"
-                )
-                Log.d("kano_ZTE_LOG", "adb启动执行结果：${res_adb}")
-            }
-            catch (e:Exception){
-                Log.d("kano_ZTE_LOG", "adb服务启动失败：${e.message}")
-            }
+            val res_adb = ShellKano.executeShellFromAssetsSubfolderWithArgs(
+                applicationContext, "shell/adb", "start-server"
+            )
+            Log.d("kano_ZTE_LOG", "ADB-SERVER：${res_adb}")
+            ShellKano.ensureAdbAlive(applicationContext)
         }.start()
     }
 
@@ -117,15 +113,14 @@ class WebService : Service() {
         registerReceiver(statusReceiver, IntentFilter(UI_INTENT), Context.RECEIVER_EXPORTED)
         startForeground(114514, createNotification())
         startWebServer()
-
         runADB()
-
         Log.d("kano_ZTE_LOG", "WebService Init Success!")
     }
 
     private fun startWebServer() {
-        val ip = getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
-            .getString("gateway_ip", "192.168.0.1:8080") ?: "192.168.0.1:8080"
+        val ip = getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE).getString(
+            "gateway_ip", "192.168.0.1:8080"
+        ) ?: "192.168.0.1:8080"
         Thread {
             webServer = WebServer(applicationContext, port, ip)
             webServer?.start()
@@ -150,18 +145,16 @@ class WebService : Service() {
         val channelId = "web_server_channel"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId,
-                "Web Server",
-                NotificationManager.IMPORTANCE_LOW
+                channelId, "Web Server", NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
 
-        val builder = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("ZTE Tools Web Server")
-            .setContentText("服务正在后台运行中")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // 替换成你的图标
-            .setOngoing(true)
+        val builder =
+            NotificationCompat.Builder(this, channelId).setContentTitle("ZTE Tools Web Server")
+                .setContentText("服务正在后台运行中")
+                .setSmallIcon(R.drawable.ic_launcher_foreground) // 替换成你的图标
+                .setOngoing(true)
 
         return builder.build()
     }
@@ -173,15 +166,14 @@ class WebService : Service() {
         val channelName = "服务器状态"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val chan = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
+            val chan =
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(chan)
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setOngoing(true)
-            .build()
+            .setSmallIcon(R.drawable.ic_launcher_foreground).setOngoing(true).build()
 
         startForeground(1, notification)
         Log.d("kano_ZTE_LOG", "通知已建立")

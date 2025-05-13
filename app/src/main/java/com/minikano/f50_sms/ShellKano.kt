@@ -3,6 +3,7 @@ package com.minikano.f50_sms
 import android.content.Context
 import android.provider.DocumentsContract
 import android.util.Log
+import okio.Path
 import org.w3c.dom.Document
 import java.io.BufferedReader
 import java.io.File
@@ -20,11 +21,11 @@ class ShellKano {
             return bytes.joinToString("") { "%02x".format(it) }
         }
 
-        fun runShellCommand(command: String?,escaped:Boolean=false): String? {
+        fun runShellCommand(command: String?, escaped: Boolean = false): String? {
             val output = StringBuilder()
             try {
                 var process = Runtime.getRuntime().exec(command)
-                if(escaped) {
+                if (escaped) {
                     process = Runtime.getRuntime().exec(arrayOf("sh", "-c", command))
                 }
                 val reader = BufferedReader(
@@ -53,7 +54,7 @@ class ShellKano {
             val output = StringBuilder()
             try {
                 // 设置 HOME 环境变量
-                val env = arrayOf("HOME=${context.cacheDir.absolutePath}")
+                val env = arrayOf("HOME=${context.filesDir.absolutePath}")
 
                 // 启动进程（传入环境变量）
                 val process = Runtime.getRuntime().exec(command, env)
@@ -86,11 +87,11 @@ class ShellKano {
          * 0表示执行点击成功
          * -1表示执行失败 没有找到任何文本
          */
-        fun parseUiDumpAndClick(targetText: String,adbPath:String,context: Context): Number {
-            val cacheFile = getUiDoc(adbPath,context)
+        fun parseUiDumpAndClick(targetText: String, adbPath: String, context: Context): Number {
+            val cacheFile = getUiDoc(adbPath, context)
 
             val doc = cacheFile
-            Log.d("kano_ZTE_LOG","doc 读取 结果：${doc.getElementsByTagName("node")}")
+            Log.d("kano_ZTE_LOG", "doc 读取 结果：${doc.getElementsByTagName("node")}")
 
             //tap逻辑
             val nodes = doc.getElementsByTagName("node")
@@ -106,10 +107,11 @@ class ShellKano {
                     val (x1, y1, x2, y2) = match.destructured
                     val tapX = (x1.toInt() + x2.toInt()) / 2
                     val tapY = (y1.toInt() + y2.toInt()) / 2
-                    val result = runShellCommand("$adbPath shell input tap $tapX $tapY",context)?:throw Exception("执行 input tap 失败")
-                    Log.d("kano_ZTE_LOG","input tap 点击 坐标：$tapX,$tapY 结果：${result} ")
+                    val result = runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                        ?: throw Exception("执行 input tap 失败")
+                    Log.d("kano_ZTE_LOG", "input tap 点击 坐标：$tapX,$tapY 结果：${result} ")
                     return 0
-                }else if(text.contains("AT Command:")){
+                } else if (text.contains("AT Command:")) {
                     //说明已经在AT页面了
                     return 1
                 }
@@ -125,9 +127,10 @@ class ShellKano {
             adbPath: String,
             context: Context,
             resId: String,
-            btnName:String
+            btnName: String,
+            needBack: Boolean = true
         ): String {
-            val doc = getUiDoc(adbPath,context)
+            val doc = getUiDoc(adbPath, context)
             val nodes = doc.getElementsByTagName("node")
 
             // 寻找输入框
@@ -145,7 +148,7 @@ class ShellKano {
                     val tapX = (x1.toInt() + x2.toInt()) / 2
                     val tapY = (y1.toInt() + y2.toInt()) / 2
 
-                    repeat(3){
+                    repeat(3) {
                         runShellCommand("$adbPath shell input tap $tapX $tapY", context)
                         Log.d("kano_ZTE_LOG", "点击输入框坐标：$tapX,$tapY")
                     }
@@ -157,7 +160,7 @@ class ShellKano {
                     runShellCommand("$adbPath shell input text \"$escapedInput\"", context)
                     Log.d("kano_ZTE_LOG", "输入文本：$inputText")
                     inputClicked = true
-                    if(escapedInput.length>20){
+                    if (escapedInput.length > 20) {
                         Thread.sleep(500) // 稍等输入完毕
                     }
                     break
@@ -167,7 +170,7 @@ class ShellKano {
             if (!inputClicked) throw Exception("未找到 EditText 输入框")
 
             //fix：输入框输入完成后ui界面可能会变动（比如按钮位置会被挤下去）需要重新获取UI
-            val nodes_after = getUiDoc(adbPath,context).getElementsByTagName("node")
+            val nodes_after = getUiDoc(adbPath, context).getElementsByTagName("node")
             //找到按钮点击
             for (i in 0 until nodes_after.length) {
                 val node = nodes_after.item(i)
@@ -184,19 +187,29 @@ class ShellKano {
                     runShellCommand("$adbPath shell input tap $tapX $tapY", context)
                     Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
                     //继续检测result
-                    if(resId != "") {
+                    if (resId != "") {
                         val res = getTextFromUIByResourceId(resId, adbPath, context)
                         Thread.sleep(50) // 稍等
-                        //返回就完事了
-                        repeat(10) {
-                            runShellCommand("$adbPath shell input keyevent KEYCODE_BACK", context)
+                        if (needBack) {
+                            //返回就完事了
+                            repeat(10) {
+                                runShellCommand(
+                                    "$adbPath shell input keyevent KEYCODE_BACK",
+                                    context
+                                )
+                            }
                         }
                         return res[0]
-                    }else{
+                    } else {
                         Thread.sleep(50) // 稍等输入完毕
-                        //返回就完事了
-                        repeat(10) {
-                            runShellCommand("$adbPath shell input keyevent KEYCODE_BACK", context)
+                        if (needBack) {
+                            //返回就完事了
+                            repeat(10) {
+                                runShellCommand(
+                                    "$adbPath shell input keyevent KEYCODE_BACK",
+                                    context
+                                )
+                            }
                         }
                         return ""
                     }
@@ -206,8 +219,29 @@ class ShellKano {
             throw Exception("未找到 $btnName 按钮")
         }
 
-        private fun getTextFromUIByResourceId(resId:String,adbPath: String, context: Context): List<String> {
-            val doc = getUiDoc(adbPath,context)
+        fun createShellScript(context: Context, fileName: String, scriptContent: String): File {
+            val scriptFile = File(context.getExternalFilesDir(null), fileName)
+
+            // 如果文件已存在，删除旧文件
+            if (scriptFile.exists()) {
+                scriptFile.delete()
+            }
+
+            // 写入内容（writeText 本身就是覆盖写入）
+            scriptFile.writeText(scriptContent)
+
+            // 设置执行权限（某些设备需要删除后重新设置权限才生效）
+            scriptFile.setExecutable(true)
+
+            return scriptFile
+        }
+
+        private fun getTextFromUIByResourceId(
+            resId: String,
+            adbPath: String,
+            context: Context
+        ): List<String> {
+            val doc = getUiDoc(adbPath, context)
             val nodes = doc.getElementsByTagName("node")
 
             val resultTexts = mutableListOf<String>()
@@ -223,12 +257,15 @@ class ShellKano {
                 }
             }
 
-            Log.d("kano_ZTE_LOG", "根据：$resId 共找到${resultTexts.size}条 result_text 文本：$resultTexts")
+            Log.d(
+                "kano_ZTE_LOG",
+                "根据：$resId 共找到${resultTexts.size}条 result_text 文本：$resultTexts"
+            )
             return resultTexts
         }
 
         //获取UI 到app cache
-        private fun getUIFile(adbPath: String,context: Context):File{
+        private fun getUIFile(adbPath: String, context: Context): File {
             if (adbPath.isEmpty()) throw Exception("需要 adbPath")
 
             // 清除旧的 UI 文件
@@ -240,7 +277,7 @@ class ShellKano {
                 ?: throw Exception("uiautomator dump 失败")
 
             // pull 到本地
-            val cacheFile = File(context.cacheDir, "kano_ui.xml")
+            val cacheFile = File(context.filesDir, "kano_ui.xml")
             val pullResult = runShellCommand(
                 "$adbPath pull /sdcard/kano_ui.xml ${cacheFile.absolutePath}",
                 context
@@ -285,12 +322,19 @@ class ShellKano {
                 val assetManager = context.assets
                 val inputStream = assetManager.open(assetSubPath)
                 val fileName = File(assetSubPath).name
-                val outFile = File(context.cacheDir, fileName)
+                val outFile = File(context.filesDir, fileName)
 
-                inputStream.use { input ->
-                    FileOutputStream(outFile).use { output ->
-                        input.copyTo(output)
+                try {
+                    inputStream.use { input ->
+                        FileOutputStream(outFile).use { output ->
+                            input.copyTo(output)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.d(
+                        "kano_ZTE_LOG",
+                        "${outFile}文件已存在，无需复制"
+                    )
                 }
 
                 // 设置可执行权限
@@ -303,13 +347,13 @@ class ShellKano {
                 }
 
                 // 设置 HOME 环境变量
-                val env = arrayOf("HOME=${context.cacheDir.absolutePath}")
+                val env = arrayOf("HOME=${context.filesDir.absolutePath}")
 
                 // 构建 ProcessBuilder
                 val process = ProcessBuilder(command)
                     .redirectErrorStream(true) // 合并错误输出
                     .apply {
-                        environment().put("HOME", context.cacheDir.absolutePath)
+                        environment().put("HOME", context.filesDir.absolutePath)
                     }
                     .start()
 
@@ -317,14 +361,33 @@ class ShellKano {
                 val output = process.inputStream.bufferedReader().readText()
                 process.waitFor()
 
-//                Log.d("kano_ZTE_LOG", "执行命令：${command.joinToString(" ")}")
-//                Log.d("kano_ZTE_LOG", "命令输出：$output")
-
                 output
             } catch (e: Exception) {
-                Log.d("kano_ZTE_LOG", "executeShellFromAssetsSubfolderWithArgs 执行出错：${e.message}")
+                Log.d(
+                    "kano_ZTE_LOG",
+                    "executeShellFromAssetsSubfolderWithArgs 执行出错：${e.message}"
+                )
                 e.printStackTrace()
                 null
+            }
+        }
+
+        //检测adb存活
+        fun ensureAdbAlive(context: Context) {
+            try {
+                val result = executeShellFromAssetsSubfolderWithArgs(
+                    context, "shell/adb", "devices"
+                )
+                if (result != null) {
+                    if (!result.contains("device")) {
+                        Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
+                        executeShellFromAssetsSubfolderWithArgs(
+                            context, "shell/adb", "start-server"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "检测/启动ADB失败: ${e.message}")
             }
         }
 
@@ -334,7 +397,7 @@ class ShellKano {
 
                 // 从 assets/shell/ 复制，比如 assetSubPath = "shell/test.sh"
                 val inputStream = assetManager.open(assetSubPath)
-                val outFile = File(context.cacheDir, "temp_script.sh")
+                val outFile = File(context.filesDir, "temp_script.sh")
 
                 inputStream.use { input ->
                     FileOutputStream(outFile).use { output ->
@@ -342,13 +405,10 @@ class ShellKano {
                     }
                 }
 
-                // 加上执行权限（可能需要 root）
                 outFile.setExecutable(true)
 
-                // 执行脚本
                 val process = Runtime.getRuntime().exec(outFile.absolutePath)
 
-                // 读取输出
                 val reader = process.inputStream.bufferedReader()
                 val output = reader.readText()
 
@@ -361,6 +421,10 @@ class ShellKano {
             }
 
             return null
+        }
+
+        fun installAPK(context: Context, apkPath: Path) {
+
         }
     }
 }

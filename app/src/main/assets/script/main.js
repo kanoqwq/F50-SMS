@@ -302,6 +302,7 @@ function main_func() {
 
     //初始化所有按钮
     const initRenderMethod = async () => {
+        initUpdateSoftware()
         handlerADBStatus()
         handlerADBNetworkStatus()
         handlerPerformaceStatus()
@@ -2881,8 +2882,188 @@ function main_func() {
     collapseGen("#collapse_lkcell_btn", "#collapse_lkcell", "collapse_lkcell")
 
 
+    //软件更新
+    const queryUpdate = async () => {
+        if (!(await initRequestData())) {
+            return null
+        }
+        try {
+            const res = await fetch(`${KANO_baseURL}/check_update`, {
+                method: 'get',
+                headers: common_headers
+            })
+            const { alist_res, base_uri } = await res.json()
+            const content = alist_res?.data?.content[0]?.name
+            if (content) {
+                return {
+                    name: content,
+                    base_uri: base_uri
+                }
+            }
+        } catch {
+            return null
+        }
+    }
+
+    //安装更新（测试版）
+    const requestInstallUpdate = async () => {
+        const OTATextContent = document.querySelector('#OTATextContent')
+        try {
+            OTATextContent.innerHTML = `<div>📦 安装中...</div>`
+            const _res = await fetch(`${KANO_baseURL}/install_apk`, {
+                method: 'POST',
+                headers: {
+                    ...common_headers,
+                }
+            })
+            const res = await _res.json()
+            if (res && res.error) throw new Error('安装失败: ' + res.error)
+            const res_text = res.result == 'success' ? '✅ 安装成功！' : '❌ 安装失败，请重启随身WIFI后再试'
+            OTATextContent.innerHTML = `<div>${res_text}</div><div>${res.result != 'success' ? res.result : ''}</div>`
+        } catch (e) {
+            createToast('安装程序运行结束', 'green')
+            let res_text = '✅ 安装成功，等待程序重启即可使用'
+            console.log(e.message);
+            if (e.message.includes('安装失败')) {
+                res_text = '❌ 安装失败，请重启随身WIFI后再试'
+            }
+            OTATextContent.innerHTML = `<div>${res_text}</div></div>`
+        }
+    }
+
+    //立即更新
+    let updateSoftwareInterval = null
+    const handleUpdateSoftware = async (url) => {
+        updateSoftwareInterval && updateSoftwareInterval()
+        if (!url || url.trim() == "") return
+        const doUpdateEl = document.querySelector('#doUpdate')
+        // 更新时禁用按钮
+        doUpdateEl && (doUpdateEl.onclick = null)
+        doUpdateEl && (doUpdateEl.style.backgroundColor = '#80808073')
+
+        try {
+            //开始请求下载更新
+            const _dres = await fetch(`${KANO_baseURL}/download_apk`, {
+                method: 'POST',
+                headers: {
+                    ...common_headers,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(
+                    {
+                        apk_url: url
+                    }
+                )
+            })
+            const dres = await _dres.json()
+        } catch {
+            createToast('下载请求失败，请检查网络连接', 'red')
+            initUpdateSoftware()
+            return
+        } finally {
+            initUpdateSoftware()
+        }
+
+        //开启定时器，查询更新进度
+        const OTATextContent = document.querySelector('#OTATextContent')
+        updateSoftwareInterval = requestInterval(async () => {
+            try {
+                const _res = await fetch(`${KANO_baseURL}/download_apk_status`, {
+                    method: 'get',
+                    headers: common_headers
+                })
+                const res = await _res.json()
+                if (res && res.error == 'error') throw '下载失败'
+                const status = res.status == "idle" ? '🕒 等待中' : res.status == "downloading" ? '🟢 下载中' : res.status == "done" ? "✅ 下载完成" : '❌ 下载失败'
+                OTATextContent.innerHTML = `<div>🔄 正在下载更新...<br/>状态：${status}<br/>📁 当前进度：${res?.percent}%<br/></div>`
+                if (res.percent == 100) {
+                    updateSoftwareInterval && updateSoftwareInterval()
+                    createToast('下载完成，正在自动安装...', 'green')
+                    // 执行安装
+                    requestInstallUpdate()
+                }
+            } catch (e) {
+                OTATextContent.innerHTML = "下载失败，请检查网络连接"
+                updateSoftwareInterval && updateSoftwareInterval()
+            } finally {
+                initUpdateSoftware()
+            }
+        }, 500)
+    }
+
+    //仅下载更新包到本地
+    const handleDownloadSoftwareLink = async (fileLink) => {
+        createToast("已开始下载", 'green')
+        const linkEl = document.createElement('a')
+        linkEl.href = fileLink
+        linkEl.target = '_blank'
+        linkEl.style.display = 'none'
+        document.body.appendChild(linkEl)
+        setTimeout(() => {
+            linkEl.click()
+            setTimeout(() => {
+                linkEl.remove()
+            }, 100);
+        }, 50);
+    }
+    //检测更新
+    const initUpdateSoftware = async () => {
+        const btn = document.querySelector('#OTA')
+        if (!btn) return
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+
+        btn.style.backgroundColor = 'var(--dark-btn-color)'
+
+        btn.onclick = async () => {
+            if (!(await initRequestData())) {
+                btn.onclick = () => createToast('请登录', 'red')
+                btn.style.backgroundColor = '#80808073'
+                return null
+            }
+            OTATextContent.innerHTML = '正在检查更新...'
+            showModal('#updateSoftwareModal')
+            try {
+                const content = await queryUpdate()
+                const OTATextContent = document.querySelector('#OTATextContent')
+                if (content) {
+                    const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
+                    const { name, base_uri } = content
+                    const version = name.match(/V(\d+\.\d+\.\d+)/i)?.[1];
+                    const isLatest = name.includes(app_ver) || (version <= app_ver)
+                    const doUpdateEl = document.querySelector('#doUpdate')
+                    const doDownloadAPKEl = document.querySelector('#downloadAPK')
+                    if (doUpdateEl && doDownloadAPKEl) {
+                        if (!isLatest) {
+                            doUpdateEl.style.backgroundColor = 'var(--dark-btn-color)'
+                            doDownloadAPKEl.style.backgroundColor = 'var(--dark-btn-color)'
+                            doUpdateEl.onclick = () => handleUpdateSoftware(base_uri + name)
+                            doDownloadAPKEl.onclick = () => handleDownloadSoftwareLink(base_uri + name)
+                        } else {
+                            doUpdateEl.onclick = null
+                            doDownloadAPKEl.onclick = null
+                            doUpdateEl.style.backgroundColor = '#80808073'
+                            doDownloadAPKEl.style.backgroundColor = '#80808073'
+                        }
+                    }
+                    OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver}</div>` : `发现更新:<div>${name}</div>`}`
+                } else {
+                    throw '没有更新'
+                }
+            } catch (e) {
+                OTATextContent.innerHTML = '连接更新服务器出错，请检查网络连接'
+            }
+        }
+    }
+    initUpdateSoftware()
+
     //挂载方法到window
     const methods = {
+        handleDownloadSoftwareLink,
+        handleUpdateSoftware,
         enableTTYD,
         createToast,
         changeNetwork,

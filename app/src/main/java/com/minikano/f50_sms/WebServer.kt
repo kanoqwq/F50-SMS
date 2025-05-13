@@ -26,8 +26,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Calendar
 import java.util.Random
+import kotlin.concurrent.thread
 
-class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port) {
+class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port) {
 
     private val targetServer = "http://$gatewayIp"  // 目标服务器地址
     private val targetServerIP = gatewayIp  // 目标服务器地址
@@ -35,41 +36,52 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     private val PREF_LOGIN_TOKEN = "login_token"
     private val PREF_TOKEN_ENABLED = "login_token_enabled"
 
+    @Volatile
+    var downloadInProgress = false
+
+    @Volatile
+    var download_percent = 0
+
+    @Volatile
+    var downloadResultPath: String? = null
+
+    @Volatile
+    var downloadError: String? = null
+
+    @Volatile
+    var currentDownloadingUrl: String = ""
+
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
         val uri = session?.uri?.removePrefix("/api") ?: "/"
         val sharedPrefsForToken = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val auth_token = sharedPrefsForToken.getString(PREF_LOGIN_TOKEN,"admin")
-        val token_enabled = sharedPrefsForToken.getString(PREF_TOKEN_ENABLED,true.toString())
+        val auth_token = sharedPrefsForToken.getString(PREF_LOGIN_TOKEN, "admin")
+        val token_enabled = sharedPrefsForToken.getString(PREF_TOKEN_ENABLED, true.toString())
         try {
-            if(token_enabled == "true"){
-                if(session?.uri != null && session.uri.contains("/api")){
+            if (token_enabled == "true") {
+                if (session?.uri != null && session.uri.contains("/api")) {
                     // 获取请求头
                     val headers = session.headers ?: throw Exception("401")
                     val authHeader = headers["authorization"]
                     if (authHeader != auth_token) {
-                       throw Exception("401")
+                        throw Exception("401")
                     }
                 }
             }
-        } catch (e:Exception){
+        } catch (e: Exception) {
             return newFixedLengthResponse(
-                Response.Status.UNAUTHORIZED,
-                MIME_PLAINTEXT,
-                "401 Unauthorized"
+                Response.Status.UNAUTHORIZED, MIME_PLAINTEXT, "401 Unauthorized"
             )
         }
 
         //cpu温度
         if (method == "GET" && uri == "/temp") {
             return try {
-                val temp = ShellKano.executeShellFromAssetsSubfolder(context_app,"shell/temp.sh")
-                val temp1 =  ShellKano.runShellCommand("cat /sys/class/thermal/thermal_zone1/temp")
+                val temp = ShellKano.executeShellFromAssetsSubfolder(context_app, "shell/temp.sh")
+                val temp1 = ShellKano.runShellCommand("cat /sys/class/thermal/thermal_zone1/temp")
                 Log.d("kano_ZTE_LOG", "获取CPU温度成功: $temp")
                 val response = newFixedLengthResponse(
-                    Response.Status.OK,
-                    "application/json",
-                    """{"temp":${temp?:temp1}}"""
+                    Response.Status.OK, "application/json", """{"temp":${temp ?: temp1}}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -88,9 +100,11 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
         //cpu使用率
         if (method == "GET" && uri == "/cpu") {
             return try {
-                val stat1 = ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat1没有数据")
-                val (total1, idle1) = parseCpuStat(stat1) ?:  throw Exception("parseCpuStat执行失败")
-                val stat2 = ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat2没有数据")
+                val stat1 =
+                    ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat1没有数据")
+                val (total1, idle1) = parseCpuStat(stat1) ?: throw Exception("parseCpuStat执行失败")
+                val stat2 =
+                    ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat2没有数据")
                 val (total2, idle2) = parseCpuStat(stat2) ?: throw Exception("parseCpuStat执行失败")
                 val totalDiff = total2 - total1
                 val idleDiff = idle2 - idle1
@@ -98,9 +112,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                 Log.d("kano_ZTE_LOG", "CPU 使用率：%.2f%%".format(usage * 100))
                 val response = newFixedLengthResponse(
-                    Response.Status.OK,
-                    "application/json",
-                    """{"cpu":${usage * 100}}"""
+                    Response.Status.OK, "application/json", """{"cpu":${usage * 100}}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -123,9 +135,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 val usage = parseMeminfo(info)
                 Log.d("kano_ZTE_LOG", "内存使用率：%.2f%%".format(usage * 100))
                 val response = newFixedLengthResponse(
-                    Response.Status.OK,
-                    "application/json",
-                    """{"mem":${usage * 100}}"""
+                    Response.Status.OK, "application/json", """{"mem":${usage * 100}}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -147,9 +157,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 val sharedPrefs = context_app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 val ADB_IP_ENABLED = sharedPrefs.getString("ADB_IP_ENABLED", "false")
                 val response = newFixedLengthResponse(
-                    Response.Status.OK,
-                    "application/json",
-                    """{"enabled":$ADB_IP_ENABLED}"""
+                    Response.Status.OK, "application/json", """{"enabled":$ADB_IP_ENABLED}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -177,7 +185,8 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 try {
                     // 解析 query 参数
                     val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
-                    val AT_command_arr = rawParams["command"] ?: throw Exception("qeury 缺少 command 参数")
+                    val AT_command_arr =
+                        rawParams["command"] ?: throw Exception("qeury 缺少 command 参数")
                     val AT_slot_arr = rawParams["slot"] ?: throw Exception("qeury 缺少 slot 参数")
                     val AT_command = AT_command_arr[0]
                     val AT_slot = AT_slot_arr.getOrNull(0)?.toIntOrNull() ?: 0 // 如果取不到或不是数字，就用 0
@@ -187,7 +196,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val assetManager = context_app.assets
                     val inputStream_adb = assetManager.open("shell/sendat")
                     val fileName2 = File("shell/sendat").name
-                    val outFile_at = File(context_app.cacheDir, fileName2)
+                    val outFile_at = File(context_app.filesDir, fileName2)
 
                     try {
                         inputStream_adb.use { input ->
@@ -195,7 +204,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                                 input.copyTo(output)
                             }
                         }
-                    }catch(e:Exception){
+                    } catch (e: Exception) {
                         Log.d("kano_ZTE_LOG", "adb文件已存在， 无需复制")
                     }
 
@@ -206,10 +215,10 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     if (!AT_command.toString().startsWith("AT", ignoreCase = true)) {
                         throw Exception("解析失败，AT指令需要以 “AT” 开头")
                     }
-                    val command = "${outFile_at.absolutePath} -n $AT_slot -c '${AT_command.trimStart()}'"
-                    val result = runShellCommand(command,true) ?: throw Exception("没有输出")
-                    var res = result
-                        .replace("\"", "\\\"")      // 转义引号
+                    val command =
+                        "${outFile_at.absolutePath} -n $AT_slot -c '${AT_command.trimStart()}'"
+                    val result = runShellCommand(command, true) ?: throw Exception("没有输出")
+                    var res = result.replace("\"", "\\\"")      // 转义引号
                         .replace("\n", "")          // 去掉换行
                         .replace("\r", "")          // 去掉回车
                         .trimStart()
@@ -233,9 +242,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
 
             val response = newChunkedResponse(
-                Response.Status.OK,
-                "application/json",
-                pipedInput
+                Response.Status.OK, "application/json", pipedInput
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response
@@ -253,7 +260,8 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 try {
                     // 解析 query 参数
                     val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
-                    val path_command_arr = rawParams["path"] ?: throw Exception("qeury 缺少 path 参数")
+                    val path_command_arr =
+                        rawParams["path"] ?: throw Exception("qeury 缺少 path 参数")
                     val path_command = path_command_arr[0]
                     Log.d("kano_ZTE_LOG", "path 传入参数：${path_command}")
 
@@ -261,7 +269,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val assetManager = context_app.assets
                     val inputStream_adb = assetManager.open("shell/adb")
                     val fileName_adb = File("shell/adb").name
-                    val outFile_adb = File(context_app.cacheDir, fileName_adb)
+                    val outFile_adb = File(context_app.filesDir, fileName_adb)
 
                     val smb = assetManager.open("shell/smb.conf")
                     val fileName_smb = File("shell/smb.conf").name
@@ -270,9 +278,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     //ttyd
                     val ttyd = assetManager.open("shell/ttyd")
                     val fileName_ttyd = File("shell/ttyd").name
-                    val outFile_ttyd = File(context_app.cacheDir, fileName_ttyd)
+                    val outFile_ttyd = File(context_app.filesDir, fileName_ttyd)
 
-                    //复制ttyd到context_app.cacheDir
+                    //复制ttyd到context_app.filesDir
                     try {
                         ttyd.use { input ->
                             FileOutputStream(outFile_ttyd).use { output ->
@@ -303,7 +311,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                             }
                         }
                         Log.d("kano_ZTE_LOG", "复制到 ${outFile_adb.absolutePath} 成功")
-                    }catch(e:Exception){
+                    } catch (e: Exception) {
                         Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
                     }
 
@@ -314,50 +322,67 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
                     val adb_command = "${outFile_adb.absolutePath} disconnect"
-                    val adb_result = runShellCommand(adb_command,context_app)
+                    val adb_result = runShellCommand(adb_command, context_app)
                     Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
                     Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
 
                     Thread.sleep(1000)//小睡一下
 
                     //复制smb到sdcard
-                    val smb_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",context_app)?:throw Exception("smb复制到sd卡失败")
-                    Log.d("kano_ZTE_LOG", "执行：${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res")
+                    val smb_res = runShellCommand(
+                        "${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",
+                        context_app
+                    ) ?: throw Exception("smb复制到sd卡失败")
+                    Log.d(
+                        "kano_ZTE_LOG",
+                        "执行：${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res"
+                    )
 
                     //复制ttyd到sdcard
-                    val ttyd_res = runShellCommand("${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",context_app)?:throw Exception("ttyd复制到sd卡失败")
-                    Log.d("kano_ZTE_LOG", "执行：${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res")
+                    val ttyd_res = runShellCommand(
+                        "${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",
+                        context_app
+                    ) ?: throw Exception("ttyd复制到sd卡失败")
+                    Log.d(
+                        "kano_ZTE_LOG",
+                        "执行：${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res"
+                    )
 
-
-                    fun click_stage1(){
+                    fun click_stage1() {
                         //打开工程模式活动
-                        repeat(3){
-                            val Eng_result = runShellCommand("${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",context_app)?:throw Exception("工程模式活动打开失败")
+                        repeat(3) {
+                            val Eng_result = runShellCommand(
+                                "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                context_app
+                            ) ?: throw Exception("工程模式活动打开失败")
                             Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                         }
                         Thread.sleep(200)
-                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick("DEBUG&LOG",outFile_adb.absolutePath,context_app)
-                        if(res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
-                        if(res_debug_log_btn == 0) {
+                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
+                            "DEBUG&LOG", outFile_adb.absolutePath, context_app
+                        )
+                        if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
+                        if (res_debug_log_btn == 0) {
                             val res = ShellKano.parseUiDumpAndClick(
-                                "Adb shell",
-                                outFile_adb.absolutePath,
-                                context_app
+                                "Adb shell", outFile_adb.absolutePath, context_app
                             )
                             if (res == -1) throw Exception("点击 Adb Shell 按钮失败")
                         }
                     }
+
                     var fallBackTime = 0
-                    try{
+                    try {
                         click_stage1()
-                    }
-                    catch (e:Exception){
+                    } catch (e: Exception) {
                         //返回
                         repeat(10) {
-                            runShellCommand("${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK", context_app)
+                            runShellCommand(
+                                "${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK",
+                                context_app
+                            )
                         }
                         Thread.sleep(1000)
-                        if(fallBackTime++<2) {
+                        if (fallBackTime++ < 2) {
                             click_stage1()
                         }
                     }
@@ -367,17 +392,12 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     try {
                         val escapedCommand =
                             "toybox cp /sdcard/${outFile_smb.name} /data/samba/etc/".replace(
-                                "\"",
-                                "\\\""
+                                "\"", "\\\""
                             )
                         fillInputAndSend(
-                            escapedCommand,
-                            outFile_adb.absolutePath,
-                            context_app,
-                            "",
-                            "START"
+                            escapedCommand, outFile_adb.absolutePath, context_app, "", "START"
                         )
-                    }catch (e:Exception){
+                    } catch (e: Exception) {
                         jsonResult = """{"result":"执行失败"}"""
                     }
                     writer.write(jsonResult)
@@ -390,9 +410,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
 
             val response = newChunkedResponse(
-                Response.Status.OK,
-                "application/json",
-                pipedInput
+                Response.Status.OK, "application/json", pipedInput
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response
@@ -417,23 +435,21 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 val host = targetServerIP.substringBefore(":")
 
                 //保存
-                if(enabled == true){
-                    sharedPrefs.edit()
-                        .putString("ADB_IP", host)
-                        .putString("ADMIN_PWD",password)
-                        .putString("ADB_IP_ENABLED","true")
-                        .apply()
-                }else{
+                if (enabled == true) {
+                    sharedPrefs.edit().putString("ADB_IP", host).putString("ADMIN_PWD", password)
+                        .putString("ADB_IP_ENABLED", "true").apply()
+                } else {
                     sharedPrefs.edit().remove("ADB_IP").remove("ADMIN_PWD")
-                        .putString("ADB_IP_ENABLED","false")
-                        .apply()
+                        .putString("ADB_IP_ENABLED", "false").apply()
                 }
 
-                Log.d("kano_ZTE_LOG", "保存结果：ADB_IP:${
-                    sharedPrefs.getString("ADB_IP", "")
-                } ADMIN_PWD:${
-                    sharedPrefs.getString("ADMIN_PWD", "")
-                }")
+                Log.d(
+                    "kano_ZTE_LOG", "保存结果：ADB_IP:${
+                        sharedPrefs.getString("ADB_IP", "")
+                    } ADMIN_PWD:${
+                        sharedPrefs.getString("ADMIN_PWD", "")
+                    }"
+                )
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
@@ -504,7 +520,8 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 headers["Content-Type"] = "application/octet-stream"
                 headers["Content-Disposition"] = "attachment; filename=random.dat"
                 headers["Content-Transfer-Encoding"] = "binary"
-                headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+                headers["Cache-Control"] =
+                    "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
                 headers["Pragma"] = "no-cache"
 
                 val chunkSizeBytes = 1024 * 1024  // 每个chunk 1MB
@@ -549,7 +566,8 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     }
                 }
 
-                val response = newChunkedResponse(Response.Status.OK, "application/octet-stream", stream)
+                val response =
+                    newChunkedResponse(Response.Status.OK, "application/octet-stream", stream)
 
                 headers.forEach { (k, v) -> response.addHeader(k, v) }
 
@@ -557,9 +575,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             } catch (e: Exception) {
                 Log.d("kano_ZTE_LOG", "测速出错： ${e.message}")
                 val response = newFixedLengthResponse(
-                    Response.Status.INTERNAL_ERROR,
-                    "application/json",
-                    """{"error":"测速出错"}"""
+                    Response.Status.INTERNAL_ERROR, "application/json", """{"error":"测速出错"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -598,32 +614,36 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             }
         }
 
+        //存储获取
         if (method == "GET" && uri == "/storage_and_dailyData") {
             return try {
                 //内部存储
                 val internalStorage: File = context_app.filesDir
                 val statFs = StatFs(internalStorage.absolutePath)
                 val totalSize = (statFs.blockSizeLong * statFs.blockCountLong)
-                val availableSize =(statFs.blockSizeLong * statFs.availableBlocksLong)
+                val availableSize = (statFs.blockSizeLong * statFs.availableBlocksLong)
                 val usedSize = totalSize - availableSize
 
                 val dailyData = (getTodayDataUsage(context_app))
 
                 //外部存储
                 val ex_storage_info = getRemovableStorageInfo(context_app)
-                var ex_storage_total_size = ex_storage_info?.totalBytes?:0
-                var ex_storage_avalible_size = ex_storage_info?.availableBytes?:0
+                var ex_storage_total_size = ex_storage_info?.totalBytes ?: 0
+                var ex_storage_avalible_size = ex_storage_info?.availableBytes ?: 0
                 var ex_storage_used_size = ex_storage_total_size - ex_storage_avalible_size
 
 
-                Log.d("kano_ZTE_LOG","日用流量：$dailyData")
-                Log.d("kano_ZTE_LOG","内部存储：$usedSize/$totalSize")
-                Log.d("kano_ZTE_LOG","外部存储：${(ex_storage_info?.availableBytes?:0)}/${(ex_storage_info?.totalBytes?:0)}")
+                Log.d("kano_ZTE_LOG", "日用流量：$dailyData")
+                Log.d("kano_ZTE_LOG", "内部存储：$usedSize/$totalSize")
+                Log.d(
+                    "kano_ZTE_LOG",
+                    "外部存储：${(ex_storage_info?.availableBytes ?: 0)}/${(ex_storage_info?.totalBytes ?: 0)}"
+                )
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"daily_data":$dailyData,"internal_available_storage":$availableSize,"internal_used_storage":$usedSize,"internal_total_storage":$totalSize,"external_total_storage":${(ex_storage_info?.totalBytes?:0)},"external_used_storage":$ex_storage_used_size,"external_available_storage":${(ex_storage_info?.availableBytes?:0)}}""".trimIndent()
+                    """{"daily_data":$dailyData,"internal_available_storage":$availableSize,"internal_used_storage":$usedSize,"internal_total_storage":$totalSize,"external_total_storage":${(ex_storage_info?.totalBytes ?: 0)},"external_used_storage":$ex_storage_used_size,"external_available_storage":${(ex_storage_info?.availableBytes ?: 0)}}""".trimIndent()
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -637,6 +657,260 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
             }
+        }
+
+        //检查更新
+        if (method == "GET" && uri == "/check_update") {
+            return try {
+                val path = "/UFI-TOOLS-UPDATE"
+                val download_url = "https://pan.kanokano.cn/d${path}/"
+                val json =
+                    """{"path":"$path","password":"","page":1,"per_page":0,"refresh":false}""".trimIndent()
+                val res = KanoRequest.postJson(
+                    "https://pan.kanokano.cn/api/fs/list", json
+                )
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"base_uri":"${download_url}","alist_res":${res.body?.string()}}""".trimIndent()
+
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "请求出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR, "application/json", """{"error":"请求出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //从URL下载apk
+        if (method == "POST" && uri == "/download_apk") {
+            return try {
+                val map = HashMap<String, String>()
+                session?.parseBody(map)
+                val body = map["postData"] ?: throw Exception("postData is null")
+                val json = JSONObject(body)
+
+                val apk_url = json.optString("apk_url", "").trim()
+                if (apk_url.isEmpty()) {
+                    throw Exception("请提供apk_url")
+                }
+
+                Log.d("kano_ZTE_LOG", "接收到apk_url=$apk_url")
+
+                synchronized(this) {
+                    if (downloadInProgress && apk_url == currentDownloadingUrl) {
+                        Log.d("kano_ZTE_LOG", "已在下载该 APK，忽略重复请求")
+                    } else {
+                        downloadInProgress = true
+                        download_percent = 0
+                        downloadResultPath = null
+                        downloadError = null
+                        currentDownloadingUrl = apk_url
+
+                        val outputFile =
+                            File(context_app.getExternalFilesDir(null), "downloaded_app.apk")
+                        if (outputFile.exists()) outputFile.delete()
+
+                        thread {
+                            try {
+                                val path =
+                                    KanoRequest.downloadFile(apk_url, outputFile) { percent ->
+                                        download_percent = percent
+                                    }
+                                if (path != null) {
+                                    downloadResultPath = path
+                                    Log.d("kano_ZTE_LOG", "下载完成：$path")
+                                } else {
+                                    downloadError = "下载失败"
+                                    Log.d("kano_ZTE_LOG", "下载失败")
+                                }
+                            } catch (e: Exception) {
+                                downloadError = e.message ?: "未知错误"
+                                Log.d("kano_ZTE_LOG", "下载异常：${e.message}")
+                            } finally {
+                                downloadInProgress = false
+                            }
+                        }
+                    }
+                }
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK, "application/json", """{"result":"download_started"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "执行 /install_apk 出错：${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"${e.message}"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+        //下载进度
+        if (method == "GET" && uri == "/download_apk_status") {
+            val status = when {
+                downloadInProgress -> "downloading"
+                downloadError != null -> "error"
+                downloadResultPath != null -> "done"
+                else -> "idle"
+            }
+            val response = newFixedLengthResponse(
+                Response.Status.OK, "application/json", """{
+                "status":"$status",
+                "percent":$download_percent,
+                "error":"${downloadError ?: ""}"
+                }""".trimIndent()
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
+        }
+        //安装下载好的APK
+        if (method == "POST" && uri == "/install_apk") {
+            val pipedInput = PipedInputStream()
+            val pipedOutput = PipedOutputStream(pipedInput)
+            if (downloadResultPath != null) {
+                //安装APK
+                // 使用协程处理耗时任务
+                CoroutineScope(Dispatchers.IO).launch {
+                    Log.d("kano_ZTE_LOG", "开始安装apk，位置：$downloadResultPath")
+                    val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
+                    try {
+                        //复制依赖
+                        val assetManager = context_app.assets
+                        val inputStream_adb = assetManager.open("shell/adb")
+                        val fileName_adb = File("shell/adb").name
+                        val outFile_adb = File(context_app.filesDir, fileName_adb)
+
+                        try {
+                            inputStream_adb.use { input ->
+                                FileOutputStream(outFile_adb).use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            Log.d("kano_ZTE_LOG", "复制到 ${outFile_adb.absolutePath} 成功")
+                        } catch (e: Exception) {
+                            Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
+                        }
+
+                        outFile_adb.setExecutable(true)
+
+                        Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
+                        Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
+
+                        val adb_command = "${outFile_adb.absolutePath} disconnect"
+                        var adb_result: String? = null
+                        repeat(3) {
+                            adb_result = runShellCommand(adb_command, context_app)
+                            Thread.sleep(200)//小睡一下
+                        }
+                        Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
+                        Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
+
+                        Thread.sleep(1000)//小睡一下
+
+                        //复制APK到SD卡根目录
+                        val adb_command_copy =
+                            "${outFile_adb.absolutePath} shell sh -c 'cp ${downloadResultPath} /sdcard/ufi_tools_latest.apk'"
+                        val adb_result_copy = runShellCommand(adb_command_copy, context_app)
+                        Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command_copy")
+                        Log.d("kano_ZTE_LOG", "adb_result：$adb_result_copy")
+
+                        //创建sh文件
+                        val sh_text = """#!/system/bin/sh
+                        pm install -r /sdcard/ufi_tools_latest.apk >> /sdcard/kk.log
+                        am start -n com.minikano.f50_sms/.MainActivity  >> /sdcard/kk.log
+                        echo "done"""".trimIndent()
+
+                        //复制sh到SD卡根目录
+                        val file =
+                            ShellKano.createShellScript(context_app, "ufi_tools_update.sh", sh_text)
+                        val shAbsolutePath = file.absolutePath
+                        Log.d("kano_ZTE_LOG", "Script created at: $shAbsolutePath")
+                        val adb_command_copy_sh =
+                            "${outFile_adb.absolutePath} shell sh -c 'cp ${shAbsolutePath} /sdcard/ufi_tools_update.sh'"
+                        val adb_result_copy_sh = runShellCommand(adb_command_copy_sh, context_app)
+                        Log.d("kano_ZTE_LOG", "copy_sh执行命令：$adb_command_copy_sh")
+                        Log.d("kano_ZTE_LOG", "copy_sh_result：$adb_result_copy_sh")
+
+                        //模拟操作
+                        fun click_stage() {
+                            //打开工程模式活动
+                            repeat(3) {
+                                val Eng_result = runShellCommand(
+                                    "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                    context_app
+                                ) ?: throw Exception("工程模式活动打开失败")
+                                Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                            }
+                            Thread.sleep(200)
+                            val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
+                                "DEBUG&LOG", outFile_adb.absolutePath, context_app
+                            )
+                            if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
+                            if (res_debug_log_btn == 0) {
+                                val res = ShellKano.parseUiDumpAndClick(
+                                    "Adb shell", outFile_adb.absolutePath, context_app
+                                )
+                                if (res == -1) throw Exception("点击 Adb Shell 按钮失败")
+                            }
+                        }
+
+                        var fallBackTime = 0
+                        try {
+                            click_stage()
+                        } catch (e: Exception) {
+                            //返回
+                            repeat(10) {
+                                runShellCommand(
+                                    "${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK",
+                                    context_app
+                                )
+                            }
+                            Thread.sleep(1000)
+                            if (fallBackTime++ < 2) {
+                                click_stage()
+                            }
+                        }
+
+                        //输入指令，点击发送
+                        var jsonResult = """{"result":"success"}"""
+                        try {
+                            val escapedCommand =
+                                "sh /sdcard/ufi_tools_update.sh".replace(
+                                    "\"", "\\\""
+                                )
+                            fillInputAndSend(
+                                escapedCommand, outFile_adb.absolutePath, context_app, "", "START",
+                                needBack = false
+                            )
+                        } catch (e: Exception) {
+                            jsonResult = """{"result":"null"}"""
+                        }
+                        writer.write(jsonResult)
+
+                    } catch (e: Exception) {
+                        writer.write("""{"error":"adb安装apk执行错误：${e.message}"}""")
+                    } finally {
+                        writer.flush()
+                        pipedOutput.close()
+                    }
+                }
+            }
+
+            val response = newChunkedResponse(
+                Response.Status.OK, "application/json", pipedInput
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
         }
 
         // 静态文件逻辑
@@ -698,7 +972,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
                     // 发送请求体到目标服务器
                     conn.doOutput = true
-                    conn.setRequestProperty("Content-Length", requestBodyStr.toByteArray().size.toString())
+                    conn.setRequestProperty(
+                        "Content-Length", requestBodyStr.toByteArray().size.toString()
+                    )
                     conn.outputStream.use { it.write(requestBodyStr.toByteArray()) }
                 }
             }
@@ -734,7 +1010,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
             response
         } catch (e: Exception) {
-            newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Proxy error: ${e.message}")
+            newFixedLengthResponse(
+                Response.Status.INTERNAL_ERROR, "text/plain", "Proxy error: ${e.message}"
+            )
         }
     }
 
@@ -792,7 +1070,9 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
             val mime = getMimeTypeForFile(path)
             newChunkedResponse(Response.Status.OK, mime, inputStream)
         } catch (e: Exception) {
-            newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "404 Not Found: ${e.message}")
+            newFixedLengthResponse(
+                Response.Status.NOT_FOUND, "text/plain", "404 Not Found: ${e.message}"
+            )
         }
     }
 
@@ -866,10 +1146,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
 
         try {
             val summary = networkStatsManager.querySummaryForDevice(
-                ConnectivityManager.TYPE_MOBILE,
-                null,
-                startTime,
-                endTime
+                ConnectivityManager.TYPE_MOBILE, null, startTime, endTime
             )
 //            val bucket = NetworkStats.Bucket()
 //            summary.getNextBucket(bucket)
@@ -891,9 +1168,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
     }
 
     data class MyStorageInfo(
-        val path: String,
-        val totalBytes: Long,
-        val availableBytes: Long
+        val path: String, val totalBytes: Long, val availableBytes: Long
     )
 
     fun getRemovableStorageInfo(context: Context): MyStorageInfo? {
@@ -909,9 +1184,7 @@ class WebServer(context: Context, port: Int,gatewayIp: String) : NanoHTTPD(port)
                     val available = statFs.blockSizeLong * statFs.availableBlocksLong
 
                     return MyStorageInfo(
-                        path = path,
-                        totalBytes = total,
-                        availableBytes = available
+                        path = path, totalBytes = total, availableBytes = available
                     )
                 }
             }

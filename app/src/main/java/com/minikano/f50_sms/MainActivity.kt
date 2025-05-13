@@ -65,8 +65,12 @@ class MainActivity : ComponentActivity() {
 
         //请求通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                )
+                != PackageManager.PERMISSION_GRANTED
+            ) {
 
                 ActivityCompat.requestPermissions(
                     this,
@@ -97,7 +101,8 @@ class MainActivity : ComponentActivity() {
         startForegroundService(intent)
 
         // 注册广播
-        registerReceiver(serverStatusReceiver, IntentFilter(SERVER_INTENT),
+        registerReceiver(
+            serverStatusReceiver, IntentFilter(SERVER_INTENT),
             Context.RECEIVER_EXPORTED
         )
 
@@ -139,7 +144,7 @@ class MainActivity : ComponentActivity() {
                 ServerUI(
                     serverAddress = "http://${gatewayIp.substringBefore(":")}:$port",
                     gatewayIp,
-                    versionName = versionName ?: "未知" ,
+                    versionName = versionName ?: "未知",
                     onStopServer = {
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", false))
                         serverStatusLiveData.postValue(false)
@@ -151,10 +156,10 @@ class MainActivity : ComponentActivity() {
                     gatewayIp = gatewayIp,
                     onGatewayIpChange = { gatewayIp = it },
                     loginToken = loginToken,
-                    versionName = versionName ?: "未知" ,
+                    versionName = versionName ?: "未知",
                     onLoginTokenChange = { loginToken = it },
                     isTokenEnabled = isTokenEnabled == true.toString(),
-                    onTokenEnableChange = {isTokenEnabled = it.toString()},
+                    onTokenEnableChange = { isTokenEnabled = it.toString() },
                     onConfirm = {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
@@ -172,7 +177,7 @@ class MainActivity : ComponentActivity() {
         runADB()
     }
 
-    private fun runADB(){
+    private fun runADB() {
         //网络adb
         //adb setprop service.adb.tcp.port 5555
         Thread {
@@ -180,12 +185,12 @@ class MainActivity : ComponentActivity() {
                 ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
                 ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
                 Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
-            }catch(e:Exception) {
+            } catch (e: Exception) {
                 try {
                     ShellKano.runShellCommand("/system/bin/setprop service.adb.tcp.port 5555")
                     ShellKano.runShellCommand("/system/bin/setprop persist.service.adb.tcp.port 5555")
                     Log.d("kano_ZTE_LOG", "网络adb调试执行成功")
-                }catch(e:Exception) {
+                } catch (e: Exception) {
                     Log.d("kano_ZTE_LOG", "网络adb调试出错： ${e.message}")
                 }
             }
@@ -291,7 +296,12 @@ fun InputUI(
 }
 
 @Composable
-fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,versionName:String) {
+fun ServerUI(
+    serverAddress: String,
+    gatewayIP: String,
+    onStopServer: () -> Unit,
+    versionName: String
+) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Card(
             shape = RoundedCornerShape(16.dp), // 圆角
@@ -301,7 +311,9 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,ve
                 .padding(16.dp) // 外边距
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -330,7 +342,10 @@ fun ServerUI(serverAddress: String,gatewayIP:String, onStopServer: () -> Unit,ve
                 Spacer(modifier = Modifier.height(20.dp))
                 Text("可点击停止服务更改网关和口令密码(默认admin)", fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("本软件需安装在随身WiFi机内，安装在手机上会导致部分功能不可用", fontSize = 10.sp)
+                Text(
+                    "本软件需安装在随身WiFi机内，安装在手机上会导致部分功能不可用",
+                    fontSize = 10.sp
+                )
                 Text("如需手机使用，请下载手机独立版", fontSize = 10.sp)
                 Spacer(modifier = Modifier.height(20.dp))
                 Button(onClick = onStopServer) {

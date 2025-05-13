@@ -11,7 +11,8 @@ object IPManager {
      */
     fun getWifiGatewayIp(context: Context): String? {
         return try {
-            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+            val wifiManager =
+                context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
             val dhcpInfo = wifiManager?.dhcpInfo
             val gatewayInt = dhcpInfo?.gateway ?: return null
             val gatewayIp = intToIp(gatewayInt)

@@ -540,6 +540,7 @@ li.dragging {
 
 .speedtest {
     white-space: pre-wrap;
+    word-wrap: break-word;
     padding: 0 10px;
     border-left: 4px solid #2196F3;
 }

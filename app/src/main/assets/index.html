@@ -48,6 +48,7 @@
                         <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
                         <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB文件共享</button>
                         <button id="ROAM" class="btn" onclick="createToast('请登录','red')">开启网络漫游</button>
+                        <button id="OTA" class="btn" onclick="createToast('请登录','red')">软件更新</button>
                         <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
                             <option value="WL_AND_5G">5G/4G/3G</option>
                             <option value="LTE_AND_5G">5G NSA</option>
@@ -821,6 +822,27 @@
                     <button id="startSpeedBtn" onclick="startTest(event)">开始测速</button>
                     <button id="loopMode" onclick="handleLoopMode(event)">循环测速</button>
                     <button type="button" onclick="closeModal('#speedTestModal')">关闭</button>
+                </div>
+            </div>
+            <!-- 版本更新模态框 -->
+            <div class="mask" id="updateSoftwareModal" style="display: none;">
+                <div class="modal">
+                    <div class="title">UFI-TOOLS 软件更新</div>
+                    <div class="title" style="font-size: 12px;margin-top: 10px;">
+                        <i>软件更新功能需要启用网络ADB调试功能，没有启用无法使用 ”一键更新“ 功能，可以点击 "下载安装包" 自行下载安装</i>
+                    </div>
+                    <div class="content" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                        <div class="speedtest" style="font-size: 12px;" id="OTATextContent">正在检查更新...</div>
+                    </div>
+                    <div class="btn" style="text-align: right;">
+                        <button id="doUpdate">一键更新</button>
+                        <button id="downloadAPK">下载安装包</button>
+                        <button type="button" onclick="closeModal('#updateSoftwareModal')">关闭</button>
+                    </div>
                 </div>
             </div>
             <!-- ❤️ -->
