@@ -237,9 +237,13 @@ class ShellKano {
         fun createShellScript(context: Context, fileName: String, scriptContent: String): File {
             val scriptFile = File(context.getExternalFilesDir(null), fileName)
 
-            // 如果文件已存在，删除旧文件
-            if (scriptFile.exists()) {
-                scriptFile.delete()
+            try{
+                // 如果文件已存在，删除旧文件
+                if (scriptFile.exists()) {
+                    scriptFile.delete()
+                }
+            } catch (e:Exception){
+                Log.d("kano_ZTE_LOG", "删除脚本出错：${e.message}")
             }
 
             // 写入内容（writeText 本身就是覆盖写入）
@@ -395,7 +399,7 @@ class ShellKano {
                 )
                 Log.d("kano_ZTE_LOG", "adb device 执行状态：${result}")
                 if (result != null) {
-                    if (result.contains("emulator") || result.contains("5555") || result.contains("5554")) {
+                    if (result.contains("List of devices attached")) {
                         Log.d("kano_ZTE_LOG", "adb存活，无需启动")
                     }else{
                         Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")

@@ -343,15 +343,19 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     )
 
                     fun click_stage1() {
-                        //打开工程模式活动
+                        var Eng_result:Any? = null
                         repeat(10) {
-                            val Eng_result = runShellCommand(
+                            Thread.sleep(10)
+                            Eng_result = runShellCommand(
                                 "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
                                 context_app
-                            ) ?: throw Exception("工程模式活动打开失败")
+                            )
                             Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                         }
-                        Thread.sleep(200)
+                        if(Eng_result == null) {
+                            throw Exception("工程模式活动打开失败")
+                        }
+                        Thread.sleep(400)
                         val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
                             "DEBUG&LOG", outFile_adb.absolutePath, context_app
                         )
@@ -840,14 +844,18 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         //模拟操作
                         fun click_stage() {
                             //打开工程模式活动
+                            var Eng_result:Any? = null
                             repeat(10) {
-                                val Eng_result = runShellCommand(
-                                    "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
-                                    context_app
-                                ) ?: throw Exception("工程模式活动打开失败")
+                                Thread.sleep(10)
+                                Eng_result = runShellCommand(
+                                "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                context_app)
                                 Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                             }
-                            Thread.sleep(200)
+                            if(Eng_result == null) {
+                                throw Exception("工程模式活动打开失败")
+                            }
+                            Thread.sleep(400)
                             val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
                                 "DEBUG&LOG", outFile_adb.absolutePath, context_app
                             )
@@ -890,7 +898,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 useClipBoard = true
                             )
                         } catch (e: Exception) {
-                            jsonResult = """{"result":"null"}"""
+                            jsonResult = """{"error":"adb安装apk执行错误：${e.message}"}"""
                         }
                         //清理临时文件
                         writer.write(jsonResult)

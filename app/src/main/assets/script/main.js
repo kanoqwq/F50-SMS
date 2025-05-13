@@ -2911,7 +2911,7 @@ function main_func() {
         }
     }
 
-    //安装更新（测试版）
+    //安装更新
     const requestInstallUpdate = async () => {
         const OTATextContent = document.querySelector('#OTATextContent')
         try {
@@ -2932,7 +2932,7 @@ function main_func() {
             let res_text = '✅ 安装成功，等待程序重启即可使用'
             console.log(e.message);
             if (e.message.includes('安装失败')) {
-                res_text = '❌ 安装失败，请重启随身WIFI后再试'
+                res_text = `❌ 安装失败，原因${e.message.replace('安装失败','')}，请刷新网页或重启随身WIFI再试`
             }
             OTATextContent.innerHTML = `<div>${res_text}</div></div>`
         }
