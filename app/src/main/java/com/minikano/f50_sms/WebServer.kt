@@ -344,7 +344,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
 
                     fun click_stage1() {
                         //打开工程模式活动
-                        repeat(3) {
+                        repeat(10) {
                             val Eng_result = runShellCommand(
                                 "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
                                 context_app
@@ -840,7 +840,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         //模拟操作
                         fun click_stage() {
                             //打开工程模式活动
-                            repeat(3) {
+                            repeat(10) {
                                 val Eng_result = runShellCommand(
                                     "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
                                     context_app

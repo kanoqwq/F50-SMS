@@ -1,19 +1,14 @@
 package com.minikano.f50_sms
 
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.BatteryManager
-import android.provider.DocumentsContract
 import android.util.Log
-import okio.Path
 import org.w3c.dom.Document
+import org.w3c.dom.NodeList
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
-import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
 
 class ShellKano {
@@ -169,7 +164,6 @@ class ShellKano {
                         runShellCommand("$adbPath shell input keyevent KEYCODE_PASTE", context)
                         Log.d("kano_ZTE_LOG", "读取剪贴板，输入文本：$inputText")
                         inputClicked = true
-                        Thread.sleep(500) // 稍等输入完毕
                         break
                     }
                 }
@@ -177,51 +171,64 @@ class ShellKano {
 
             if (!inputClicked) throw Exception("未找到 EditText 输入框")
 
-            //fix：输入框输入完成后ui界面可能会变动（比如按钮位置会被挤下去）需要重新获取UI
-            val nodes_after = getUiDoc(adbPath, context).getElementsByTagName("node")
-            //找到按钮点击
-            for (i in 0 until nodes_after.length) {
-                val node = nodes_after.item(i)
-                val attrs = node.attributes
-                val text = attrs.getNamedItem("text")?.nodeValue ?: ""
-                val bounds = attrs.getNamedItem("bounds")?.nodeValue ?: continue
+            Thread.sleep(666) // 稍等输入完毕
+            fun getBtnAndClick(nodes_after: NodeList): String? {
+                //找到按钮点击
+                for (i in 0 until nodes_after.length) {
+                    val node = nodes_after.item(i)
+                    val attrs = node.attributes
+                    val text = attrs.getNamedItem("text")?.nodeValue ?: ""
+                    val bounds = attrs.getNamedItem("bounds")?.nodeValue ?: continue
 
-                if (text.equals(btnName, ignoreCase = true)) {
-                    val regex = Regex("""\[(\d+),(\d+)\]\[(\d+),(\d+)\]""")
-                    val match = regex.find(bounds) ?: continue
-                    val (x1, y1, x2, y2) = match.destructured
-                    val tapX = (x1.toInt() + x2.toInt()) / 2
-                    val tapY = (y1.toInt() + y2.toInt()) / 2
-                    runShellCommand("$adbPath shell input tap $tapX $tapY", context)
-                    Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
-                    //继续检测result
-                    if (resId != "") {
-                        val res = getTextFromUIByResourceId(resId, adbPath, context)
-                        Thread.sleep(50) // 稍等
-                        if (needBack) {
-                            //返回就完事了
-                            repeat(10) {
-                                runShellCommand(
-                                    "$adbPath shell input keyevent KEYCODE_BACK",
-                                    context
-                                )
+                    if (text.equals(btnName, ignoreCase = true)) {
+                        val regex = Regex("""\[(\d+),(\d+)\]\[(\d+),(\d+)\]""")
+                        val match = regex.find(bounds) ?: continue
+                        val (x1, y1, x2, y2) = match.destructured
+                        val tapX = (x1.toInt() + x2.toInt()) / 2
+                        val tapY = (y1.toInt() + y2.toInt()) / 2
+                        runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                        Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
+                        //继续检测result
+                        if (resId != "") {
+                            val res = getTextFromUIByResourceId(resId, adbPath, context)
+                            Thread.sleep(50) // 稍等
+                            if (needBack) {
+                                //返回就完事了
+                                repeat(10) {
+                                    runShellCommand(
+                                        "$adbPath shell input keyevent KEYCODE_BACK",
+                                        context
+                                    )
+                                }
                             }
-                        }
-                        return res[0]
-                    } else {
-                        Thread.sleep(50) // 稍等输入完毕
-                        if (needBack) {
-                            //返回就完事了
-                            repeat(10) {
-                                runShellCommand(
-                                    "$adbPath shell input keyevent KEYCODE_BACK",
-                                    context
-                                )
+                            return res[0]
+                        } else {
+                            Thread.sleep(150) // 稍等输入完毕
+                            if (needBack) {
+                                //返回就完事了
+                                repeat(10) {
+                                    runShellCommand(
+                                        "$adbPath shell input keyevent KEYCODE_BACK",
+                                        context
+                                    )
+                                }
                             }
+                            return ""
                         }
-                        return ""
                     }
                 }
+                return null
+            }
+
+            var res:String? = null
+
+            repeat(10){
+                val nodes_after = getUiDoc(adbPath, context).getElementsByTagName("node")
+                res = getBtnAndClick(nodes_after)
+            }
+
+            if(res != null){
+                return res as String
             }
 
             throw Exception("未找到 $btnName 按钮")
