@@ -712,6 +712,7 @@
             <div class="mask" id="ATModal" style="display: none">
                 <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
                     <div class="title" style="margin-bottom: 4px;">指令工具</div>
+                    <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
                     <div class="title" style="margin-bottom: 4px;font-size: 12px;">
                         <i>⚠️警告：执行自定义 AT 指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
                     </div>
@@ -828,6 +829,7 @@
             <div class="mask" id="updateSoftwareModal" style="display: none;">
                 <div class="modal">
                     <div class="title">UFI-TOOLS 软件更新</div>
+                    <div style="font-size: 12px;margin-top: 10px;" class="adb_status title"></div>
                     <div class="title" style="font-size: 12px;margin-top: 10px;">
                         <i>软件更新功能需要启用网络ADB调试功能，没有启用无法使用 ”一键更新“ 功能，可以点击 "下载安装包" 自行下载安装，如果更新失败，可以关闭窗口再试</i>
                     </div>
@@ -837,16 +839,17 @@
                         width: 66vw;
                         max-width: 400px;">
                         <div class="speedtest" style="font-size: 12px;" id="OTATextContent">正在检查更新...</div>
+                        <div class="speedtest" style="font-size: 12px;" id="ChangelogTextContent"></div>
                     </div>
                     <div class="btn" style="text-align: right;">
                         <button id="doUpdate">一键更新</button>
                         <button id="downloadAPK">下载安装包</button>
-                        <button type="button" onclick="closeModal('#updateSoftwareModal')">关闭</button>
+                        <button id="closeUpdateBtn" type="button" onclick="closeModal('#updateSoftwareModal')">关闭</button>
                     </div>
                 </div>
             </div>
             <!-- ❤️ -->
-            <div class="mask" id="payModal" style="display: none">
+            <div class="mask" id="payModal" style="display: none" onclick="handleClosePayModal(event)">
                 <div class="modal">
                     <div class="title">打赏作者</div>
                     <div class="title" style="display: flex;align-items: center;margin-top: 10px;font-size: 12px;">

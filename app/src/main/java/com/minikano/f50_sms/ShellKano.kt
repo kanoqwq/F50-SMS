@@ -100,7 +100,7 @@ class ShellKano {
                     val (x1, y1, x2, y2) = match.destructured
                     val tapX = (x1.toInt() + x2.toInt()) / 2
                     val tapY = (y1.toInt() + y2.toInt()) / 2
-                    val result = runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                    val result = runShellCommand("$adbPath -s localhost shell input tap $tapX $tapY", context)
                         ?: throw Exception("执行 input tap 失败")
                     Log.d("kano_ZTE_LOG", "input tap 点击 坐标：$tapX,$tapY 结果：${result} ")
                     return 0
@@ -146,14 +146,14 @@ class ShellKano {
                     val tapY = (y1.toInt() + y2.toInt()) / 2
 
                     repeat(3) {
-                        runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                        runShellCommand("$adbPath -s localhost shell input tap $tapX $tapY", context)
                         Log.d("kano_ZTE_LOG", "点击输入框坐标：$tapX,$tapY")
                     }
 
                     // 输入文本
                     if(!useClipBoard) {
                         Thread.sleep(200) // 稍等软键盘弹出
-                        runShellCommand("$adbPath shell input text \"$escapedInput\"", context)
+                        runShellCommand("$adbPath -s localhost shell input text \"$escapedInput\"", context)
                         Log.d("kano_ZTE_LOG", "输入文本：$inputText")
                         inputClicked = true
                         if (escapedInput.length > 20) {
@@ -161,9 +161,10 @@ class ShellKano {
                         }
                         break
                     } else {
-                        runShellCommand("$adbPath shell input keyevent KEYCODE_PASTE", context)
+                        runShellCommand("$adbPath -s localhost shell input keyevent KEYCODE_PASTE", context)
                         Log.d("kano_ZTE_LOG", "读取剪贴板，输入文本：$inputText")
                         inputClicked = true
+                        Thread.sleep(666) // 稍等输入完毕
                         break
                     }
                 }
@@ -171,7 +172,6 @@ class ShellKano {
 
             if (!inputClicked) throw Exception("未找到 EditText 输入框")
 
-            Thread.sleep(666) // 稍等输入完毕
             fun getBtnAndClick(nodes_after: NodeList): String? {
                 //找到按钮点击
                 for (i in 0 until nodes_after.length) {
@@ -186,7 +186,7 @@ class ShellKano {
                         val (x1, y1, x2, y2) = match.destructured
                         val tapX = (x1.toInt() + x2.toInt()) / 2
                         val tapY = (y1.toInt() + y2.toInt()) / 2
-                        runShellCommand("$adbPath shell input tap $tapX $tapY", context)
+                        runShellCommand("$adbPath -s localhost shell input tap $tapX $tapY", context)
                         Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
                         //继续检测result
                         if (resId != "") {
@@ -196,7 +196,7 @@ class ShellKano {
                                 //返回就完事了
                                 repeat(10) {
                                     runShellCommand(
-                                        "$adbPath shell input keyevent KEYCODE_BACK",
+                                        "$adbPath -s localhost shell input keyevent KEYCODE_BACK",
                                         context
                                     )
                                 }
@@ -208,7 +208,7 @@ class ShellKano {
                                 //返回就完事了
                                 repeat(10) {
                                     runShellCommand(
-                                        "$adbPath shell input keyevent KEYCODE_BACK",
+                                        "$adbPath -s localhost shell input keyevent KEYCODE_BACK",
                                         context
                                     )
                                 }
@@ -224,7 +224,10 @@ class ShellKano {
 
             repeat(10){
                 val nodes_after = getUiDoc(adbPath, context).getElementsByTagName("node")
-                res = getBtnAndClick(nodes_after)
+                var temp = getBtnAndClick(nodes_after)
+                if(temp != null){
+                    res = temp
+                }
             }
 
             if(res != null){
@@ -283,51 +286,45 @@ class ShellKano {
             return resultTexts
         }
 
-        //获取UI 到app cache
-        private fun getUIFile(adbPath: String, context: Context): File {
-            if (adbPath.isEmpty()) throw Exception("需要 adbPath")
-
-            // 清除旧的 UI 文件
-            runShellCommand("$adbPath shell rm /sdcard/kano_ui.xml", context)
-            Thread.sleep(100)
-
-            // dump 当前界面
-            runShellCommand("$adbPath shell uiautomator dump /sdcard/kano_ui.xml", context)
-                ?: throw Exception("uiautomator dump 失败")
-
-            // pull 到本地
-            val cacheFile = File(context.filesDir, "kano_ui.xml")
-            val pullResult = runShellCommand(
-                "$adbPath pull /sdcard/kano_ui.xml ${cacheFile.absolutePath}",
-                context
-            ) ?: throw Exception("pull kano_ui.xml 失败")
-            Log.d("kano_ZTE_LOG", "adb pull 执行结果: $pullResult")
-
-            if (!cacheFile.exists()) throw Exception("kano_ui.xml 文件不存在")
-            return cacheFile
-        }
-
         //获取UI
-        private fun getUiDoc(adbPath: String, context: Context): Document {
+        private fun getUiDoc(adbPath: String, context: Context, maxRetry: Int = 3): Document {
             if (adbPath.isEmpty()) throw Exception("需要 adbPath")
 
-            // 清除旧的 XML
-            runShellCommand("$adbPath shell rm /sdcard/kano_ui.xml", context)
-            Thread.sleep(100)
+            repeat(maxRetry) { attempt ->
+                try {
 
-            // dump 当前 UI
-            runShellCommand("$adbPath shell uiautomator dump /sdcard/kano_ui.xml", context)
-                ?: throw Exception("uiautomator dump 失败")
+                    // 清除旧的 XML
+                    runShellCommand("$adbPath -s localhost shell rm /sdcard/kano_ui.xml", context)
+                    Thread.sleep(200)
 
-            // 使用 cat 读取文件内容（无需 pull 到本地）
-            val xmlContent = runShellCommand("$adbPath shell cat /sdcard/kano_ui.xml", context)
-                ?: throw Exception("cat kano_ui.xml 失败")
+                    // dump 当前 UI
+                    runShellCommand("$adbPath -s localhost shell uiautomator dump /sdcard/kano_ui.xml", context)
+                        ?: throw Exception("uiautomator dump 失败")
 
-            // 解析 XML 字符串为 Document
-            val factory = DocumentBuilderFactory.newInstance()
-            val builder = factory.newDocumentBuilder()
-            val inputStream = xmlContent.byteInputStream()
-            return builder.parse(inputStream)
+                    Thread.sleep(300)
+
+                    // cat 读取 XML 内容
+                    val xmlContent = runShellCommand("$adbPath -s localhost shell cat /sdcard/kano_ui.xml", context)
+                        ?: throw Exception("cat kano_ui.xml 失败")
+
+                    if (!xmlContent.trim().endsWith("</hierarchy>")) {
+                        Log.w("kano_ZTE_LOG", "UI XML 不完整，第 ${attempt + 1} 次尝试")
+                        Thread.sleep(200)
+                        return@repeat
+                    }
+
+                    // 转换为 Document
+                    val factory = DocumentBuilderFactory.newInstance()
+                    val builder = factory.newDocumentBuilder()
+                    val inputStream = xmlContent.byteInputStream()
+                    return builder.parse(inputStream)
+                } catch (e: Exception) {
+                    Log.e("kano_ZTE_LOG", "解析 UI XML 失败，第 ${attempt + 1} 次：${e.message}")
+                    Thread.sleep(200)
+                }
+            }
+
+            throw Exception("多次尝试后仍无法获取完整的 UI dump")
         }
 
 
@@ -392,28 +389,44 @@ class ShellKano {
         }
 
         //检测adb存活
-        fun ensureAdbAlive(context: Context):Boolean {
+        fun ensureAdbAlive(context: Context): Boolean {
             try {
-                val result = executeShellFromAssetsSubfolderWithArgs(
-                    context, "shell/adb", "devices"
-                )
-                Log.d("kano_ZTE_LOG", "adb device 执行状态：${result}")
-                if (result != null) {
-                    if (result.contains("List of devices attached")) {
-                        Log.d("kano_ZTE_LOG", "adb存活，无需启动")
-                    }else{
-                        Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
-                        Thread{
-                        executeShellFromAssetsSubfolderWithArgs(
-                            context, "shell/adb", "kill-server"
-                        )
-                        Thread.sleep(800)
-                        executeShellFromAssetsSubfolderWithArgs(
-                            context, "shell/adb", "start-server"
-                        )}.start()
-                    }
+                val adbPath = "shell/adb"
+
+                // 第一次检测
+                var result = executeShellFromAssetsSubfolderWithArgs(context, adbPath, "devices")
+                Log.d("kano_ZTE_LOG", "adb device 执行状态：$result")
+
+                if (result?.contains("localhost:5555\tdevice") == true) {
+                    Log.d("kano_ZTE_LOG", "adb存活，无需启动")
+                    return true
                 }
-                return true
+
+                Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
+
+                // 重启 ADB server
+                executeShellFromAssetsSubfolderWithArgs(context, adbPath, "kill-server")
+                Thread.sleep(1000)
+                executeShellFromAssetsSubfolderWithArgs(context, adbPath, "connect", "localhost")
+
+                // 等待最多 10 秒，设备变为 "device"
+                val maxWaitMs = 10_000
+                val interval = 500
+                var waited = 0
+
+                while (waited < maxWaitMs) {
+                    result = executeShellFromAssetsSubfolderWithArgs(context, adbPath, "devices")
+                    Log.d("kano_ZTE_LOG", "等待 ADB 启动中：$result")
+                    if (result?.contains("localhost:5555\tdevice") == true) {
+                        Log.d("kano_ZTE_LOG", "ADB连接成功")
+                        return true
+                    }
+                    Thread.sleep(interval.toLong())
+                    waited += interval
+                }
+
+                Log.e("kano_ZTE_LOG", "等待ADB device超时")
+                return false
             } catch (e: Exception) {
                 Log.e("kano_ZTE_LOG", "检测/启动ADB失败: ${e.message}")
                 return false

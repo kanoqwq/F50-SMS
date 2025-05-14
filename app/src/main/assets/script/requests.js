@@ -320,10 +320,11 @@ async function getDataUsage() {
 //adb保活
 async function adbKeepAlive() {
     try {
-        const { result } = await (await fetch(`${KANO_baseURL}/adb_keep_alive`,{
-            headers:common_headers
+        const { result } = await (await fetch(`${KANO_baseURL}/adb_alive`, {
+            headers: common_headers
         })).json()
-        return result
+        if (result == undefined || result == null) return false
+        return result == "true" ? true : false
     } catch {
         return false
     }

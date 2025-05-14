@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.StatFs
 import android.util.Log
+import com.minikano.f50_sms.ShellKano.Companion.executeShellFromAssetsSubfolderWithArgs
 import com.minikano.f50_sms.ShellKano.Companion.fillInputAndSend
 import com.minikano.f50_sms.ShellKano.Companion.runShellCommand
 import fi.iki.elonen.NanoHTTPD
@@ -315,39 +316,40 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
                     Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
-                    val adb_command = "${outFile_adb.absolutePath} disconnect"
-                    val adb_result = runShellCommand(adb_command, context_app)
-                    Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
-                    Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
-
-                    Thread.sleep(1000)//小睡一下
-
                     //复制smb到sdcard
                     val smb_res = runShellCommand(
-                        "${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",
+                        "${outFile_adb.absolutePath} -s localhost shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",
                         context_app
                     ) ?: throw Exception("smb复制到sd卡失败")
                     Log.d(
                         "kano_ZTE_LOG",
-                        "执行：${outFile_adb.absolutePath} shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res"
+                        "执行：${outFile_adb.absolutePath} -s localhost shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res"
                     )
 
                     //复制ttyd到sdcard
                     val ttyd_res = runShellCommand(
-                        "${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",
+                        "${outFile_adb.absolutePath} -s localhost shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",
                         context_app
                     ) ?: throw Exception("ttyd复制到sd卡失败")
                     Log.d(
                         "kano_ZTE_LOG",
-                        "执行：${outFile_adb.absolutePath} shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res"
+                        "执行：${outFile_adb.absolutePath} -s localhost shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res"
                     )
 
                     fun click_stage1() {
                         var Eng_result:Any? = null
+                        // 唤醒屏幕
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
+                        Thread.sleep(10)
+                        // 解锁
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
+                        Thread.sleep(10)
+                        // 点击一下，防止系统卡住
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
+                        Thread.sleep(10)
                         repeat(10) {
-                            Thread.sleep(10)
                             Eng_result = runShellCommand(
-                                "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
                                 context_app
                             )
                             Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
@@ -368,22 +370,29 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         }
                     }
 
-                    var fallBackTime = 0
-                    try {
-                        click_stage1()
-                    } catch (e: Exception) {
-                        //返回
-                        repeat(10) {
-                            runShellCommand(
-                                "${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK",
-                                context_app
-                            )
+                    fun tryClickStage1(maxRetry: Int = 2) {
+                        var retry = 0
+                        while (retry <= maxRetry) {
+                            try {
+                                click_stage1()
+                                return // 成功则直接退出
+                            } catch (e: Exception) {
+                                Log.w("kano_ZTE_LOG", "click_stage1 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
+                                // 退回操作
+                                repeat(10) {
+                                    runShellCommand(
+                                        "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_BACK",
+                                        context_app
+                                    )
+                                }
+                                Thread.sleep(1000)
+                                retry++
+                            }
                         }
-                        Thread.sleep(1000)
-                        if (fallBackTime++ < 2) {
-                            click_stage1()
-                        }
+                        throw Exception("click_stage1 多次重试失败")
                     }
+
+                    tryClickStage1()
 
                     //输入指令，点击发送
                     var jsonResult = """{"result":"执行成功"}"""
@@ -662,6 +671,9 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             return try {
                 val path = "/UFI-TOOLS-UPDATE"
                 val download_url = "https://pan.kanokano.cn/d${path}/"
+                //changelog
+                val changelog_url = "https://pan.kanokano.cn/d${path}/changelog.txt"
+                val changelog = KanoRequest.getTextFromUrl(changelog_url)
                 val json =
                     """{"path":"$path","password":"","page":1,"per_page":0,"refresh":false}""".trimIndent()
                 val res = KanoRequest.postJson(
@@ -670,8 +682,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"base_uri":"${download_url}","alist_res":${res.body?.string()}}""".trimIndent()
-
+                    """{"base_uri":"${download_url}","alist_res":${res.body?.string()},"changelog":"${changelog?.replace(Regex("\r?\n"), "<br>")}"}""".trimIndent()
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -806,20 +817,9 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
                         Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
-                        val adb_command = "${outFile_adb.absolutePath} disconnect"
-                        var adb_result: String? = null
-                        repeat(3) {
-                            adb_result = runShellCommand(adb_command, context_app)
-                            Thread.sleep(200)//小睡一下
-                        }
-                        Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command")
-                        Log.d("kano_ZTE_LOG", "adb_result：$adb_result")
-
-                        Thread.sleep(1000)//小睡一下
-
                         //复制APK到SD卡根目录
                         val adb_command_copy =
-                            "${outFile_adb.absolutePath} shell sh -c 'cp ${downloadResultPath} /sdcard/ufi_tools_latest.apk'"
+                            "${outFile_adb.absolutePath} -s localhost shell sh -c 'cp ${downloadResultPath} /sdcard/ufi_tools_latest.apk'"
                         val adb_result_copy = runShellCommand(adb_command_copy, context_app)
                         Log.d("kano_ZTE_LOG", "adb_执行命令：$adb_command_copy")
                         Log.d("kano_ZTE_LOG", "adb_result：$adb_result_copy")
@@ -836,7 +836,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         val shAbsolutePath = file.absolutePath
                         Log.d("kano_ZTE_LOG", "Script created at: $shAbsolutePath")
                         val adb_command_copy_sh =
-                            "${outFile_adb.absolutePath} shell sh -c 'cp ${shAbsolutePath} /sdcard/ufi_tools_update.sh'"
+                            "${outFile_adb.absolutePath} -s localhost shell sh -c 'cp ${shAbsolutePath} /sdcard/ufi_tools_update.sh'"
                         val adb_result_copy_sh = runShellCommand(adb_command_copy_sh, context_app)
                         Log.d("kano_ZTE_LOG", "copy_sh执行命令：$adb_command_copy_sh")
                         Log.d("kano_ZTE_LOG", "copy_sh_result：$adb_result_copy_sh")
@@ -845,10 +845,18 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         fun click_stage() {
                             //打开工程模式活动
                             var Eng_result:Any? = null
-                            repeat(10) {
-                                Thread.sleep(10)
+                            // 唤醒屏幕
+                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
+                            Thread.sleep(10)
+                            // 解锁
+                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
+                            Thread.sleep(10)
+                            // 点击一下，防止系统卡住
+                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
+                            Thread.sleep(10)
+                            repeat(5) {
                                 Eng_result = runShellCommand(
-                                "${outFile_adb.absolutePath} shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
                                 context_app)
                                 Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                             }
@@ -868,22 +876,29 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                             }
                         }
 
-                        var fallBackTime = 0
-                        try {
-                            click_stage()
-                        } catch (e: Exception) {
-                            //返回
-                            repeat(10) {
-                                runShellCommand(
-                                    "${outFile_adb.absolutePath} shell input keyevent KEYCODE_BACK",
-                                    context_app
-                                )
+                        fun tryClickStage(maxRetry: Int = 2) {
+                            var retry = 0
+                            while (retry <= maxRetry) {
+                                try {
+                                    click_stage()
+                                    return // 成功则直接退出
+                                } catch (e: Exception) {
+                                    Log.w("kano_ZTE_LOG", "click_stage 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
+                                    // 退回操作
+                                    repeat(10) {
+                                        runShellCommand(
+                                            "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_BACK",
+                                            context_app
+                                        )
+                                    }
+                                    Thread.sleep(1000)
+                                    retry++
+                                }
                             }
-                            Thread.sleep(1000)
-                            if (fallBackTime++ < 2) {
-                                click_stage()
-                            }
+                            throw Exception("click_stage 多次重试失败")
                         }
+
+                        tryClickStage()
 
                         //输入指令，点击发送
                         var jsonResult = """{"result":"success"}"""
@@ -918,13 +933,10 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             return response
         }
 
-        //手动保活ADB
-        if (method == "GET" && uri == "/adb_keep_alive"){
-            val res = ShellKano.ensureAdbAlive(context_app)
+        //ADB初始化状态
+        if (method == "GET" && uri == "/adb_alive"){
             val response = newFixedLengthResponse(
-                Response.Status.OK, "application/json", """{
-                "result":"$res",
-                }""".trimIndent()
+                Response.Status.OK, "application/json", """{"result":"${ADBService.adbIsReady}"}""".trimIndent()
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response

@@ -3,7 +3,6 @@ const MODEL = document.querySelector("#MODEL")
 let QORS_MESSAGE = null
 let smsSender = null
 let psw_fail_num = 0
-
 //判断一下是否需要token
 const needToken = async () => {
     //获取设备型号与电量，整合（如果有）
@@ -302,6 +301,7 @@ function main_func() {
 
     //初始化所有按钮
     const initRenderMethod = async () => {
+        adbQuery()
         initUpdateSoftware()
         handlerADBStatus()
         handlerADBNetworkStatus()
@@ -570,6 +570,7 @@ function main_func() {
             return
         }
         if (res) {
+            adbQuery()
             MODEL.innerHTML = " 设备：" + res.model
             isNotLoginOnce = false
             const current_cell = document.querySelector('#CURRENT_CELL')
@@ -714,8 +715,6 @@ function main_func() {
                 }
             } catch (e) {
                 console.error(e.message)
-            } finally {
-                await adbKeepAlive()
             }
         }
         btn.innerHTML = res.usb_port_switch == '1' ? '关闭USB调试' : '开启USB调试'
@@ -771,8 +770,6 @@ function main_func() {
                 }
             } catch (e) {
                 console.error(e.message)
-            } finally {
-                await adbKeepAlive()
             }
         }
         btn.innerHTML = res.enabled == "true" || res.enabled == true ? '关闭网络ADB自启' : '开启网络ADB自启'
@@ -2561,8 +2558,12 @@ function main_func() {
     //执行smb目录更改
     const handleSambaPath = async (command = '/') => {
         const AT_RESULT = document.querySelector('#AT_RESULT')
-        await adbKeepAlive()
         AT_RESULT.innerHTML = "执行中,请耐心等待..."
+        let adb_status = await adbKeepAlive()
+        if (!adb_status) {
+            AT_RESULT.innerHTML = ""
+            return createToast('ADB未初始化，请等待初始化完成', 'red')
+        }
         try {
             const command_enc = encodeURIComponent(command)
             const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
@@ -2849,6 +2850,11 @@ function main_func() {
         localStorage.setItem('hidePayModal', 'true')
     }
 
+    const handleClosePayModal = (e) => {
+        if (e.target.id != 'payModal') return
+        onClosePayModal()
+    }
+
 
     //展开收起
     // 配置观察器_菜单
@@ -2893,17 +2899,22 @@ function main_func() {
             return null
         }
         try {
-            await adbKeepAlive()
             const res = await fetch(`${KANO_baseURL}/check_update`, {
                 method: 'get',
                 headers: common_headers
             })
-            const { alist_res, base_uri } = await res.json()
-            const content = alist_res?.data?.content[0]?.name
+            const { alist_res, base_uri, changelog } = await res.json()
+            const contents = alist_res?.data?.content
+            if (!contents || contents.length <= 0) return null
+            //寻找最新APK
+            const content = (contents.filter(item => item.name.includes('.apk')).sort((a, b) => {
+                return new Date(b.modified) - new Date(a.modified)
+            }))[0]
             if (content) {
                 return {
-                    name: content,
-                    base_uri: base_uri
+                    name: content.name,
+                    base_uri,
+                    changelog
                 }
             }
         } catch {
@@ -2913,9 +2924,10 @@ function main_func() {
 
     //安装更新
     const requestInstallUpdate = async () => {
+        const changelogTextContent = document.querySelector('#ChangelogTextContent')
+        changelogTextContent.innerHTML = ''
         const OTATextContent = document.querySelector('#OTATextContent')
         try {
-            await adbKeepAlive()
             OTATextContent.innerHTML = `<div>📦 安装中...</div>`
             const _res = await fetch(`${KANO_baseURL}/install_apk`, {
                 method: 'POST',
@@ -2925,33 +2937,45 @@ function main_func() {
             })
             const res = await _res.json()
             if (res && res.error) throw new Error('安装失败: ' + res.error)
-            const res_text = res.result == 'success' ? '✅ 安装成功！' : '❌ 安装失败，请重启随身WIFI后再试'
+            const res_text = res.result == 'success' ? '✅ 安装成功，等待几秒刷新网页即可使用' : '❌ 安装失败，请重启随身WIFI后再试'
             OTATextContent.innerHTML = `<div>${res_text}</div><div>${res.result != 'success' ? res.result : ''}</div>`
         } catch (e) {
             createToast('安装程序运行结束', 'green')
-            let res_text = '✅ 安装成功，等待程序重启即可使用'
+            let res_text = '✅ 安装成功，等待几秒刷新网页即可使用'
             console.log(e.message);
             if (e.message.includes('安装失败')) {
-                res_text = `❌ 安装失败，原因${e.message.replace('安装失败','')}，请刷新网页或重启随身WIFI再试`
+                res_text = `❌ 安装失败，原因${e.message.replace('安装失败', '')}，请刷新网页或重启随身WIFI再试`
             }
             OTATextContent.innerHTML = `<div>${res_text}</div></div>`
+        } finally {
+            initUpdateSoftware()
         }
     }
 
     //立即更新
     let updateSoftwareInterval = null
     const handleUpdateSoftware = async (url) => {
-        await adbKeepAlive()
         updateSoftwareInterval && updateSoftwareInterval()
         if (!url || url.trim() == "") return
         const doUpdateEl = document.querySelector('#doUpdate')
+        const closeUpdateBtnEl = document.querySelector('#closeUpdateBtn')
+
+        let adb_status = await adbKeepAlive()
+        if (!adb_status) {
+            return createToast('ADB未初始化，请等待初始化完成', 'red')
+        }
+
         // 更新时禁用按钮
         doUpdateEl && (doUpdateEl.onclick = null)
         doUpdateEl && (doUpdateEl.style.backgroundColor = '#80808073')
+        closeUpdateBtnEl && (closeUpdateBtnEl.onclick = null)
+        closeUpdateBtnEl && (closeUpdateBtnEl.style.backgroundColor = '#80808073')
 
         try {
+            const changelogTextContent = document.querySelector('#ChangelogTextContent')
+            changelogTextContent.innerHTML = ''
             //开始请求下载更新
-            const _dres = await fetch(`${KANO_baseURL}/download_apk`, {
+            await fetch(`${KANO_baseURL}/download_apk`, {
                 method: 'POST',
                 headers: {
                     ...common_headers,
@@ -2963,13 +2987,10 @@ function main_func() {
                     }
                 )
             })
-            const dres = await _dres.json()
         } catch {
             createToast('下载请求失败，请检查网络连接', 'red')
             initUpdateSoftware()
             return
-        } finally {
-            initUpdateSoftware()
         }
 
         //开启定时器，查询更新进度
@@ -2993,7 +3014,6 @@ function main_func() {
             } catch (e) {
                 OTATextContent.innerHTML = "下载失败，请检查网络连接"
                 updateSoftwareInterval && updateSoftwareInterval()
-            } finally {
                 initUpdateSoftware()
             }
         }, 500)
@@ -3016,8 +3036,15 @@ function main_func() {
     }
     //检测更新
     const initUpdateSoftware = async () => {
+        const OTATextContent = document.querySelector('#OTATextContent')
+        const changelogTextContent = document.querySelector('#ChangelogTextContent')
+        changelogTextContent.innerHTML = ''
         const btn = document.querySelector('#OTA')
         if (!btn) return
+        const closeUpdateBtnEl = document.querySelector('#closeUpdateBtn')
+        closeUpdateBtnEl && (closeUpdateBtnEl.onclick = () => closeModal('#updateSoftwareModal'))
+        closeUpdateBtnEl && (closeUpdateBtnEl.style.backgroundColor = 'var(--dark-btn-color)')
+
         if (!(await initRequestData())) {
             btn.onclick = () => createToast('请登录', 'red')
             btn.style.backgroundColor = '#80808073'
@@ -3033,13 +3060,13 @@ function main_func() {
                 return null
             }
             OTATextContent.innerHTML = '正在检查更新...'
+            changelogTextContent.innerHTML = ''
             showModal('#updateSoftwareModal')
             try {
                 const content = await queryUpdate()
-                const OTATextContent = document.querySelector('#OTATextContent')
                 if (content) {
                     const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
-                    const { name, base_uri } = content
+                    const { name, base_uri, changelog } = content
                     const version = name.match(/V(\d+\.\d+\.\d+)/i)?.[1];
                     const isLatest = name.includes(app_ver) || (version <= app_ver)
                     const doUpdateEl = document.querySelector('#doUpdate')
@@ -3057,9 +3084,14 @@ function main_func() {
                             doDownloadAPKEl.style.backgroundColor = '#80808073'
                         }
                     }
+                    //获取changeLog
+                    if (!isLatest) {
+                        changelogTextContent.innerHTML = changelog
+                    }
+
                     OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver}</div>` : `发现更新:<div>${name}</div>`}`
                 } else {
-                    throw '没有更新'
+                    throw '出错'
                 }
             } catch (e) {
                 OTATextContent.innerHTML = '连接更新服务器出错，请检查网络连接'
@@ -3067,6 +3099,21 @@ function main_func() {
         }
     }
     initUpdateSoftware()
+
+    //adb轮询
+    const adbQuery = async () => {
+        const adb_status = await adbKeepAlive()
+        const adb_text = adb_status ? '网络ADB状态：🟢 正常' : '网络ADB状态：🟡 等待初始化'
+        const adbStatusEl = document.querySelectorAll('.adb_status')
+        if (adbStatusEl && adbStatusEl.length > 0) {
+            adbStatusEl.forEach((item) => {
+                try {
+                    item.innerHTML = adb_text
+                } catch { }
+            })
+        }
+    }
+    adbQuery()
 
     //挂载方法到window
     const methods = {
@@ -3110,6 +3157,7 @@ function main_func() {
         handleAT,
         setOrRemoveDeviceFromBlackList,
         onSelectCellRow,
+        handleClosePayModal
     }
 
     try {

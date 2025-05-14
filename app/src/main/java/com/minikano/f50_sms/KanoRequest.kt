@@ -26,6 +26,28 @@ class KanoRequest {
             return client.newCall(request).execute()
         }
 
+        fun getTextFromUrl(url: String): String? {
+            val client = OkHttpClient()
+
+            val request = Request.Builder()
+                .url(url)
+                .get()
+                .build()
+
+            return try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        println("Request failed with code: ${response.code}")
+                        return null
+                    }
+                    response.body?.string()
+                }
+            } catch (e: Exception) {
+                println("请求异常: ${e.message}")
+                null
+            }
+        }
+
         fun downloadFile(
             url: String,
             outputFile: File,

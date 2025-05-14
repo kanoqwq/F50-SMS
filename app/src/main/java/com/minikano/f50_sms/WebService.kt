@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -21,6 +22,7 @@ class WebService : Service() {
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
     private val PREFS_NAME = "kano_ZTE_store"
+    private var wakeLock: PowerManager.WakeLock? = null
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -107,6 +109,15 @@ class WebService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForegroundNotification()
+
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.SCREEN_DIM_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "ZTE-UFI-TOOLS::WakeLock"
+        )
+        wakeLock?.acquire() // 保持
+        Log.d("kano_ZTE_LOG", "已开启唤醒锁，防止屏幕熄灭!")
+
         // 注册广播接收器
         registerReceiver(statusReceiver, IntentFilter(UI_INTENT), Context.RECEIVER_EXPORTED)
         startForeground(114514, createNotification())
