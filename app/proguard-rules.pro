@@ -19,3 +19,20 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-assumenosideeffects class org.slf4j.Logger {
+    public void info(...);
+    public void debug(...);
+    public void error(...);
+    public void warn(...);
+    public void trace(...);
+    public boolean isDebugEnabled();
+    public boolean isInfoEnabled();
+    public boolean isWarnEnabled();
+    public boolean isErrorEnabled();
+    public boolean isTraceEnabled();
+}
+
+-assumenosideeffects class org.slf4j.LoggerFactory {
+    public static org.slf4j.Logger getLogger(...);
+}

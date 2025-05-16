@@ -12,7 +12,7 @@
       "filters": [],
       "attributes": [],
       "versionCode": 1,
-      "versionName": "2.8.3",
+      "versionName": "2.8.7",
       "outputFile": "app-release.apk"
     }
   ],
@@ -33,5 +33,5 @@
       ]
     }
   ],
-  "minSdkVersionForDexing": 23
+  "minSdkVersionForDexing": 26
 }

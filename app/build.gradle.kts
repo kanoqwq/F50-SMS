@@ -10,17 +10,17 @@ android {
 
     defaultConfig {
         applicationId = "com.minikano.f50_sms"
-        minSdk = 23
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "2.8.3"
+        versionName = "2.8.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +41,10 @@ android {
 
 dependencies {
     implementation(libs.nanohttpd)
+    implementation(libs.slf4j.nop)
+    implementation(libs.jcifs.ng) {
+        exclude(group = "org.slf4j")
+    }
     implementation(libs.okhttp)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

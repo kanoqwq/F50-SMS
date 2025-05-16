@@ -144,7 +144,6 @@ class MainActivity : ComponentActivity() {
                     ) ?: true.toString()
                 )
             }
-//            val host = targetServerIP.substringBefore(":")
             if (isServerRunning) {
                 ServerUI(
                     serverAddress = "http://${gatewayIp.substringBefore(":")}:$port",

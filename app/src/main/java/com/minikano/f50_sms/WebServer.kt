@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Build
 import android.os.StatFs
 import android.util.Log
-import com.minikano.f50_sms.ShellKano.Companion.executeShellFromAssetsSubfolderWithArgs
 import com.minikano.f50_sms.ShellKano.Companion.fillInputAndSend
 import com.minikano.f50_sms.ShellKano.Companion.runShellCommand
 import fi.iki.elonen.NanoHTTPD
@@ -13,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStreamWriter
@@ -20,7 +20,10 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.KeyStore
 import java.util.Random
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
 import kotlin.concurrent.thread
 
 class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port) {
@@ -45,6 +48,32 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
 
     @Volatile
     var currentDownloadingUrl: String = ""
+
+//    init {
+//        try {
+//            val password = "kano123".toCharArray()
+//
+//            val assetManager = context.assets
+//            val keystoreInputStream = assetManager.open("certs/192_168_0_1_ssl.bks")
+//
+//            val ks = KeyStore.getInstance("BKS") // 改为 BKS
+//            ks.load(keystoreInputStream, password)
+//            keystoreInputStream.close()
+//
+//            val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+//            kmf.init(ks, password)
+//
+//            val sslContext = SSLContext.getInstance("TLS")
+//            sslContext.init(kmf.keyManagers, null, null)
+//
+//            makeSecure(sslContext.serverSocketFactory, null)
+//
+//            Log.i("kano_ZTE_LOG", "SSL 启用成功")
+//
+//        } catch (e: Exception) {
+//            Log.e("kano_ZTE_LOG", "SSL失败: ${e.message}", e)
+//        }
+//    }
 
     override fun serve(session: IHTTPSession?): Response {
         val method = session?.method.toString()
@@ -188,23 +217,9 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
 
                     //复制依赖
-                    val assetManager = context_app.assets
-                    val inputStream_adb = assetManager.open("shell/sendat")
-                    val fileName2 = File("shell/sendat").name
-                    val outFile_at = File(context_app.filesDir, fileName2)
-
-                    try {
-                        inputStream_adb.use { input ->
-                            FileOutputStream(outFile_at).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.d("kano_ZTE_LOG", "adb文件已存在， 无需复制")
-                    }
+                    val outFile_at = KanoUtils.copyFileToFilesDir(context_app,"shell/sendat") ?: throw Exception("复制sendat 到filesDir失败")
 
                     outFile_at.setExecutable(true)
-                    Log.d("kano_ZTE_LOG", "AT-outFile：${outFile_at.absolutePath}")
 
                     //AT+CGEQOSRDP=1
                     if (!AT_command.toString().startsWith("AT", ignoreCase = true)) {
@@ -261,60 +276,14 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "path 传入参数：${path_command}")
 
                     //复制依赖
-                    val assetManager = context_app.assets
-                    val inputStream_adb = assetManager.open("shell/adb")
-                    val fileName_adb = File("shell/adb").name
-                    val outFile_adb = File(context_app.filesDir, fileName_adb)
+                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
+                    val outFile_smb = KanoUtils.copyAssetToExternalStorage(context_app,"shell/smb.conf",false)  ?: throw Exception("复制smb.conf 到filesDir失败")
+                    val outFile_ttyd = KanoUtils.copyFileToFilesDir(context_app,"shell/ttyd") ?: throw Exception("复制ttyd 到filesDir失败")
+                    val outFile_smb_sh = KanoUtils.copyFileToFilesDir(context_app,"shell/samba_change.sh",false) ?: throw Exception("复制samba_change.sh 到filesDir失败")
 
-                    val smb = assetManager.open("shell/smb.conf")
-                    val fileName_smb = File("shell/smb.conf").name
-                    val outFile_smb = File(context_app.getExternalFilesDir(null), fileName_smb)
-
-                    //ttyd
-                    val ttyd = assetManager.open("shell/ttyd")
-                    val fileName_ttyd = File("shell/ttyd").name
-                    val outFile_ttyd = File(context_app.filesDir, fileName_ttyd)
-
-                    //复制ttyd到context_app.filesDir
-                    try {
-                        ttyd.use { input ->
-                            FileOutputStream(outFile_ttyd).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_ttyd.absolutePath} 成功")
-                    } catch (e: Exception) {
-                        Log.e("kano_ZTE_LOG", "复制失败：${e.message}")
-                    }
-
-                    //复制smb到外部存储
-                    try {
-                        smb.use { input ->
-                            FileOutputStream(outFile_smb).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_smb.absolutePath} 成功")
-                    } catch (e: Exception) {
-                        Log.e("kano_ZTE_LOG", "复制失败：${e.message}")
-                    }
-
-                    try {
-                        inputStream_adb.use { input ->
-                            FileOutputStream(outFile_adb).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        Log.d("kano_ZTE_LOG", "复制到 ${outFile_adb.absolutePath} 成功")
-                    } catch (e: Exception) {
-                        Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
-                    }
-
+                    outFile_smb_sh.setExecutable(true)
                     outFile_adb.setExecutable(true)
                     outFile_ttyd.setExecutable(true)
-
-                    Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
-                    Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
                     //复制smb到sdcard
                     val smb_res = runShellCommand(
@@ -402,7 +371,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 "\"", "\\\""
                             )
                         fillInputAndSend(
-                            escapedCommand, outFile_adb.absolutePath, context_app, "", "START", useClipBoard = true
+                            escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"), useClipBoard = true
                         )
                     } catch (e: Exception) {
                         jsonResult = """{"result":"执行失败"}"""
@@ -796,26 +765,9 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
                     try {
                         //复制依赖
-                        val assetManager = context_app.assets
-                        val inputStream_adb = assetManager.open("shell/adb")
-                        val fileName_adb = File("shell/adb").name
-                        val outFile_adb = File(context_app.filesDir, fileName_adb)
-
-                        try {
-                            inputStream_adb.use { input ->
-                                FileOutputStream(outFile_adb).use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            Log.d("kano_ZTE_LOG", "复制到 ${outFile_adb.absolutePath} 成功")
-                        } catch (e: Exception) {
-                            Log.d("kano_ZTE_LOG", "依赖文件已存在， 无需复制")
-                        }
+                        val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
 
                         outFile_adb.setExecutable(true)
-
-                        Log.d("kano_ZTE_LOG", "adb-outFile：${outFile_adb.absolutePath}")
-                        Log.d("kano_ZTE_LOG", "adbPath：${outFile_adb.absolutePath}")
 
                         //复制APK到SD卡根目录
                         val adb_command_copy =
@@ -826,8 +778,8 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
 
                         //创建sh文件
                         val sh_text = """#!/system/bin/sh
-                        pm install -r /sdcard/ufi_tools_latest.apk >> /sdcard/kk.log
-                        am start -n com.minikano.f50_sms/.MainActivity  >> /sdcard/kk.log
+                        pm install -r /sdcard/ufi_tools_latest.apk >> /sdcard/ufi_tools_update.log
+                        am start -n com.minikano.f50_sms/.MainActivity  >> /sdcard/ufi_tools_update.log
                         echo "done"""".trimIndent()
 
                         //复制sh到SD卡根目录
@@ -908,7 +860,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                     "\"", "\\\""
                                 )
                             fillInputAndSend(
-                                escapedCommand, outFile_adb.absolutePath, context_app, "", "START",
+                                escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"),
                                 needBack = false,
                                 useClipBoard = true
                             )
@@ -937,6 +889,108 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         if (method == "GET" && uri == "/adb_alive"){
             val response = newFixedLengthResponse(
                 Response.Status.OK, "application/json", """{"result":"${ADBService.adbIsReady}"}""".trimIndent()
+            )
+            response.addHeader("Access-Control-Allow-Origin", "*")
+            return response
+        }
+
+        //执行shell脚本
+        if (method == "GET" && uri == "/one_click_shell"){
+            // 创建一个 Piped 流来异步返回数据
+            val pipedInput = PipedInputStream()
+            val pipedOutput = PipedOutputStream(pipedInput)
+
+            // 使用协程处理耗时任务
+            CoroutineScope(Dispatchers.IO).launch {
+                val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
+                try {
+                    //复制依赖
+                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
+
+                    outFile_adb.setExecutable(true)
+
+                    fun click_stage1() {
+                        var Eng_result:Any? = null
+                        // 唤醒屏幕
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
+                        Thread.sleep(10)
+                        // 解锁
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
+                        Thread.sleep(10)
+                        // 点击一下，防止系统卡住
+                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
+                        Thread.sleep(10)
+                        repeat(10) {
+                            Eng_result = runShellCommand(
+                                "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                context_app
+                            )
+                            Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                        }
+                        if(Eng_result == null) {
+                            throw Exception("工程模式活动打开失败")
+                        }
+                        Thread.sleep(400)
+                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
+                            "DEBUG&LOG", outFile_adb.absolutePath, context_app
+                        )
+                        if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
+                        if (res_debug_log_btn == 0) {
+                            val res = ShellKano.parseUiDumpAndClick(
+                                "Adb shell", outFile_adb.absolutePath, context_app
+                            )
+                            if (res == -1) throw Exception("点击 Adb Shell 按钮失败")
+                        }
+                    }
+
+                    fun tryClickStage1(maxRetry: Int = 2) {
+                        var retry = 0
+                        while (retry <= maxRetry) {
+                            try {
+                                click_stage1()
+                                return // 成功则直接退出
+                            } catch (e: Exception) {
+                                Log.w("kano_ZTE_LOG", "click_stage1 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
+                                // 退回操作
+                                repeat(10) {
+                                    runShellCommand(
+                                        "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_BACK",
+                                        context_app
+                                    )
+                                }
+                                Thread.sleep(1000)
+                                retry++
+                            }
+                        }
+                        throw Exception("click_stage1 多次重试失败")
+                    }
+
+                    tryClickStage1()
+
+                    //输入指令，点击发送
+                    var jsonResult = """{"result":"执行成功"}"""
+                    try {
+                        val escapedCommand =
+                            "sh /sdcard/one_click_shell.sh".replace(
+                                "\"", "\\\""
+                            )
+                        fillInputAndSend(
+                            escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"), useClipBoard = true
+                        )
+                    } catch (e: Exception) {
+                        jsonResult = """{"result":"执行失败"}"""
+                    }
+                    writer.write(jsonResult)
+                } catch (e: Exception) {
+                    writer.write("""{"error":"one_click_shell执行错误：${e.message}"}""")
+                } finally {
+                    writer.flush()
+                    pipedOutput.close()
+                }
+            }
+
+            val response = newChunkedResponse(
+                Response.Status.OK, "application/json", pipedInput
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response

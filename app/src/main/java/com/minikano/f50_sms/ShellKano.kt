@@ -1,5 +1,6 @@
 package com.minikano.f50_sms
 
+import android.content.ComponentCallbacks
 import android.content.Context
 import android.util.Log
 import org.w3c.dom.Document
@@ -9,6 +10,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStreamReader
+import java.util.concurrent.TimeUnit
 import javax.xml.parsers.DocumentBuilderFactory
 
 class ShellKano {
@@ -120,7 +122,7 @@ class ShellKano {
             adbPath: String,
             context: Context,
             resId: String,
-            btnName: String,
+            btnName: List<String>,
             needBack: Boolean = true,
             useClipBoard:Boolean = false
         ): String {
@@ -180,20 +182,20 @@ class ShellKano {
                     val text = attrs.getNamedItem("text")?.nodeValue ?: ""
                     val bounds = attrs.getNamedItem("bounds")?.nodeValue ?: continue
 
-                    if (text.equals(btnName, ignoreCase = true)) {
+                    if (btnName.any { it.equals(text, ignoreCase = true) }) {
                         val regex = Regex("""\[(\d+),(\d+)\]\[(\d+),(\d+)\]""")
                         val match = regex.find(bounds) ?: continue
                         val (x1, y1, x2, y2) = match.destructured
                         val tapX = (x1.toInt() + x2.toInt()) / 2
                         val tapY = (y1.toInt() + y2.toInt()) / 2
                         runShellCommand("$adbPath -s localhost shell input tap $tapX $tapY", context)
-                        Log.d("kano_ZTE_LOG", "点击 $btnName 坐标：$tapX,$tapY")
+                        Log.d("kano_ZTE_LOG", "点击 ${btnName.joinToString(", ")} 坐标：$tapX,$tapY")
                         //继续检测result
                         if (resId != "") {
                             val res = getTextFromUIByResourceId(resId, adbPath, context)
-                            Thread.sleep(50) // 稍等
                             if (needBack) {
                                 //返回就完事了
+                                Thread.sleep(800) // 稍等输入完毕
                                 repeat(10) {
                                     runShellCommand(
                                         "$adbPath -s localhost shell input keyevent KEYCODE_BACK",
@@ -203,9 +205,9 @@ class ShellKano {
                             }
                             return res[0]
                         } else {
-                            Thread.sleep(150) // 稍等输入完毕
                             if (needBack) {
                                 //返回就完事了
+                                Thread.sleep(800) // 稍等输入完毕
                                 repeat(10) {
                                     runShellCommand(
                                         "$adbPath -s localhost shell input keyevent KEYCODE_BACK",
@@ -222,11 +224,12 @@ class ShellKano {
 
             var res:String? = null
 
-            repeat(10){
+            for (i in 0 until 10){
                 val nodes_after = getUiDoc(adbPath, context).getElementsByTagName("node")
                 var temp = getBtnAndClick(nodes_after)
                 if(temp != null){
                     res = temp
+                    break
                 }
             }
 
@@ -234,7 +237,7 @@ class ShellKano {
                 return res as String
             }
 
-            throw Exception("未找到 $btnName 按钮")
+            throw Exception("未找到 ${btnName.joinToString(", ")} 按钮")
         }
 
         fun createShellScript(context: Context, fileName: String, scriptContent: String): File {
@@ -328,62 +331,101 @@ class ShellKano {
         }
 
 
+        fun killProcessByName(processKeyword: String) {
+            try {
+                val psProcess = ProcessBuilder("ps").start()
+                val output = psProcess.inputStream.bufferedReader().readText()
+
+                val lines = output.lines()
+                for (line in lines) {
+                    if (line.contains(processKeyword)) {
+                        val tokens = line.trim().split(Regex("\\s+"))
+                        if (tokens.size > 1) {
+                            val pid = tokens[1]
+                            Log.w("kano_ZTE_LOG", "匹配到进程: $line，准备 kill -9 $pid")
+                            try {
+                                ProcessBuilder("kill", "-9", pid).start().waitFor()
+                                Log.w("kano_ZTE_LOG", "已 kill -9 $pid")
+                            } catch (e: Exception) {
+                                Log.e("kano_ZTE_LOG", "kill -9 $pid 失败: ${e.message}")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "killProcessByName 执行失败: ${e.message}")
+            }
+        }
+
         fun executeShellFromAssetsSubfolderWithArgs(
             context: Context,
             assetSubPath: String,
-            vararg args: String
+            vararg args: String,
+            timeoutMs: Long = 20000,  // 默认最多等20秒
+            onTimeout: (() -> Unit)? = null  // 超时回调
         ): String? {
             return try {
-                // 复制文件到 cache 目录
                 val assetManager = context.assets
                 val inputStream = assetManager.open(assetSubPath)
                 val fileName = File(assetSubPath).name
                 val outFile = File(context.filesDir, fileName)
 
-                try {
+                if (!outFile.exists()) {
                     inputStream.use { input ->
                         FileOutputStream(outFile).use { output ->
                             input.copyTo(output)
                         }
                     }
-                } catch (e: Exception) {
-                    Log.d(
-                        "kano_ZTE_LOG",
-                        "${outFile}文件已存在，无需复制"
-                    )
+                    Log.d("kano_ZTE_LOG", "${outFile} 文件复制完成")
+                } else {
+                    Log.d("kano_ZTE_LOG", "${outFile} 文件已存在，无需复制")
                 }
 
-                // 设置可执行权限
                 outFile.setExecutable(true)
 
-                // 拼接命令
                 val command = ArrayList<String>().apply {
                     add(outFile.absolutePath)
                     addAll(args)
                 }
 
-                // 设置 HOME 环境变量
-                val env = arrayOf("HOME=${context.filesDir.absolutePath}")
+                Log.d("kano_ZTE_LOG", "执行命令: ${command.joinToString(" ")}")
 
-                // 构建 ProcessBuilder
                 val process = ProcessBuilder(command)
-                    .redirectErrorStream(true) // 合并错误输出
+                    .redirectErrorStream(true)
                     .apply {
-                        environment().put("HOME", context.filesDir.absolutePath)
+                        environment()["HOME"] = context.filesDir.absolutePath
                     }
                     .start()
 
-                // 读取输出内容
-                val output = process.inputStream.bufferedReader().readText()
-                process.waitFor()
+                // 启动线程读输出
+                val outputBuilder = StringBuilder()
+                val readerThread = Thread {
+                    try {
+                        process.inputStream.bufferedReader().forEachLine {
+                            outputBuilder.appendLine(it)
+                        }
+                    } catch (e: Exception) {
+                        Log.w("kano_ZTE_LOG", "读取进程输出异常：${e.message}")
+                    }
+                }
+                readerThread.start()
 
-                output
+                // 最多等待 timeoutMs 毫秒
+                val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
+
+                if (!finished) {
+                    Log.w("kano_ZTE_LOG", "执行超时，强制销毁进程")
+                    process.destroy()
+
+                    // 调用回调
+                    onTimeout?.invoke()
+                }
+
+                readerThread.join(100) // 最多等 100ms 等输出读完
+                outputBuilder.toString().trim()
+
             } catch (e: Exception) {
-                Log.d(
-                    "kano_ZTE_LOG",
-                    "executeShellFromAssetsSubfolderWithArgs 执行出错：${e.message}"
-                )
-                e.printStackTrace()
+                Log.e("kano_ZTE_LOG", "执行异常: ${e.message}")
                 null
             }
         }

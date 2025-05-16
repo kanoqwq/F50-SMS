@@ -103,7 +103,7 @@ function kano_parseSignalBar(val, min = -125, max = -81, green_low = -90, yellow
 
 function kano_getSignalEmoji(strength) {
     const signals = ["📶 ⬜⬜⬜⬜", "📶 🟨⬜⬜⬜", "📶 🟩🟨⬜⬜", "📶 🟩🟩🟨⬜", "📶 🟩🟩🟩🟨", "📶 🟩🟩🟩🟩"];
-    return  `${strength} ${signals[Math.max(0, Math.min(strength, 5))]}`; // 确保输入在 0-5 之间
+    return `${strength} ${signals[Math.max(0, Math.min(strength, 5))]}`; // 确保输入在 0-5 之间
 }
 
 function kano_formatTime(seconds) {
@@ -341,4 +341,9 @@ const collapseGen = (btn_id, collapse_id, storName) => {
         }
     });
     collapseBtn.appendChild(switchComponent);
+}
+
+//inputIMEI
+const inputIMEIAT = () => {
+    document.querySelector('#AT_INPUT').value = 'AT+SPIMEI=0或者1,"你的串号"'
 }

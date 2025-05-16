@@ -5,7 +5,11 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/svg+xml" href="./favicon.webp">
     <title id="TITLE">ZTE-UFI-TOOLS-WEB</title>
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/style/style.css">
     <script src="/script/draglist.js"></script>
 </head>
@@ -40,7 +44,7 @@
                         <button id="SpeedTestBtn" class="btn" onclick="showModal('#speedTestModal')">内网测速</button>
                         <button id="ClientManagement" class="btn">连接设备管理</button>
                         <button id="WIFIManagement" class="btn">WIFI设置</button>
-                        <button id="AT" class=" btn" onclick="createToast('请登录','red')">AT指令</button>
+                        <button id="AT" class="btn" onclick="createToast('请登录','red')">AT指令</button>
                         <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
                         <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
                         <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
@@ -638,7 +642,7 @@
                 <div class="title" style="margin-bottom: 4px;">主题背景设置</div>
                 <div style="text-align: left ;">
                     <p style="font-size: 14px"><label
-                            style="display: flex;align-items: center;"><span>启用背景？</span><input type="checkbox"
+                            style="display: flex;align-items: center;"><span>启用背景图片？</span><input type="checkbox"
                                 id="isCheckedBG"></label></p>
                     <p style="font-size: 14px;">图片网址：
                         <input placeholder="输入网址" type="text" id="BG_INPUT"
@@ -710,9 +714,8 @@
             </div>
             <!-- 指令执行模态框 -->
             <div class="mask" id="ATModal" style="display: none">
-                <div class="modal" style="width: 90%;max-width: 400px; display: flex;flex-direction: column;">
+                <div class="modal" style="width: 90%;max-width: 800px; display: flex;flex-direction: column;">
                     <div class="title" style="margin-bottom: 4px;">指令工具</div>
-                    <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
                     <div class="title" style="margin-bottom: 4px;font-size: 12px;">
                         <i>⚠️警告：执行自定义 AT 指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
                     </div>
@@ -734,21 +737,34 @@
                                 onclick="disableButtonWhenExecuteFunc(event,handleATFormSubmit)">GO</button>
                         </div>
                         <div style="margin-top: 2px;margin-bottom: 10px;">
-                            <p style="font-size: 14px;margin-bottom: 10px;margin-top: 8px;">快捷指令</p>
                             <div style="display: flex;flex-wrap: wrap; gap: 10px;">
                                 <div>
+                                    <p style="font-size: 14px;margin-bottom: 10px;margin-top: 8px;">快捷指令</p>
                                     <button class="btn"
-                                        onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">点我查卡速率</button>
+                                        onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">QCI等级</button>
                                     <button class="btn"
-                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGSN'))">点我查IMEI</button>
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGSN'))">IMEI</button>
                                     <button class="btn"
-                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGMR'))">点我查基带信息</button>
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGMR'))">基带信息</button>
                                     <button class="btn" style="margin-top: 6px;"
-                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CIMI'))">点我查IMSI</button>
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CIMI'))">IMSI</button>
+                                    <button class="btn" style="margin-top: 6px;"
+                                        onclick="disableButtonWhenExecuteFunc(event,()=>inputIMEIAT())">填入改串指令</button>
                                 </div>
-                                <button class="btn"
-                                    onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">(此选项需开启网络adb自启并重启机器)<br />(完成后手动连一下smb)<br />更改Samba目录到
-                                    / </button>
+                                <div>
+                                    <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
+                                    <div class="title" style="font-size: 10px;margin-bottom: 10px;">
+                                        <div>
+                                            <i>TTYD端口为1146(三击标题区域可更改) 还原smb配置：ttyd执行：<code>sh /sdcard/unlock_samba.sh</code>重启机器即可</i>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex;gap: 10px;flex-wrap: wrap;">
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">永久更改Samba目录+添加TTYD</button>
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,handleShell)">一键执行shell脚本<br>(脚本需在/sdcard/one_click_shell.sh)</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
@@ -827,16 +843,21 @@
             </div>
             <!-- 版本更新模态框 -->
             <div class="mask" id="updateSoftwareModal" style="display: none;">
-                <div class="modal">
+                <div class="modal" style="
+                    width: 90%;
+                    max-width: 800px;
+                ">
                     <div class="title">UFI-TOOLS 软件更新</div>
                     <div style="font-size: 12px;margin-top: 10px;" class="adb_status title"></div>
                     <div class="title" style="font-size: 12px;margin-top: 10px;">
-                        <i>软件更新功能需要启用网络ADB调试功能，没有启用无法使用 ”一键更新“ 功能，可以点击 "下载安装包" 自行下载安装，如果更新失败，可以关闭窗口再试</i>
+                        <div>
+                            <i>软件更新功能需要启用网络ADB调试功能，没有启用无法使用 ”一键更新“ 功能，可以点击 "下载安装包" 自行下载安装，如果更新失败，可以关闭窗口再试</i><br>
+                            <i>使用有线网络的用户，请暂时关掉"网络ADB自启"开关，否则更新完成之后会断网</i>
+                        </div>
                     </div>
                     <div class="content" style="
                         overflow-y: scroll;
-                        padding: 15px;
-                        width: 66vw;
+                        margin: 15px 0;
                         max-width: 400px;">
                         <div class="speedtest" style="font-size: 12px;" id="OTATextContent">正在检查更新...</div>
                         <div class="speedtest" style="font-size: 12px;" id="ChangelogTextContent"></div>
@@ -844,7 +865,8 @@
                     <div class="btn" style="text-align: right;">
                         <button id="doUpdate">一键更新</button>
                         <button id="downloadAPK">下载安装包</button>
-                        <button id="closeUpdateBtn" type="button" onclick="closeModal('#updateSoftwareModal')">关闭</button>
+                        <button id="closeUpdateBtn" type="button"
+                            onclick="closeModal('#updateSoftwareModal')">关闭</button>
                     </div>
                 </div>
             </div>

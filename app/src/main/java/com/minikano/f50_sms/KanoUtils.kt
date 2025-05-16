@@ -11,6 +11,9 @@ import com.minikano.f50_sms.WebServer.MyStorageInfo
 import java.util.Calendar
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.util.Log
+import java.io.File
+import java.io.FileOutputStream
 
 class KanoUtils {
     companion object {
@@ -182,6 +185,71 @@ class KanoUtils {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText(label, text)
             clipboard.setPrimaryClip(clip)
+        }
+
+        fun copyFileToFilesDir(context: Context, path: String, skipIfExists: Boolean = true): File? {
+            val assetManager = context.assets
+            val fileName = File(path).name
+            val outFile = File(context.filesDir, fileName)
+
+            // 如果是追加模式且目标文件已存在，则直接返回该文件，避免干扰可执行文件的运行
+            if (skipIfExists && outFile.exists()) {
+                Log.d("kano_ZTE_LOG", "文件已存在，跳过复制：${outFile.absolutePath}")
+                return outFile
+            }
+
+            val input = try {
+                assetManager.open(path)
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "assets 中不存在文件: $path")
+                return null
+            }
+
+            return try {
+                Log.d("kano_ZTE_LOG", "开始复制 $fileName 到 ${context.filesDir}（skipIfExists？：$skipIfExists）")
+                input.use { ins ->
+                    FileOutputStream(outFile, skipIfExists).use { out ->
+                        ins.copyTo(out)
+                    }
+                }
+                Log.d("kano_ZTE_LOG", "复制 $fileName 成功 -> ${outFile.absolutePath}")
+                outFile
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "复制 $fileName 失败: ${e.message}")
+                null
+            }
+        }
+
+        fun copyAssetToExternalStorage(context: Context, assetPath: String, skipIfExists: Boolean = false): File? {
+            val fileName = File(assetPath).name
+            val outFile = File(context.getExternalFilesDir(null), fileName)
+
+            // 如果是追加模式且目标文件已存在，则直接返回该文件，避免干扰可执行文件的运行
+            if (skipIfExists && outFile.exists()) {
+                Log.d("kano_ZTE_LOG", "外部文件已存在，跳过复制：${outFile.absolutePath}")
+                return outFile
+            }
+
+            val input = try {
+                context.assets.open(assetPath)
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "assets 中不存在文件: $assetPath")
+                return null
+            }
+
+            return try {
+                Log.d("kano_ZTE_LOG", "开始复制 $fileName 到外部存储目录（skipIfExists?：$skipIfExists）")
+                input.use { ins ->
+                    FileOutputStream(outFile, skipIfExists).use { out ->
+                        ins.copyTo(out)
+                    }
+                }
+                Log.d("kano_ZTE_LOG", "复制成功 -> ${outFile.absolutePath}")
+                outFile
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "复制失败: ${e.message}")
+                null
+            }
         }
     }
 }

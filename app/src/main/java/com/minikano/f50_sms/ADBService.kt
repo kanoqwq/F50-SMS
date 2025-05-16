@@ -22,59 +22,73 @@ class ADBService : Service() {
         var adbIsReady: Boolean = false
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(1, createNotification())
 
-        runnable = object : Runnable {
-            override fun run() {
-                Log.d("MyService", "保活ADB服务中...")
-                handler.postDelayed(this, 11_000) // 每 11 秒执行一次
-                try {
-                    val adbPath = "shell/adb"
-                    // 第一次检测
-                    var result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices")
-                    Log.d("kano_ZTE_LOG", "adb device 执行状态：$result")
+        Thread {
+            try {
+                val adbPath = "shell/adb"
+
+                while (true) {
+                    //激活SMB指令
+                    Log.d("kano_ZTE_LOG", "激活SMB内置脚本中...")
+                    SmbThrottledRunner.runOnceInThread()
+
+                    Log.d("kano_ZTE_LOG", "保活ADB服务中...")
+                    var result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices",
+                        onTimeout = {
+                            ShellKano.killProcessByName("adb")
+                        })
+                    Log.d("kano_ZTE_LOG", "adb devices 执行状态：$result")
 
                     if (result?.contains("localhost:5555\tdevice") == true) {
                         Log.d("kano_ZTE_LOG", "adb存活，无需启动")
                         adbIsReady = true
-                        return
-                    }
+                    } else {
+                        Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
+                        adbIsReady = false
 
-                    adbIsReady = false
+                        // 重启 ADB 服务
+                        ShellKano.killProcessByName("adb")
+//                        executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "kill-server", logTag = "kill-server")
+                        Thread.sleep(1000)
+                        executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "connect", "localhost",
+                            onTimeout = {
+                                ShellKano.killProcessByName("adb")
+                            })
 
-                    Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
+                        // 等待最多 5 秒，看设备是否连接成功
+                        val maxWaitMs = 5_000
+                        val interval = 500
+                        var waited = 0
 
-                    // 重启 ADB server
-                    executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "kill-server")
-                    Thread.sleep(1000)
-                    executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "connect", "localhost")
+                        while (waited < maxWaitMs) {
+                            result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices",
+                                onTimeout = {
+                                ShellKano.killProcessByName("adb")
+                            })
+                            if (result?.contains("localhost:5555\tdevice") == true) {
+                                Log.d("kano_ZTE_LOG", "ADB连接成功: $result")
+                                adbIsReady = true
+                                break
+                            } else {
+                                Log.d("kano_ZTE_LOG", "未等待到ADB成功结果：$result")
+                            }
 
-                    // 等待最多 10 秒，设备变为 "device"
-                    val maxWaitMs = 10_000
-                    val interval = 500
-                    var waited = 0
-
-                    while (waited < maxWaitMs) {
-                        result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices")
-                        Log.d("kano_ZTE_LOG", "等待 ADB 启动中：$result")
-                        if (result?.contains("localhost:5555\tdevice") == true) {
-                            Log.d("kano_ZTE_LOG", "ADB连接成功")
-                            return
+                            Thread.sleep(interval.toLong())
+                            waited += interval
                         }
-                        Thread.sleep(interval.toLong())
-                        waited += interval
                     }
 
-                    Log.e("kano_ZTE_LOG", "等待ADB device超时")
-                    return
-                } catch (e: Exception) {
-                    Log.e("kano_ZTE_LOG", "检测/启动ADB失败: ${e.message}")
-                    return
+                    // 等待下一轮检测
+                    Thread.sleep(11_000)
                 }
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "ADB 保活线程异常: ${e.message}")
             }
-        }
-        handler.post(runnable)
+        }.start()
+
         return START_STICKY
     }
 

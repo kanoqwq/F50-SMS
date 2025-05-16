@@ -3,6 +3,22 @@ const MODEL = document.querySelector("#MODEL")
 let QORS_MESSAGE = null
 let smsSender = null
 let psw_fail_num = 0
+
+//ttyd
+if (!localStorage.getItem('ttyd_port')) {
+    localStorage.setItem('ttyd_port', 1146)
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => {
+            console.log('Service Worker 注册成功:', reg);
+        })
+        .catch(err => {
+            console.error('Service Worker 注册失败:', err);
+        });
+}
+
 //判断一下是否需要token
 const needToken = async () => {
     //获取设备型号与电量，整合（如果有）
@@ -318,6 +334,7 @@ function main_func() {
         initScheduleRebootStatus()
         initShutdownBtn()
         initATBtn()
+        initShellBtn()
         initChangePassData()
         initSimCardType()
         QOSRDPCommand("AT+CGEQOSRDP=1")
@@ -2558,12 +2575,14 @@ function main_func() {
     //执行smb目录更改
     const handleSambaPath = async (command = '/') => {
         const AT_RESULT = document.querySelector('#AT_RESULT')
-        AT_RESULT.innerHTML = "执行中,请耐心等待..."
         let adb_status = await adbKeepAlive()
         if (!adb_status) {
             AT_RESULT.innerHTML = ""
             return createToast('ADB未初始化，请等待初始化完成', 'red')
         }
+
+        AT_RESULT.innerHTML = "执行中,请耐心等待..."
+
         try {
             const command_enc = encodeURIComponent(command)
             const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
@@ -3115,12 +3134,46 @@ function main_func() {
     }
     adbQuery()
 
+    //执行shell脚本
+    const handleShell = async () => {
+        const AT_RESULT = document.querySelector('#AT_RESULT')
+        let adb_status = await adbKeepAlive()
+        if (!adb_status) {
+            AT_RESULT.innerHTML = ""
+            return createToast('ADB未初始化，请等待初始化完成', 'red')
+        }
+
+        AT_RESULT.innerHTML = "执行中,请耐心等待..."
+
+        try {
+            const res = await (await fetch(`${KANO_baseURL}/one_click_shell`, {
+                headers: common_headers
+            })).json()
+            if (res) {
+                if (res.error) {
+                    AT_RESULT.innerHTML = res.error;
+                    createToast('执行失败', 'red');
+                    return;
+                }
+                AT_RESULT.innerHTML = res.result;
+                createToast('执行完成', 'green');
+            } else {
+                AT_RESULT.innerHTML = '';
+                createToast('执行失败', 'red');
+            }
+        } catch (e) {
+            AT_RESULT.innerHTML = '';
+            createToast('执行失败', 'red');
+        }
+
+    }
+
     //挂载方法到window
     const methods = {
+        handleShell,
         handleDownloadSoftwareLink,
         handleUpdateSoftware,
         enableTTYD,
-        createToast,
         changeNetwork,
         changeUSBNetwork,
         changeSimCard,
@@ -3149,8 +3202,6 @@ function main_func() {
         startTest,
         handleLoopMode,
         onClosePayModal,
-        showModal,
-        closeModal,
         handleTTYDFormSubmit,
         handleQosAT,
         handleSambaPath,

@@ -154,7 +154,7 @@ input::placeholder {
     text-align: center;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-radius: 10px;
+    border-radius: 10px 10px 0 0;
     /* color: var(--dark-text-color); */
     font-size: 12px;
 }
