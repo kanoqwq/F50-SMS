@@ -40,8 +40,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.nanohttpd)
     implementation(libs.slf4j.nop)
+    implementation(libs.nanohttpd)
     implementation(libs.jcifs.ng) {
         exclude(group = "org.slf4j")
     }

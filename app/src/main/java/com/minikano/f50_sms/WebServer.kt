@@ -12,18 +12,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.KeyStore
 import java.util.Random
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
 import kotlin.concurrent.thread
 
 class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port) {
@@ -270,115 +265,54 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 try {
                     // 解析 query 参数
                     val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
-                    val path_command_arr =
-                        rawParams["path"] ?: throw Exception("qeury 缺少 path 参数")
-                    val path_command = path_command_arr[0]
-                    Log.d("kano_ZTE_LOG", "path 传入参数：${path_command}")
+                    val qeury_arr =
+                        rawParams["enable"] ?: throw Exception("qeury 缺少 enable 参数")
+                    val enabled = qeury_arr[0]
+                    Log.d("kano_ZTE_LOG", "enable 传入参数：${enabled}")
 
                     //复制依赖
                     val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
-                    val outFile_smb = KanoUtils.copyAssetToExternalStorage(context_app,"shell/smb.conf",false)  ?: throw Exception("复制smb.conf 到filesDir失败")
+                    val smb_path = SMBConfig.writeConfig(context_app)  ?: throw Exception("复制smb.conf 到filesDir失败")
                     val outFile_ttyd = KanoUtils.copyFileToFilesDir(context_app,"shell/ttyd") ?: throw Exception("复制ttyd 到filesDir失败")
-                    val outFile_smb_sh = KanoUtils.copyFileToFilesDir(context_app,"shell/samba_change.sh",false) ?: throw Exception("复制samba_change.sh 到filesDir失败")
+                    val outFile_socat = KanoUtils.copyFileToFilesDir(context_app,"shell/socat") ?: throw Exception("socat 到filesDir失败")
+                    val outFile_smb_sh = KanoUtils.copyFileToFilesDir(context_app,"shell/samba_exec.sh",false) ?: throw Exception("复制samba_exec.sh 到filesDir失败")
 
                     outFile_smb_sh.setExecutable(true)
                     outFile_adb.setExecutable(true)
                     outFile_ttyd.setExecutable(true)
+                    outFile_socat.setExecutable(true)
+                    var jsonResult = """{"result":"执行成功，重启生效！"}"""
 
-                    //复制smb到sdcard
-                    val smb_res = runShellCommand(
-                        "${outFile_adb.absolutePath} -s localhost shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}",
-                        context_app
-                    ) ?: throw Exception("smb复制到sd卡失败")
-                    Log.d(
-                        "kano_ZTE_LOG",
-                        "执行：${outFile_adb.absolutePath} -s localhost shell cp ${outFile_smb.absolutePath} /sdcard/${outFile_smb.name}：$smb_res"
-                    )
-
-                    //复制ttyd到sdcard
-                    val ttyd_res = runShellCommand(
-                        "${outFile_adb.absolutePath} -s localhost shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}",
-                        context_app
-                    ) ?: throw Exception("ttyd复制到sd卡失败")
-                    Log.d(
-                        "kano_ZTE_LOG",
-                        "执行：${outFile_adb.absolutePath} -s localhost shell cp ${outFile_ttyd.absolutePath} /sdcard/${outFile_ttyd.name}：$ttyd_res"
-                    )
-
-                    fun click_stage1() {
-                        var Eng_result:Any? = null
-                        // 唤醒屏幕
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
-                        Thread.sleep(10)
-                        // 解锁
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
-                        Thread.sleep(10)
-                        // 点击一下，防止系统卡住
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
-                        Thread.sleep(10)
-                        repeat(10) {
-                            Eng_result = runShellCommand(
-                                "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
-                                context_app
-                            )
-                            Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
+                    if(enabled == "1") {
+                        //输入指令，点击发送
+                        runShellCommand(
+                            "${outFile_adb.absolutePath} -s localhost shell cat ${smb_path} > /data/samba/etc/smb.conf",
+                            context = context_app
+                        ) ?: throw Exception("修改smb.conf失败")
+                        jsonResult = """{"result":"执行成功，等待一会儿即可生效！"}"""
+                    } else {
+                        val script = """
+                            sh /sdcard/ufi_tools_boot.sh
+                            chattr -i /data/samba/etc/smb.conf
+                            chmod 644 /data/samba/etc/smb.conf
+                            rm -f /data/samba/etc/smb.conf
+                            sync
+                        """.trimIndent()
+                        val socketPath = File(context_app.filesDir.absolutePath,"kano_root_shell.sock")
+                        if(!socketPath.exists()){
+                           throw Exception("执行失败，没有找到socat创建的sock")
                         }
-                        if(Eng_result == null) {
-                            throw Exception("工程模式活动打开失败")
-                        }
-                        Thread.sleep(400)
-                        val res_debug_log_btn = ShellKano.parseUiDumpAndClick(
-                            "DEBUG&LOG", outFile_adb.absolutePath, context_app
-                        )
-                        if (res_debug_log_btn == -1) throw Exception("点击 DEBUG&LOG 失败")
-                        if (res_debug_log_btn == 0) {
-                            val res = ShellKano.parseUiDumpAndClick(
-                                "Adb shell", outFile_adb.absolutePath, context_app
-                            )
-                            if (res == -1) throw Exception("点击 Adb Shell 按钮失败")
-                        }
+                        val result =  RootShell.sendCommandToSocket(script, socketPath.absolutePath) ?: throw Exception("删除smb.conf失败")
+                        Log.d("kano_ZTE_LOG", "sendCommandToSocket Output:\n$result")
                     }
 
-                    fun tryClickStage1(maxRetry: Int = 2) {
-                        var retry = 0
-                        while (retry <= maxRetry) {
-                            try {
-                                click_stage1()
-                                return // 成功则直接退出
-                            } catch (e: Exception) {
-                                Log.w("kano_ZTE_LOG", "click_stage1 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
-                                // 退回操作
-                                repeat(10) {
-                                    runShellCommand(
-                                        "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_BACK",
-                                        context_app
-                                    )
-                                }
-                                Thread.sleep(1000)
-                                retry++
-                            }
-                        }
-                        throw Exception("click_stage1 多次重试失败")
-                    }
+                    //刷新SMB
+                    Log.d("kano_ZTE_LOG", "刷新SMB中...")
+                    SmbThrottledRunner.runOnceInThread()
 
-                    tryClickStage1()
-
-                    //输入指令，点击发送
-                    var jsonResult = """{"result":"执行成功"}"""
-                    try {
-                        val escapedCommand =
-                            "toybox cp /sdcard/${outFile_smb.name} /data/samba/etc/".replace(
-                                "\"", "\\\""
-                            )
-                        fillInputAndSend(
-                            escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"), useClipBoard = true
-                        )
-                    } catch (e: Exception) {
-                        jsonResult = """{"result":"执行失败"}"""
-                    }
                     writer.write(jsonResult)
                 } catch (e: Exception) {
-                    writer.write("""{"error":"AT指令执行错误：${e.message}"}""")
+                    writer.write("""{"error":"执行错误：${e.message}"}""")
                 } finally {
                     writer.flush()
                     pipedOutput.close()

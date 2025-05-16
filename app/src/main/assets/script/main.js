@@ -2573,7 +2573,7 @@ function main_func() {
     }
 
     //执行smb目录更改
-    const handleSambaPath = async (command = '/') => {
+    const handleSambaPath = async (flag = '1') => {
         const AT_RESULT = document.querySelector('#AT_RESULT')
         let adb_status = await adbKeepAlive()
         if (!adb_status) {
@@ -2584,8 +2584,7 @@ function main_func() {
         AT_RESULT.innerHTML = "执行中,请耐心等待..."
 
         try {
-            const command_enc = encodeURIComponent(command)
-            const res = await (await fetch(`${KANO_baseURL}/smbPath?path=${command_enc}`, { headers: common_headers })).json()
+            const res = await (await fetch(`${KANO_baseURL}/smbPath?enable=${flag}`, { headers: common_headers })).json()
             if (res) {
                 if (res.error) {
                     AT_RESULT.innerHTML = res.error;

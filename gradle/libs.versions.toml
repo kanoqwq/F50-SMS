@@ -3,6 +3,9 @@ agp = "8.7.2"
 androidxLifecycleRuntimeKtx = "2.6.2"
 jcifsNg = "2.1.8"
 jcifsNgVersion = "2.1.6"
+junixsocketCore = "2.6.0"
+junixsocketNativeCommon = "2.6.0"
+junixsocketNativeLibrary = "2.7.0"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -38,6 +41,9 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+junixsocket-core = { module = "com.kohlschutter.junixsocket:junixsocket-core", version.ref = "junixsocketCore" }
+junixsocket-native-common = { module = "com.kohlschutter.junixsocket:junixsocket-native-common", version.ref = "junixsocketNativeCommon" }
+junixsocket-native-library = { module = "com.kohlschutter.junixsocket:junixsocket-native-library", version.ref = "junixsocketNativeLibrary" }
 nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }

@@ -717,7 +717,7 @@
                 <div class="modal" style="width: 90%;max-width: 800px; display: flex;flex-direction: column;">
                     <div class="title" style="margin-bottom: 4px;">指令工具</div>
                     <div class="title" style="margin-bottom: 4px;font-size: 12px;">
-                        <i>⚠️警告：执行自定义 AT 指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
+                        <i>⚠️警告：执行自定义 AT与指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
                     </div>
                     <p style="font-size: 14px;margin-bottom: 0;margin-top:10px;">自定义AT指令</p>
                     <div style="margin: 10px 0;">
@@ -741,7 +741,7 @@
                                 <div>
                                     <p style="font-size: 14px;margin-bottom: 10px;margin-top: 8px;">快捷指令</p>
                                     <button class="btn"
-                                        onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">QCI等级</button>
+                                        onclick="disableButtonWhenExecuteFunc(event,handleQosAT)">签约速率</button>
                                     <button class="btn"
                                         onclick="disableButtonWhenExecuteFunc(event,()=>handleAT('AT+CGSN'))">IMEI</button>
                                     <button class="btn"
@@ -755,12 +755,15 @@
                                     <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
                                     <div class="title" style="font-size: 10px;margin-bottom: 10px;">
                                         <div>
-                                            <i>TTYD端口为1146(三击标题区域可更改) 还原smb配置：ttyd执行：<code>sh /sdcard/unlock_samba.sh</code>重启机器即可</i>
+                                            <i>TTYD端口为1146(三击标题区域可更改)</i><br>
+                                            <i style="user-select: all">如还原Samba目录报错，可以在TTYD上执行 sh /sdcard/unlock_samba.sh</i>
                                         </div>
                                     </div>
                                     <div style="display: flex;gap: 10px;flex-wrap: wrap;">
                                         <button class="btn"
-                                            onclick="disableButtonWhenExecuteFunc(event,handleSambaPath)">永久更改Samba目录+添加TTYD</button>
+                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath())">永久更改Samba目录+添加TTYD</button>
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath('0'))">还原Samba目录+移除TTYD(重启生效)</button>
                                         <button class="btn"
                                             onclick="disableButtonWhenExecuteFunc(event,handleShell)">一键执行shell脚本<br>(脚本需在/sdcard/one_click_shell.sh)</button>
                                     </div>
