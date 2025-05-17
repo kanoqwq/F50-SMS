@@ -1,5 +1,6 @@
 package com.minikano.f50_sms
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -102,8 +103,13 @@ class MainActivity : ComponentActivity() {
 
         val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
 
-        startForegroundService(Intent(this, WebService::class.java))
-        startForegroundService(Intent(this, ADBService::class.java))
+        //防止服务重复启动
+        if (!isServiceRunning(WebService::class.java)) {
+            startForegroundService(Intent(this, WebService::class.java))
+        }
+        if (!isServiceRunning(ADBService::class.java)) {
+            startForegroundService(Intent(this, ADBService::class.java))
+        }
 
         // 注册广播
         registerReceiver(
@@ -215,6 +221,16 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(serverStatusReceiver)
+    }
+
+    fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
     }
 }
 
