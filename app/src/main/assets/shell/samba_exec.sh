@@ -1,5 +1,18 @@
 #!/system/bin/sh
 LOG_FILE="/sdcard/smb_log.log"
+
+MAX_SIZE=$((4 * 1024 * 1024))  # 4MB = 4 * 1024 * 1024 bytes
+
+# check log file
+if [ -f "$LOG_FILE" ]; then
+    # get file size
+    FILE_SIZE=$(wc -c < "$LOG_FILE")
+
+    if [ "$FILE_SIZE" -ge "$MAX_SIZE" ]; then
+        echo "Log file exceeded 4MB, clearing..." > "$LOG_FILE"
+    fi
+fi
+
 #lock samba conf
 chmod 444 /data/samba/etc/smb.conf
 chattr +i /data/samba/etc/smb.conf
@@ -20,12 +33,13 @@ echo "$UNLOCK_SAMBA_CONF" > /sdcard/unlock_samba.sh
 TARGET_SCRIPT="/sdcard/ufi_tools_boot.sh"
 
 if [ -f "$TARGET_SCRIPT" ]; then
-    echo "exec $TARGET_SCRIPT ..." >> "$LOG_FILE"
+    echo "[`date`] exec $TARGET_SCRIPT ..." >> "$LOG_FILE"
     sh "$TARGET_SCRIPT"
 else
     echo "$BOOTUP_SH" > /sdcard/ufi_tools_boot.sh
-    echo "$TARGET_SCRIPT not found，skip" >> "$LOG_FILE"
+    echo "[`date`] $TARGET_SCRIPT not found，skip" >> "$LOG_FILE"
 fi
+
 TTYD_PATH="/data/data/com.minikano.f50_sms/files/ttyd"
 
 #Drop port for ipv6
@@ -36,12 +50,12 @@ ip6tables -A INPUT -p tcp --dport 445 -j DROP
 ip6tables -A INPUT -p tcp --dport 5555 -j DROP
 
 # check ttyd running
-if ! top -n 1 | grep "ttyd --writable --port 1146 /system/bin/sh" | grep -v grep > /dev/null; then
-    echo "start ttyd..." >> /sdcard/smb_log.log
+if ! ps -ef | grep "ttyd --writable --port 1146 /system/bin/sh" | grep -v grep > /dev/null; then
+    echo "[`date`] start ttyd..." >> "$LOG_FILE"
 
     "$TTYD_PATH" --writable --port 1146 /system/bin/sh &
 else
-    echo "ttyd already running." >> "$LOG_FILE"
+    echo "[`date`] ttyd already running." >> "$LOG_FILE"
 fi
 
 SOCKET_DIR="/data/data/com.minikano.f50_sms/files"
@@ -52,7 +66,7 @@ SOCAT_PATH="/data/data/com.minikano.f50_sms/files/socat"
 mkdir -p "$SOCKET_DIR"
 
 # check socat running
-if ! lsof | grep "$SOCKET_FILE" > /dev/null 2>&1; then
+if ! ps -ef | grep "$SOCKET_FILE" | grep -v grep > /dev/null; then
     echo "[`date`] start socat..." >> "$LOG_FILE"
     # run socat unix socket，exec /system/bin/sh
     "$SOCAT_PATH" -d -d UNIX-LISTEN:"$SOCKET_FILE",fork,reuseaddr,unlink-early EXEC:/system/bin/sh &
