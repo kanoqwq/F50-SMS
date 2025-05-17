@@ -317,7 +317,9 @@ function main_func() {
 
     //初始化所有按钮
     const initRenderMethod = async () => {
+        initChangePassData()
         adbQuery()
+        loadTitle()
         initUpdateSoftware()
         handlerADBStatus()
         handlerADBNetworkStatus()
@@ -335,7 +337,6 @@ function main_func() {
         initShutdownBtn()
         initATBtn()
         initShellBtn()
-        initChangePassData()
         initSimCardType()
         QOSRDPCommand("AT+CGEQOSRDP=1")
     }
@@ -573,7 +574,6 @@ function main_func() {
         }
         let res = await getUFIData()
         if (!res) {
-            MODEL.innerHTML = " 设备："
             // out()
             if (flag) {
                 status.innerHTML = `<li style="padding-top: 15px;"><strong onclick="copyText(event)" class="green">当你看到这个tag的时候，请检查你的网络连接与软件内网关地址是否正确~</strong></li>`
@@ -588,7 +588,6 @@ function main_func() {
         }
         if (res) {
             adbQuery()
-            MODEL.innerHTML = " 设备：" + res.model
             isNotLoginOnce = false
             const current_cell = document.querySelector('#CURRENT_CELL')
             let html = ''
@@ -2129,8 +2128,9 @@ function main_func() {
     // title
     const loadTitle = async () => {
         try {
-            const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
-            document.querySelector('#TITLE').innerHTML = `ZTE-UFI-TOOLS-WEB Ver: ${app_ver}`
+            const { app_ver, model } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
+            MODEL.innerHTML = `设备：${model}`
+            document.querySelector('#TITLE').innerHTML = `[${model}]ZTE-UFI-TOOLS-WEB Ver: ${app_ver}`
             document.querySelector('#MAIN_TITLE').innerHTML = `ZTE-UFI管理工具 <span style="font-size:14px">Ver: ${app_ver}</span>`
         } catch {/*没有，不处理*/ }
     }
@@ -3100,7 +3100,7 @@ function main_func() {
                             isLatest = false;
                         }
                         // 如果版本号相同，再比时间
-                        else if ((versionNew === versionCurrent)  && formatted_date) {
+                        else if ((versionNew === versionCurrent) && formatted_date) {
                             const newDate = Number(formatted_date);
                             const currentDate = Number(app_ver_code);
 

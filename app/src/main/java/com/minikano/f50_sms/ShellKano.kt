@@ -500,7 +500,7 @@ class ShellKano {
 
                 return output
             } catch (e: Exception) {
-                Log.d("kano_ZTE_LOG", "adb执行出错：${e.message}")
+                Log.d("kano_ZTE_LOG", "执行出错：${e.message}")
                 e.printStackTrace()
             }
 
