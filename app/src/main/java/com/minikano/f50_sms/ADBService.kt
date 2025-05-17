@@ -9,6 +9,7 @@ import android.util.Log
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.minikano.f50_sms.ShellKano.Companion.executeShellFromAssetsSubfolderWithArgs
@@ -22,19 +23,28 @@ class ADBService : Service() {
         var adbIsReady: Boolean = false
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(1, createNotification())
+
+        Thread{
+            while (true){
+                try {
+                    //激活SMB指令
+                    Log.d("kano_ZTE_LOG", "激活SMB内置脚本中...")
+                    SmbThrottledRunner.runOnceInThread(applicationContext)
+                }catch (e:Exception){
+                    Log.e("kano_ZTE_LOG", "激活SMB内置脚本错误")
+                }
+                // 等待下一轮检测
+                Thread.sleep(10_000)
+            }
+        }.start()
 
         Thread {
             try {
                 val adbPath = "shell/adb"
 
                 while (true) {
-                    //激活SMB指令
-                    Log.d("kano_ZTE_LOG", "激活SMB内置脚本中...")
-                    SmbThrottledRunner.runOnceInThread()
-
                     Log.d("kano_ZTE_LOG", "保活ADB服务中...")
                     var result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices",
                         onTimeout = {

@@ -1,3 +1,7 @@
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import java.text.SimpleDateFormat
+import java.util.Date
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -11,9 +15,10 @@ android {
     defaultConfig {
         applicationId = "com.minikano.f50_sms"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "2.8.7"
+        targetSdk = 33
+        // 动态生成 versionCode 为 yyyyMMdd 格式
+        versionCode = SimpleDateFormat("yyyyMMdd").format(Date()).toInt()
+        versionName = "2.8.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +41,24 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    android.applicationVariants.all {
+        val variant = this
+        if (variant.buildType.name == "release") {
+            variant.outputs.all {
+                val output = this as BaseVariantOutputImpl
+
+                val appName = "ZTE-UFI-TOOLS_WEB"
+                val versionName = variant.versionName ?: variant.versionCode
+                val versionCode = variant.versionCode
+                val date = SimpleDateFormat("HHmm").format(Date())
+
+                val newName = "${appName}_V${versionName}_${versionCode}_${date}.apk"
+
+                output.outputFileName = newName
+            }
+        }
     }
 }
 

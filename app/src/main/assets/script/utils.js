@@ -347,3 +347,39 @@ const collapseGen = (btn_id, collapse_id, storName) => {
 const inputIMEIAT = () => {
     document.querySelector('#AT_INPUT').value = 'AT+SPIMEI=0或者1,"你的串号"'
 }
+
+//提取apk中日期与时间
+const getApkDate = (filename = null) => {
+    if (!filename) return {
+        date_str: null,
+        date_obj: null,
+        formatted_date: null
+    }
+    const match = filename.match(/(\d{8}_\d{4})/);
+    if (match) {
+        const datetimeStr = match[1];
+        const [datePart, timePart] = datetimeStr.split('_');
+
+        const year = datePart.slice(0, 4);
+        const month = datePart.slice(4, 6);
+        const day = datePart.slice(6, 8);
+        const hour = timePart.slice(0, 2);
+        const minute = timePart.slice(2, 4);
+
+        const formatted = `${year}-${month}-${day} ${hour}:${minute}`;
+        const formatted_date = `${year}${month}${day}`;
+        const date_obj = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+        return {
+            date_str: formatted,
+            date_obj,
+            formatted_date
+        }
+
+    } else {
+        return {
+            date_str: null,
+            date_obj: null,
+            formatted_date: null
+        }
+    }
+}

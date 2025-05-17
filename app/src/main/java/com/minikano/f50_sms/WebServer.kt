@@ -308,7 +308,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
 
                     //刷新SMB
                     Log.d("kano_ZTE_LOG", "刷新SMB中...")
-                    SmbThrottledRunner.runOnceInThread()
+                    SmbThrottledRunner.runOnceInThread(context_app)
 
                     writer.write(jsonResult)
                 } catch (e: Exception) {
@@ -388,13 +388,14 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val packageManager = context_app.packageManager
                 val packageName = context_app.packageName
                 val versionName = packageManager.getPackageInfo(packageName, 0).versionName
+                val versionCode= packageManager.getPackageInfo(packageName, 0).versionCode
 
                 Log.d("kano_ZTE_LOG", "型号与电量：$model $batteryLevel")
 
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"app_ver":"$versionName","model":"$model","battery":"$batteryLevel"}"""
+                    """{"app_ver":"$versionName","app_ver_code":"$versionCode","model":"$model","battery":"$batteryLevel"}"""
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response

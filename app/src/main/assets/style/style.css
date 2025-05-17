@@ -21,6 +21,11 @@
     }
 }
 
+.user_select {
+    user-select: all !important;
+    -webkit-user-select: all !important;
+}
+
 body {
     position: relative;
     margin: 0;

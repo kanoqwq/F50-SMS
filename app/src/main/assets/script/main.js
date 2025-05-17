@@ -3083,10 +3083,39 @@ function main_func() {
             try {
                 const content = await queryUpdate()
                 if (content) {
-                    const { app_ver } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json()
-                    const { name, base_uri, changelog } = content
+                    const { app_ver, app_ver_code } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json();
+                    const { name, base_uri, changelog } = content;
+
                     const version = name.match(/V(\d+\.\d+\.\d+)/i)?.[1];
-                    const isLatest = name.includes(app_ver) || (version <= app_ver)
+                    const appVer = app_ver.match(/(\d+\.\d+\.\d+)/i)?.[1];
+                    const { date_str, formatted_date } = getApkDate(name);
+                    let isLatest = false;
+
+                    if (version && appVer) {
+                        const versionNew = version.trim();
+                        const versionCurrent = appVer.trim();
+
+                        // 如果新版本号大于当前版本
+                        if (versionNew > versionCurrent) {
+                            isLatest = false;
+                        }
+                        // 如果版本号相同，再比时间
+                        else if ((versionNew === versionCurrent)  && formatted_date) {
+                            const newDate = Number(formatted_date);
+                            const currentDate = Number(app_ver_code);
+
+                            if (newDate > currentDate) {
+                                isLatest = false;
+                            } else {
+                                isLatest = true;
+                            }
+                        }
+                    }
+
+                    // 如果包含 force 标志，强制不是最新
+                    if (name.includes('force')) {
+                        isLatest = false;
+                    }
                     const doUpdateEl = document.querySelector('#doUpdate')
                     const doDownloadAPKEl = document.querySelector('#downloadAPK')
                     if (doUpdateEl && doDownloadAPKEl) {
@@ -3107,12 +3136,12 @@ function main_func() {
                         changelogTextContent.innerHTML = changelog
                     }
 
-                    OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver}</div>` : `发现更新:<div>${name}</div>`}`
+                    OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver} ${app_ver_code}</div>` : `<div>发现更新:${name}<br/>${date_str ? `<br/>发布日期：${date_str}` : ''}</div><br/>`}`
                 } else {
-                    throw '出错'
+                    throw new Error('出错')
                 }
             } catch (e) {
-                OTATextContent.innerHTML = '连接更新服务器出错，请检查网络连接'
+                OTATextContent.innerHTML = `连接更新服务器出错，请检查网络连接<br>${e.message ? e.message : ''}`
             }
         }
     }
