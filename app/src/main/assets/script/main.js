@@ -3069,9 +3069,82 @@ function main_func() {
             }, 100);
         }, 50);
     }
+
     //检测更新
-    const initUpdateSoftware = async () => {
+    const checkUpdateAction = async (silent = false) => {
+        const changelogTextContent = document.querySelector('#ChangelogTextContent')
         const OTATextContent = document.querySelector('#OTATextContent')
+        OTATextContent.innerHTML = '正在检查更新...'
+        changelogTextContent.innerHTML = ''
+        !silent && showModal('#updateSoftwareModal')
+        try {
+            const content = await queryUpdate()
+            if (content) {
+                const { app_ver, app_ver_code } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json();
+                const { name, base_uri, changelog } = content;
+
+                const version = name.match(/V(\d+\.\d+\.\d+)/i)?.[1];
+                const appVer = app_ver.match(/(\d+\.\d+\.\d+)/i)?.[1];
+                const { date_str, formatted_date } = getApkDate(name);
+                let isLatest = false;
+
+                if (version && appVer) {
+                    const versionNew = version.trim();
+                    const versionCurrent = appVer.trim();
+
+                    // 如果新版本号大于当前版本
+                    if (versionNew > versionCurrent) {
+                        isLatest = false;
+                    }
+                    // 如果版本号相同，再比时间
+                    else if ((versionNew === versionCurrent) && formatted_date) {
+                        const newDate = Number(formatted_date);
+                        const currentDate = Number(app_ver_code);
+
+                        if (newDate > currentDate) {
+                            isLatest = false;
+                        } else {
+                            isLatest = true;
+                        }
+                    }
+                }
+
+                // 如果包含 force 标志，强制不是最新
+                if (name.includes('force')) {
+                    isLatest = false;
+                }
+                const doUpdateEl = document.querySelector('#doUpdate')
+                const doDownloadAPKEl = document.querySelector('#downloadAPK')
+                if (doUpdateEl && doDownloadAPKEl) {
+                    if (!isLatest) {
+                        doUpdateEl.style.backgroundColor = 'var(--dark-btn-color)'
+                        doDownloadAPKEl.style.backgroundColor = 'var(--dark-btn-color)'
+                        doUpdateEl.onclick = () => handleUpdateSoftware(base_uri + name)
+                        doDownloadAPKEl.onclick = () => handleDownloadSoftwareLink(base_uri + name)
+                    } else {
+                        doUpdateEl.onclick = null
+                        doDownloadAPKEl.onclick = null
+                        doUpdateEl.style.backgroundColor = '#80808073'
+                        doDownloadAPKEl.style.backgroundColor = '#80808073'
+                    }
+                }
+                //获取changeLog
+                if (!isLatest) {
+                    changelogTextContent.innerHTML = changelog
+                }
+                OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver} ${app_ver_code}</div>` : `<div>发现更新:${name}<br/>${date_str ? `<br/>发布日期：${date_str}` : ''}</div><br/>`}`
+                return !isLatest ? version + ' ' + date_str : null
+
+            } else {
+                throw new Error('出错')
+            }
+        } catch (e) {
+            OTATextContent.innerHTML = `连接更新服务器出错，请检查网络连接<br>${e.message ? e.message : ''}`
+            return null
+        }
+    }
+
+    const initUpdateSoftware = async () => {
         const changelogTextContent = document.querySelector('#ChangelogTextContent')
         changelogTextContent.innerHTML = ''
         const btn = document.querySelector('#OTA')
@@ -3085,81 +3158,15 @@ function main_func() {
             btn.style.backgroundColor = '#80808073'
             return null
         }
-
         btn.style.backgroundColor = 'var(--dark-btn-color)'
-
         btn.onclick = async () => {
+            const btn = document.querySelector('#OTA')
             if (!(await initRequestData())) {
                 btn.onclick = () => createToast('请登录', 'red')
                 btn.style.backgroundColor = '#80808073'
                 return null
             }
-            OTATextContent.innerHTML = '正在检查更新...'
-            changelogTextContent.innerHTML = ''
-            showModal('#updateSoftwareModal')
-            try {
-                const content = await queryUpdate()
-                if (content) {
-                    const { app_ver, app_ver_code } = await (await fetch(`${KANO_baseURL}/battery_and_model`, { headers: common_headers })).json();
-                    const { name, base_uri, changelog } = content;
-
-                    const version = name.match(/V(\d+\.\d+\.\d+)/i)?.[1];
-                    const appVer = app_ver.match(/(\d+\.\d+\.\d+)/i)?.[1];
-                    const { date_str, formatted_date } = getApkDate(name);
-                    let isLatest = false;
-
-                    if (version && appVer) {
-                        const versionNew = version.trim();
-                        const versionCurrent = appVer.trim();
-
-                        // 如果新版本号大于当前版本
-                        if (versionNew > versionCurrent) {
-                            isLatest = false;
-                        }
-                        // 如果版本号相同，再比时间
-                        else if ((versionNew === versionCurrent) && formatted_date) {
-                            const newDate = Number(formatted_date);
-                            const currentDate = Number(app_ver_code);
-
-                            if (newDate > currentDate) {
-                                isLatest = false;
-                            } else {
-                                isLatest = true;
-                            }
-                        }
-                    }
-
-                    // 如果包含 force 标志，强制不是最新
-                    if (name.includes('force')) {
-                        isLatest = false;
-                    }
-                    const doUpdateEl = document.querySelector('#doUpdate')
-                    const doDownloadAPKEl = document.querySelector('#downloadAPK')
-                    if (doUpdateEl && doDownloadAPKEl) {
-                        if (!isLatest) {
-                            doUpdateEl.style.backgroundColor = 'var(--dark-btn-color)'
-                            doDownloadAPKEl.style.backgroundColor = 'var(--dark-btn-color)'
-                            doUpdateEl.onclick = () => handleUpdateSoftware(base_uri + name)
-                            doDownloadAPKEl.onclick = () => handleDownloadSoftwareLink(base_uri + name)
-                        } else {
-                            doUpdateEl.onclick = null
-                            doDownloadAPKEl.onclick = null
-                            doUpdateEl.style.backgroundColor = '#80808073'
-                            doDownloadAPKEl.style.backgroundColor = '#80808073'
-                        }
-                    }
-                    //获取changeLog
-                    if (!isLatest) {
-                        changelogTextContent.innerHTML = changelog
-                    }
-
-                    OTATextContent.innerHTML = `${isLatest ? `<div>当前已是最新版本：V${app_ver} ${app_ver_code}</div>` : `<div>发现更新:${name}<br/>${date_str ? `<br/>发布日期：${date_str}` : ''}</div><br/>`}`
-                } else {
-                    throw new Error('出错')
-                }
-            } catch (e) {
-                OTATextContent.innerHTML = `连接更新服务器出错，请检查网络连接<br>${e.message ? e.message : ''}`
-            }
+            checkUpdateAction()
         }
     }
     initUpdateSoftware()
@@ -3212,6 +3219,15 @@ function main_func() {
         }
 
     }
+
+    //开屏后检测更新
+    setTimeout(() => {
+        checkUpdateAction(true).then((res) => {
+            if (res) {
+                createToast(`发现新版本：V${res}`)
+            }
+        })
+    }, 100);
 
     //挂载方法到window
     const methods = {

@@ -13,7 +13,7 @@
       "attributes": [],
       "versionCode": 20250518,
       "versionName": "2.8.8",
-      "outputFile": "ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1714.apk"
+      "outputFile": "ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1908.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1714.dm"
+        "baselineProfiles/1/ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1908.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1714.dm"
+        "baselineProfiles/0/ZTE-UFI-TOOLS_WEB_V2.8.8_20250518_1908.dm"
       ]
     }
   ],
