@@ -2369,10 +2369,12 @@ function main_func() {
             }
             console.log('TTYD已找到，正在启用。。。')
             TTYD.style.display = ''
-            list.innerHTML = `
+            setTimeout(() => {
+                list.innerHTML = `
         <li style = "padding:10px">
                     <iframe src="http://${res.ip}" style="border:none;padding:0;margin:0;width:100%;height:400px;border-radius: 10px;overflow: hidden;opacity: .6;"></iframe>
         </li > `
+            }, 600);
         } catch {
             // console.log();
         }
