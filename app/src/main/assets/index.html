@@ -45,6 +45,7 @@
                         <button id="ClientManagement" class="btn">连接设备管理</button>
                         <button id="WIFIManagement" class="btn">WIFI设置</button>
                         <button id="AT" class="btn" onclick="createToast('请登录','red')">AT指令</button>
+                        <button id="ADVANCE" class="btn" onclick="createToast('请登录','red')">高级功能</button>
                         <button id="CECULLAR" class="btn" onclick="createToast('请登录','red')">开启蜂窝数据</button>
                         <button id="ADB" class="btn" onclick="createToast('请登录','red')">开启USB调试</button>
                         <button id="ADB_NET" class="btn" onclick="createToast('请登录','red')">开启网络ADB自启</button>
@@ -712,12 +713,12 @@
                     </form>
                 </div>
             </div>
-            <!-- 指令执行模态框 -->
+            <!-- AT指令模态框 -->
             <div class="mask" id="ATModal" style="display: none">
                 <div class="modal" style="width: 90%;max-width: 800px; display: flex;flex-direction: column;">
-                    <div class="title" style="margin-bottom: 4px;">指令工具</div>
+                    <div class="title" style="margin-bottom: 4px;">AT指令</div>
                     <div class="title" style="margin-bottom: 4px;font-size: 12px;">
-                        <i>⚠️警告：执行自定义 AT与指令属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
+                        <i style="color: yellow;">⚠️警告：执行自定义AT属于高级操作，请务必确保输入准确无误。因执行指令所引发的任何后果，需由您自行承担。</i>
                     </div>
                     <p style="font-size: 14px;margin-bottom: 0;margin-top:10px;">自定义AT指令</p>
                     <div style="margin: 10px 0;">
@@ -751,23 +752,6 @@
                                     <button class="btn" style="margin-top: 6px;"
                                         onclick="disableButtonWhenExecuteFunc(event,()=>inputIMEIAT())">填入改串指令</button>
                                 </div>
-                                <div>
-                                    <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
-                                    <div class="title" style="font-size: 10px;margin-bottom: 10px;">
-                                        <div>
-                                            <i>TTYD端口为1146(三击标题区域可更改)</i><br>
-                                            <i class="user_select">如还原Samba目录报错，可以在TTYD上执行 sh /sdcard/unlock_samba.sh</i>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex;gap: 10px;flex-wrap: wrap;">
-                                        <button class="btn"
-                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath())">永久更改Samba目录+添加TTYD</button>
-                                        <button class="btn"
-                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath('0'))">还原Samba目录+移除TTYD(重启生效)</button>
-                                        <button class="btn"
-                                            onclick="disableButtonWhenExecuteFunc(event,handleShell)">一键执行shell脚本<br>(脚本需在/sdcard/one_click_shell.sh)</button>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <div class="title" style="margin-top: 14px;">执行结果</div>
@@ -777,6 +761,53 @@
                     </div>
                     <div class="btn" style="text-align: right;margin-top: 6px;">
                         <button type="button" onclick="closeModal('#ATModal')">关闭</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 高级功能模态框 -->
+            <div class="mask" id="advanceModal" style="display: none">
+                <div class="modal" style="width: 90%;max-width: 800px; display: flex;flex-direction: column;">
+                    <div class="title" style="margin-bottom: 4px;">高级功能</div>
+                    <div class="content" style="text-align: left;max-height: 500px;">
+                        <div class="title" style="margin-bottom: 4px;font-size: 12px;">
+                            <b style="color: red;"><i>⚠️ 警告：此功能适合有一定动手能力或对设备了解较多的玩机用户使用。普通用户请勿轻易尝试，否则可能会导致设备异常、数据丢失或无法恢复的问题。</i></b>
+                        </div>
+
+                        <div style="margin-top: 2px;margin-bottom: 10px;">
+                            <div style="display: flex;flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <div class="title" style="font-size: 12px;margin-bottom: 10px;">
+                                        <div>
+                                            <i>TTYD端口为1146(三击标题区域可更改)</i><br>
+                                            <i class="user_select">如去除高级功能报错，可以在TTYD上执行 sh
+                                                /sdcard/unlock_samba.sh 重启生效</i><br>
+                                            <i><br>添加高级功能包括:<br>
+                                                1.优化Samba目录(添加sd卡目录，设备根目录)<br>
+                                                2.添加TTYD，自带RootShell<br>
+                                                3.默认阻止官方后台 TTYD 网络ADB SMB 的ipv6访问，提升安全性<br>
+                                                4.添加定时脚本(开机执行一次，之后30s左右定时执行一次，脚本在内部存储目录下ufi_tools_boot.sh)<br>
+                                                <span style="color: pink;">(感谢酷安 @QuTick @AiCherub @atwat 提供的思路)</span>
+                                            </i>
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;margin: 8px 0;" class="adb_status title"></div>
+                                    <div style="display: flex;gap: 10px;flex-wrap: wrap;">
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath())">添加高级功能</button>
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,()=>handleSambaPath('0'))">移除高级功能(重启生效)</button>
+                                        <button class="btn"
+                                            onclick="disableButtonWhenExecuteFunc(event,handleShell)">一键执行shell脚本<br>(脚本需在/sdcard/one_click_shell.sh)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="title" style="margin-top: 14px;">执行结果</div>
+                        <p id="AD_RESULT" style="margin:20px 0;margin-top: 14px;; font-size: 14px;width: 100%;">
+                        </p>
+                    </div>
+                    <div class="btn" style="text-align: right;margin-top: 6px;">
+                        <button type="button" onclick="closeModal('#advanceModal')">关闭</button>
                     </div>
                 </div>
             </div>

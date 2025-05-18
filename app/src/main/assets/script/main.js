@@ -336,6 +336,7 @@ function main_func() {
         initScheduleRebootStatus()
         initShutdownBtn()
         initATBtn()
+        initAdvanceTools()
         initShellBtn()
         initSimCardType()
         QOSRDPCommand("AT+CGEQOSRDP=1")
@@ -2572,9 +2573,25 @@ function main_func() {
         }
     }
 
-    //执行smb目录更改
+    //初始化高级功能按钮
+    let initAdvanceTools = async () => {
+        const el = document.querySelector('#ADVANCE')
+        if (!(await initRequestData()) || !el) {
+            el.onclick = () => createToast('请登录', 'red')
+            el.style.backgroundColor = '#80808073'
+            return null
+        }
+        el.style.backgroundColor = ''
+        el.onclick = () => {
+            showModal('#advanceModal')
+        }
+    }
+    initAdvanceTools()
+
+
+    //执行高级功能更改 1为启用0为禁用
     const handleSambaPath = async (flag = '1') => {
-        const AT_RESULT = document.querySelector('#AT_RESULT')
+        const AT_RESULT = document.querySelector('#AD_RESULT')
         let adb_status = await adbKeepAlive()
         if (!adb_status) {
             AT_RESULT.innerHTML = ""
@@ -3164,7 +3181,7 @@ function main_func() {
 
     //执行shell脚本
     const handleShell = async () => {
-        const AT_RESULT = document.querySelector('#AT_RESULT')
+        const AT_RESULT = document.querySelector('#AD_RESULT')
         let adb_status = await adbKeepAlive()
         if (!adb_status) {
             AT_RESULT.innerHTML = ""
