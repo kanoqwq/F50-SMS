@@ -11,9 +11,11 @@ import com.minikano.f50_sms.WebServer.MyStorageInfo
 import java.util.Calendar
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.net.Uri
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Date
 
 class KanoUtils {
     companion object {

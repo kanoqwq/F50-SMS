@@ -41,7 +41,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
-
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
@@ -50,7 +49,6 @@ class MainActivity : ComponentActivity() {
     private val serverStatusLiveData = MutableLiveData<Boolean>()
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
-
     fun hasUsageAccessPermission(context: Context): Boolean {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
@@ -68,6 +66,8 @@ class MainActivity : ComponentActivity() {
         // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        //短信权限
+        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), 1)
 
         //请求通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

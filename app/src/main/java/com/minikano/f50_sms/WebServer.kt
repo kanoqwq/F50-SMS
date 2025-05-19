@@ -121,10 +121,12 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             return try {
                 val stat1 =
                     ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat1没有数据")
-                val (total1, idle1) = KanoUtils.parseCpuStat(stat1) ?: throw Exception("parseCpuStat执行失败")
+                val (total1, idle1) = KanoUtils.parseCpuStat(stat1)
+                    ?: throw Exception("parseCpuStat执行失败")
                 val stat2 =
                     ShellKano.runShellCommand("cat /proc/stat") ?: throw Exception("stat2没有数据")
-                val (total2, idle2) = KanoUtils.parseCpuStat(stat2) ?: throw Exception("parseCpuStat执行失败")
+                val (total2, idle2) = KanoUtils.parseCpuStat(stat2)
+                    ?: throw Exception("parseCpuStat执行失败")
                 val totalDiff = total2 - total1
                 val idleDiff = idle2 - idle1
                 val usage = if (totalDiff > 0) (totalDiff - idleDiff).toFloat() / totalDiff else 0f
@@ -212,7 +214,8 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "AT_command 传入参数：${AT_command}")
 
                     //复制依赖
-                    val outFile_at = KanoUtils.copyFileToFilesDir(context_app,"shell/sendat") ?: throw Exception("复制sendat 到filesDir失败")
+                    val outFile_at = KanoUtils.copyFileToFilesDir(context_app, "shell/sendat")
+                        ?: throw Exception("复制sendat 到filesDir失败")
 
                     outFile_at.setExecutable(true)
 
@@ -271,11 +274,19 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     Log.d("kano_ZTE_LOG", "enable 传入参数：${enabled}")
 
                     //复制依赖
-                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
-                    val smb_path = SMBConfig.writeConfig(context_app)  ?: throw Exception("复制smb.conf 到filesDir失败")
-                    val outFile_ttyd = KanoUtils.copyFileToFilesDir(context_app,"shell/ttyd") ?: throw Exception("复制ttyd 到filesDir失败")
-                    val outFile_socat = KanoUtils.copyFileToFilesDir(context_app,"shell/socat") ?: throw Exception("socat 到filesDir失败")
-                    val outFile_smb_sh = KanoUtils.copyFileToFilesDir(context_app,"shell/samba_exec.sh",false) ?: throw Exception("复制samba_exec.sh 到filesDir失败")
+                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app, "shell/adb")
+                        ?: throw Exception("复制adb 到filesDir失败")
+                    val smb_path = SMBConfig.writeConfig(context_app)
+                        ?: throw Exception("复制smb.conf 到filesDir失败")
+                    val outFile_ttyd = KanoUtils.copyFileToFilesDir(context_app, "shell/ttyd")
+                        ?: throw Exception("复制ttyd 到filesDir失败")
+                    val outFile_socat =
+                        KanoUtils.copyFileToFilesDir(context_app, "shell/socat") ?: throw Exception(
+                            "socat 到filesDir失败"
+                        )
+                    val outFile_smb_sh =
+                        KanoUtils.copyFileToFilesDir(context_app, "shell/samba_exec.sh", false)
+                            ?: throw Exception("复制samba_exec.sh 到filesDir失败")
 
                     outFile_smb_sh.setExecutable(true)
                     outFile_adb.setExecutable(true)
@@ -283,7 +294,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     outFile_socat.setExecutable(true)
                     var jsonResult = """{"result":"执行成功，重启生效！"}"""
 
-                    if(enabled == "1") {
+                    if (enabled == "1") {
                         //输入指令，点击发送
                         runShellCommand(
                             "${outFile_adb.absolutePath} -s localhost shell cat ${smb_path} > /data/samba/etc/smb.conf",
@@ -298,11 +309,13 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                             rm -f /data/samba/etc/smb.conf
                             sync
                         """.trimIndent()
-                        val socketPath = File(context_app.filesDir.absolutePath,"kano_root_shell.sock")
-                        if(!socketPath.exists()){
-                           throw Exception("执行失败，没有找到socat创建的sock")
+                        val socketPath =
+                            File(context_app.filesDir.absolutePath, "kano_root_shell.sock")
+                        if (!socketPath.exists()) {
+                            throw Exception("执行失败，没有找到socat创建的sock")
                         }
-                        val result =  RootShell.sendCommandToSocket(script, socketPath.absolutePath) ?: throw Exception("删除smb.conf失败")
+                        val result = RootShell.sendCommandToSocket(script, socketPath.absolutePath)
+                            ?: throw Exception("删除smb.conf失败")
                         Log.d("kano_ZTE_LOG", "sendCommandToSocket Output:\n$result")
                     }
 
@@ -388,7 +401,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val packageManager = context_app.packageManager
                 val packageName = context_app.packageName
                 val versionName = packageManager.getPackageInfo(packageName, 0).versionName
-                val versionCode= packageManager.getPackageInfo(packageName, 0).versionCode
+                val versionCode = packageManager.getPackageInfo(packageName, 0).versionCode
 
                 Log.d("kano_ZTE_LOG", "型号与电量：$model $batteryLevel")
 
@@ -586,7 +599,12 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
-                    """{"base_uri":"${download_url}","alist_res":${res.body?.string()},"changelog":"${changelog?.replace(Regex("\r?\n"), "<br>")}"}""".trimIndent()
+                    """{"base_uri":"${download_url}","alist_res":${res.body?.string()},"changelog":"${
+                        changelog?.replace(
+                            Regex("\r?\n"),
+                            "<br>"
+                        )
+                    }"}""".trimIndent()
                 )
                 response.addHeader("Access-Control-Allow-Origin", "*")
                 response
@@ -700,7 +718,8 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                     val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
                     try {
                         //复制依赖
-                        val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
+                        val outFile_adb = KanoUtils.copyFileToFilesDir(context_app, "shell/adb")
+                            ?: throw Exception("复制adb 到filesDir失败")
 
                         outFile_adb.setExecutable(true)
 
@@ -731,23 +750,33 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                         //模拟操作
                         fun click_stage() {
                             //打开工程模式活动
-                            var Eng_result:Any? = null
+                            var Eng_result: Any? = null
                             // 唤醒屏幕
-                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
+                            runShellCommand(
+                                "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP",
+                                context_app
+                            )
                             Thread.sleep(10)
                             // 解锁
-                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
+                            runShellCommand(
+                                "${outFile_adb.absolutePath} -s localhost shell input keyevent 82",
+                                context_app
+                            )
                             Thread.sleep(10)
                             // 点击一下，防止系统卡住
-                            runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
+                            runShellCommand(
+                                "${outFile_adb.absolutePath} -s localhost shell input tap 0 0",
+                                context_app
+                            )
                             Thread.sleep(10)
                             repeat(5) {
                                 Eng_result = runShellCommand(
-                                "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
-                                context_app)
+                                    "${outFile_adb.absolutePath} -s localhost shell am start -n com.sprd.engineermode/.EngineerModeActivity",
+                                    context_app
+                                )
                                 Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                             }
-                            if(Eng_result == null) {
+                            if (Eng_result == null) {
                                 throw Exception("工程模式活动打开失败")
                             }
                             Thread.sleep(400)
@@ -770,7 +799,10 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                     click_stage()
                                     return // 成功则直接退出
                                 } catch (e: Exception) {
-                                    Log.w("kano_ZTE_LOG", "click_stage 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
+                                    Log.w(
+                                        "kano_ZTE_LOG",
+                                        "click_stage 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}"
+                                    )
                                     // 退回操作
                                     repeat(10) {
                                         runShellCommand(
@@ -795,7 +827,11 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                     "\"", "\\\""
                                 )
                             fillInputAndSend(
-                                escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"),
+                                escapedCommand,
+                                outFile_adb.absolutePath,
+                                context_app,
+                                "",
+                                listOf("START", "开始"),
                                 needBack = false,
                                 useClipBoard = true
                             )
@@ -821,16 +857,18 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         }
 
         //ADB初始化状态
-        if (method == "GET" && uri == "/adb_alive"){
+        if (method == "GET" && uri == "/adb_alive") {
             val response = newFixedLengthResponse(
-                Response.Status.OK, "application/json", """{"result":"${ADBService.adbIsReady}"}""".trimIndent()
+                Response.Status.OK,
+                "application/json",
+                """{"result":"${ADBService.adbIsReady}"}""".trimIndent()
             )
             response.addHeader("Access-Control-Allow-Origin", "*")
             return response
         }
 
         //执行shell脚本
-        if (method == "GET" && uri == "/one_click_shell"){
+        if (method == "GET" && uri == "/one_click_shell") {
             // 创建一个 Piped 流来异步返回数据
             val pipedInput = PipedInputStream()
             val pipedOutput = PipedOutputStream(pipedInput)
@@ -840,20 +878,30 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val writer = OutputStreamWriter(pipedOutput, Charsets.UTF_8)
                 try {
                     //复制依赖
-                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app,"shell/adb") ?: throw Exception("复制adb 到filesDir失败")
+                    val outFile_adb = KanoUtils.copyFileToFilesDir(context_app, "shell/adb")
+                        ?: throw Exception("复制adb 到filesDir失败")
 
                     outFile_adb.setExecutable(true)
 
                     fun click_stage1() {
-                        var Eng_result:Any? = null
+                        var Eng_result: Any? = null
                         // 唤醒屏幕
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP", context_app)
+                        runShellCommand(
+                            "${outFile_adb.absolutePath} -s localhost shell input keyevent KEYCODE_WAKEUP",
+                            context_app
+                        )
                         Thread.sleep(10)
                         // 解锁
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input keyevent 82", context_app)
+                        runShellCommand(
+                            "${outFile_adb.absolutePath} -s localhost shell input keyevent 82",
+                            context_app
+                        )
                         Thread.sleep(10)
                         // 点击一下，防止系统卡住
-                        runShellCommand("${outFile_adb.absolutePath} -s localhost shell input tap 0 0", context_app)
+                        runShellCommand(
+                            "${outFile_adb.absolutePath} -s localhost shell input tap 0 0",
+                            context_app
+                        )
                         Thread.sleep(10)
                         repeat(10) {
                             Eng_result = runShellCommand(
@@ -862,7 +910,7 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                             )
                             Log.d("kano_ZTE_LOG", "工程模式打开结果：$Eng_result")
                         }
-                        if(Eng_result == null) {
+                        if (Eng_result == null) {
                             throw Exception("工程模式活动打开失败")
                         }
                         Thread.sleep(400)
@@ -885,7 +933,10 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 click_stage1()
                                 return // 成功则直接退出
                             } catch (e: Exception) {
-                                Log.w("kano_ZTE_LOG", "click_stage1 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}")
+                                Log.w(
+                                    "kano_ZTE_LOG",
+                                    "click_stage1 执行失败，尝试第 ${retry + 1} 次，错误：${e.message}"
+                                )
                                 // 退回操作
                                 repeat(10) {
                                     runShellCommand(
@@ -910,7 +961,12 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                                 "\"", "\\\""
                             )
                         fillInputAndSend(
-                            escapedCommand, outFile_adb.absolutePath, context_app, "", listOf("START","开始"), useClipBoard = true
+                            escapedCommand,
+                            outFile_adb.absolutePath,
+                            context_app,
+                            "",
+                            listOf("START", "开始"),
+                            useClipBoard = true
                         )
                     } catch (e: Exception) {
                         jsonResult = """{"result":"执行失败"}"""
@@ -934,6 +990,84 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
         // 静态文件逻辑
         if (!session?.uri.orEmpty().startsWith("/api")) {
             return serveStaticFile(session?.uri ?: "/")
+        }
+
+        //短信转发参数存入-邮件
+        if (method == "POST" && uri == "/sms_forward_mail") {
+            return try {
+                val map = HashMap<String, String>()
+                session?.parseBody(map)
+                val body = map["postData"] ?: throw Exception("postData is null")
+                val json = JSONObject(body)
+
+                val smtpHost = json.optString("smtp_host", "").trim()
+                val smtpPort = json.optString("smtp_port", "465").trim()
+                val smtpTo = json.optString("smtp_to", "").trim()
+                val smtpUsername = json.optString("smtp_username", "").trim()
+                val smtpPassword = json.optString("smtp_password", "").trim()
+
+                if (smtpTo.isEmpty() || smtpHost.isEmpty() || smtpUsername.isEmpty() || smtpPassword.isEmpty()) {
+                    throw Exception("缺少必要参数")
+                }
+
+                // 存储到 SharedPreferences
+                val sharedPrefs =
+                    context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+                sharedPrefs.edit().apply {
+                    putString("kano_smtp_host", smtpHost)
+                    putString("kano_smtp_port", smtpPort)
+                    putString("kano_smtp_to", smtpTo)
+                    putString("kano_smtp_username", smtpUsername)
+                    putString("kano_smtp_password", smtpPassword)
+                    apply()
+                }
+
+                Log.d("kano_ZTE_LOG", "SMTP配置已保存：$smtpHost:$smtpPort [$smtpUsername]")
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"result":"success"}""".trimIndent()
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "SMTP配置出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"SMTP配置出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //读取smtp配置
+        if (method == "GET" && uri == "/sms_forward_mail") {
+            val sharedPrefs =
+                context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+
+            val smtpHost = sharedPrefs.getString("kano_smtp_host", "") ?: ""
+            val smtpPort = sharedPrefs.getString("kano_smtp_port", "") ?: ""
+            val smtpTo = sharedPrefs.getString("kano_smtp_to", "") ?: ""
+            val username = sharedPrefs.getString("kano_smtp_username", "") ?: ""
+            val password = sharedPrefs.getString("kano_smtp_password", "") ?: ""
+
+            val json = """
+                {
+                    "smtp_host": "$smtpHost",
+                    "smtp_port": "$smtpPort",
+                    "smtp_to": "$smtpTo",
+                    "smtp_username": "$username",
+                    "smtp_password": "$password"
+                }
+            """.trimIndent()
+
+            return newFixedLengthResponse(
+                Response.Status.OK,
+                "application/json",
+                json
+            )
         }
 
         // 获取查询参数

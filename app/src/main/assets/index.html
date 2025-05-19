@@ -53,6 +53,7 @@
                         <button id="LIGHT" class="btn" onclick="createToast('请登录','red')">开启指示灯</button>
                         <button id="SMB" class="btn" onclick="createToast('请登录','red')">开启SMB文件共享</button>
                         <button id="ROAM" class="btn" onclick="createToast('请登录','red')">开启网络漫游</button>
+                        <button id="smsForward" class="btn" onclick="createToast('请登录','red')">短信转发</button>
                         <button id="OTA" class="btn" onclick="createToast('请登录','red')">软件更新</button>
                         <select class="select" id="NET_TYPE" onchange="changeNetwork(event)">
                             <option value="WL_AND_5G">5G/4G/3G</option>
@@ -770,7 +771,8 @@
                     <div class="title" style="margin-bottom: 4px;">高级功能</div>
                     <div class="content" style="text-align: left;max-height: 500px;">
                         <div class="title" style="margin-bottom: 4px;font-size: 12px;">
-                            <b style="color: red;"><i>⚠️ 警告：此功能适合有一定动手能力或对设备了解较多的玩机用户使用。普通用户请勿轻易尝试，否则可能会导致设备异常、数据丢失或无法恢复的问题。</i></b>
+                            <b style="color: red;"><i>⚠️
+                                    警告：此功能适合有一定动手能力或对设备了解较多的玩机用户使用。普通用户请勿轻易尝试，否则可能会导致设备异常、数据丢失或无法恢复的问题。</i></b>
                         </div>
 
                         <div style="margin-top: 2px;margin-bottom: 10px;">
@@ -894,7 +896,7 @@
                         margin: 15px 0;
                         max-width: 400px;">
                         <div class="speedtest" style="font-size: 12px;" id="OTATextContent">正在检查更新...</div>
-                        <div class="speedtest" style="font-size: 12px;" id="ChangelogTextContent"></div>
+                        <div class="speedtest" style="font-size: 12px;margin-top: 10px;" id="ChangelogTextContent"></div>
                     </div>
                     <div class="btn" style="text-align: right;">
                         <button id="doUpdate">一键更新</button>
@@ -902,6 +904,62 @@
                         <button id="closeUpdateBtn" type="button"
                             onclick="closeModal('#updateSoftwareModal')">关闭</button>
                     </div>
+                </div>
+            </div>
+            <!-- 短信转发模态框 -->
+            <div class="mask" id="smsForwardModal" style="display: none">
+                <div class="modal">
+                    <div class="title">短信转发(Beta)</div>
+                    <div class="title" style="margin-top: 10px; margin-bottom: 0px;font-size: 12px;">
+                        <i>目前只有SMTP邮件转发形式，其他转发方式：comming s∞n（</i>
+                    </div>
+                    <form onsubmit="handleSmsForwardForm(event)" id="smsForwardForm">
+                        <div class="content" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">主机：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_host" name="smtp_host" type="text"
+                                        placeholder="SMTP地址"></label>
+                            </div>
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">端口：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_port" name="smtp_port" type="number"
+                                        placeholder="SMTP端口号"></label>
+                            </div>
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">用户：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_username" name="smtp_username"
+                                        type="text" placeholder="SMTP用户名"></label>
+                            </div>
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_password" name="smtp_password"
+                                        type="password" placeholder="SMTP密码"></label>
+                            </div>
+                            <div class="item" style="margin: 10px auto;">
+                                <label style="
+                                display: flex;
+                                align-items: center;
+                            ">发给：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_to" name="smtp_to"
+                                        type="email" placeholder="你要转发给谁呢？"></label>
+                            </div>
+                        </div>
+                        <div class="btn" style="text-align: right;">
+                            <button type="submit">提交</button>
+                            <button type="button" onclick="closeModal('#smsForwardModal')">关闭</button>
+                        </div>
+                    </form>
                 </div>
             </div>
             <!-- ❤️ -->

@@ -8,7 +8,6 @@ import jcifs.context.SingletonContext
 
 object SmbThrottledRunner {
     private val running = AtomicBoolean(false)
-    var gatewayIP : String = "192.168.0.1"
     private val PREF_GATEWAY_IP = "gateway_ip"
     private val PREFS_NAME = "kano_ZTE_store"
 
@@ -17,9 +16,10 @@ object SmbThrottledRunner {
             Log.d("kano_ZTE_LOG", "SMB 命令正在执行中，跳过")
             return
         }
-
         val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val gatewayIP = sharedPrefs.getString(PREF_GATEWAY_IP, "localhost:445")
+        val gatewayIP = sharedPrefs.getString(PREF_GATEWAY_IP, "192.168.0.1:445")
+        Log.d("kano_ZTE_LOG", "SMB 命令正在执行中,IP:${gatewayIP}，跳过")
+
         val host = gatewayIP?.substringBefore(":")
 
         running.set(true)

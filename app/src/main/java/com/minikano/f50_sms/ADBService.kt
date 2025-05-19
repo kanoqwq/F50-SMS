@@ -24,6 +24,17 @@ class ADBService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(1, createNotification())
+        Thread{
+            while (true){
+                try {
+                    SmsPoll.checkNewSmsAndSend(applicationContext)
+                }catch (e:Exception){
+                    Log.e("kano_ZTE_LOG", "读取短信时发生错误",e)
+                }
+                // 等待下一轮检测
+                Thread.sleep(5_000)
+            }
+        }.start()
 
         Thread{
             while (true){

@@ -317,6 +317,7 @@ function main_func() {
 
     //初始化所有按钮
     const initRenderMethod = async () => {
+        initSmsForwardModal()
         initChangePassData()
         adbQuery()
         loadTitle()
@@ -2961,8 +2962,8 @@ function main_func() {
 
     //安装更新
     const requestInstallUpdate = async () => {
-        const changelogTextContent = document.querySelector('#ChangelogTextContent')
-        changelogTextContent.innerHTML = ''
+        // const changelogTextContent = document.querySelector('#ChangelogTextContent')
+        // changelogTextContent.innerHTML = ''
         const OTATextContent = document.querySelector('#OTATextContent')
         try {
             OTATextContent.innerHTML = `<div>📦 安装中...</div>`
@@ -3009,8 +3010,8 @@ function main_func() {
         closeUpdateBtnEl && (closeUpdateBtnEl.style.backgroundColor = '#80808073')
 
         try {
-            const changelogTextContent = document.querySelector('#ChangelogTextContent')
-            changelogTextContent.innerHTML = ''
+            // const changelogTextContent = document.querySelector('#ChangelogTextContent')
+            // changelogTextContent.innerHTML = ''
             //开始请求下载更新
             await fetch(`${KANO_baseURL}/download_apk`, {
                 method: 'POST',
@@ -3231,8 +3232,88 @@ function main_func() {
         })
     }, 100);
 
+    //初始化短信转发模态框
+    const initSmsForwardModal = async () => {
+        const btn = document.querySelector('#smsForward')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        btn.style.backgroundColor = 'var(--dark-btn-color)'
+        btn.onclick = async () => {
+            showModal('#smsForwardModal')
+            //获取模态框数据
+            const data = await (await fetch(`${KANO_baseURL}/sms_forward_mail`, {
+                method: 'GET',
+                headers: common_headers
+            })).json()
+            console.log(data);
+
+            const { smtp_host, smtp_port, smtp_username, smtp_password, smtp_to } = data
+            const smtpHostEl = document.querySelector('#smtp_host')
+            const smtpPortEl = document.querySelector('#smtp_port')
+            const smtpToEl = document.querySelector('#smtp_to')
+            const smtpUsernameEl = document.querySelector('#smtp_username')
+            const smtpPasswordEl = document.querySelector('#smtp_password')
+            smtpHostEl.value = smtp_host || ''
+            smtpPortEl.value = smtp_port || ''
+            smtpUsernameEl.value = smtp_username || ''
+            smtpPasswordEl.value = smtp_password || ''
+            smtpToEl.value = smtp_to || ''
+        }
+    }
+    initSmsForwardModal()
+
+    const handleSmsForwardForm = async (e) => {
+        e.preventDefault()
+        const form = e.target
+        const formData = new FormData(form);
+        const smtp_host = formData.get('smtp_host')
+        const smtp_port = formData.get('smtp_port')
+        const smtp_to = formData.get('smtp_to')
+        const smtp_username = formData.get('smtp_username')
+        const smtp_password = formData.get('smtp_password')
+
+        if (!smtp_host || smtp_host.trim() == '') return createToast('请输入SMTP服务器地址', 'red')
+        if (!smtp_port || smtp_port.trim() == '') return createToast('请输入SMTP服务器端口', 'red')
+        if (!smtp_username || smtp_username.trim() == '') return createToast('请输入SMTP服务器用户名', 'red')
+        if (!smtp_password || smtp_password.trim() == '') return createToast('请输入SMTP服务器密码', 'red')
+        if (!smtp_to || smtp_to.trim() == '') return createToast('请输入收件人邮箱', 'red')
+
+        //请求
+        try {
+            const res = await (await fetch(`${KANO_baseURL}/sms_forward_mail`, {
+                method: 'POST',
+                headers: {
+                    ...common_headers,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    smtp_host: smtp_host.trim(),
+                    smtp_port: smtp_port.trim(),
+                    smtp_username: smtp_username.trim(),
+                    smtp_password: smtp_password.trim(),
+                    smtp_to: smtp_to.trim()
+                })
+            })).json()
+            if (res.result == 'success') {
+                createToast('设置成功！', 'green')
+                // form.reset()
+                // closeModal('#smsForwardModal')
+            } else {
+                throw '设置失败'
+            }
+        }
+        catch (e) {
+            createToast('请求失败', 'red')
+            return
+        }
+    }
+
     //挂载方法到window
     const methods = {
+        handleSmsForwardForm,
         handleShell,
         handleDownloadSoftwareLink,
         handleUpdateSoftware,

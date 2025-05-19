@@ -18,8 +18,7 @@ android {
         targetSdk = 33
         // 动态生成 versionCode 为 yyyyMMdd 格式
         versionCode = SimpleDateFormat("yyyyMMdd").format(Date()).toInt()
-        versionName = "2.8.8"
-
+        versionName = "2.8.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -42,6 +41,16 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE",
+                "META-INF/NOTICE.md",
+                "META-INF/NOTICE"
+            )
+        }
+    }
 
     android.applicationVariants.all {
         val variant = this
@@ -63,6 +72,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.android.mail)
+    implementation(libs.android.activation)
     implementation(libs.slf4j.nop)
     implementation(libs.nanohttpd)
     implementation(libs.jcifs.ng) {
