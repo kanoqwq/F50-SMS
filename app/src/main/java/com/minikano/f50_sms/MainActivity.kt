@@ -14,6 +14,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
     private val PREF_GATEWAY_IP = "gateway_ip"
     private val PREF_LOGIN_TOKEN = "login_token"
     private val PREF_TOKEN_ENABLED = "login_token_enabled"
+    private val PREF_AUTO_IP_ENABLED = "auto_ip_enabled"
     private val serverStatusLiveData = MutableLiveData<Boolean>()
     private val SERVER_INTENT = "com.minikano.f50_sms.SERVER_STATUS_CHANGED"
     private val UI_INTENT = "com.minikano.f50_sms.UI_STATUS_CHANGED"
@@ -117,6 +119,9 @@ class MainActivity : ComponentActivity() {
             Context.RECEIVER_EXPORTED
         )
 
+        //每次启动时需要检测IP变动，适应用户ip网段更改
+        adaptIPChange()
+
         setContent {
             val context = this@MainActivity
             val sharedPrefs = remember {
@@ -124,12 +129,11 @@ class MainActivity : ComponentActivity() {
             }
 
             val isServerRunning by serverStatusLiveData.observeAsState(false)
-
             var gatewayIp by remember {
                 mutableStateOf(
                     sharedPrefs.getString(
                         PREF_GATEWAY_IP,
-                        IPManager.getWifiGatewayIp(context) ?: "192.168.0.1:8080"
+                        "192.168.0.1:8080"
                     ) ?: "192.168.0.1:8080"
                 )
             }
@@ -146,6 +150,14 @@ class MainActivity : ComponentActivity() {
                 mutableStateOf(
                     sharedPrefs.getString(
                         PREF_TOKEN_ENABLED,
+                        true.toString()
+                    ) ?: true.toString()
+                )
+            }
+            var isAutoIpEnabled by remember {
+                mutableStateOf(
+                    sharedPrefs.getString(
+                        PREF_AUTO_IP_ENABLED,
                         true.toString()
                     ) ?: true.toString()
                 )
@@ -169,12 +181,22 @@ class MainActivity : ComponentActivity() {
                     versionName = versionName ?: "未知",
                     onLoginTokenChange = { loginToken = it },
                     isTokenEnabled = isTokenEnabled == true.toString(),
+                    isAutoCheckIp = isAutoIpEnabled == true.toString(),
                     onTokenEnableChange = { isTokenEnabled = it.toString() },
+                    onAutoCheckIpChange = {
+                        isAutoIpEnabled = it.toString()
+                        if (it.toString() == true.toString()) {
+                            adaptIPChange(true) { newIp ->
+                                gatewayIp = newIp // 更新 Compose 状态变量，UI 立即更新
+                            }
+                        }
+                    },
                     onConfirm = {
                         // 保存并重启服务器
                         sharedPrefs.edit().putString(PREF_GATEWAY_IP, gatewayIp).apply()
                         sharedPrefs.edit().putString(PREF_LOGIN_TOKEN, loginToken).apply()
                         sharedPrefs.edit().putString(PREF_TOKEN_ENABLED, isTokenEnabled).apply()
+                        sharedPrefs.edit().putString(PREF_AUTO_IP_ENABLED, isAutoIpEnabled).apply()
                         sendBroadcast(Intent(UI_INTENT).putExtra("status", true))
                         serverStatusLiveData.postValue(true)
                         Log.d("kano_ZTE_LOG", "user touched start btn")
@@ -185,6 +207,34 @@ class MainActivity : ComponentActivity() {
         }
 
         runADB()
+    }
+
+    private fun adaptIPChange(userTouched: Boolean = false, onIpChanged: ((String) -> Unit)? = null) {
+        val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val ip_add = prefs.getString(PREF_GATEWAY_IP, null)
+        val need_auto_ip = prefs.getString(PREF_AUTO_IP_ENABLED, true.toString())
+
+        if ((ip_add != null && need_auto_ip == "true") || userTouched) {
+            val currentIp = IPManager.getHotspotGatewayIp("8080")
+            if(currentIp == null){
+                Log.d("kano_ZTE_LOG", "自动检测IP网关失败")
+                Toast.makeText(applicationContext, "自动检测IP网关失败...", Toast.LENGTH_SHORT).show()
+                return
+            }
+            if ((currentIp != ip_add) || userTouched) {
+                if(userTouched){
+                    Log.d("kano_ZTE_LOG", "用户点击，自动检测IP网关")
+                    Toast.makeText(applicationContext, "自动检测IP网关~", Toast.LENGTH_SHORT).show()
+                }else{
+                    Log.d("kano_ZTE_LOG", "检测到本地IP网关变动，自动修改IP网关")
+                    Toast.makeText(applicationContext, "检测到本地IP网关变动，自动修改IP网关", Toast.LENGTH_SHORT).show()
+                }
+                prefs.edit().putString(PREF_GATEWAY_IP, currentIp).apply()
+                if (currentIp != null) {
+                    onIpChanged?.invoke(currentIp)
+                } // 通知 Compose 更新 UI
+            }
+        }
     }
 
     private fun runADB() {
@@ -243,7 +293,9 @@ fun InputUI(
     onConfirm: () -> Unit,
     versionName: String,
     isTokenEnabled: Boolean,
-    onTokenEnableChange: (Boolean) -> Unit
+    isAutoCheckIp: Boolean,
+    onTokenEnableChange: (Boolean) -> Unit,
+    onAutoCheckIpChange: (Boolean) -> Unit
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Card(
@@ -269,22 +321,10 @@ fun InputUI(
                     value = gatewayIp,
                     onValueChange = onGatewayIpChange,
                     label = { Text("路由器管理 IP") },
+                    enabled = !isAutoCheckIp,
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 开关：是否启用登录口令
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("启用登录口令")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Switch(
-                        checked = isTokenEnabled,
-                        onCheckedChange = onTokenEnableChange
-                    )
-                }
 
                 // 登录口令输入框
                 Spacer(modifier = Modifier.height(16.dp))
@@ -296,6 +336,26 @@ fun InputUI(
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation()
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                // 开关：是否启用登录口令
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("自动检测IP")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(
+                        checked = isAutoCheckIp,
+                        onCheckedChange = onAutoCheckIpChange
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("启用登录口令")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(
+                        checked = isTokenEnabled,
+                        onCheckedChange = onTokenEnableChange
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onConfirm) {
@@ -429,8 +489,18 @@ fun HyperlinkText(
         onClick = { offset ->
             annotatedText.getStringAnnotations("URL", offset, offset)
                 .firstOrNull()?.let {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.item))
-                    context.startActivity(intent)
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.item))
+                        val packageManager = context.packageManager
+                        if (intent.resolveActivity(packageManager) != null) {
+                            context.startActivity(intent)
+                        } else {
+                            Toast.makeText(context, "无法打开链接，系统未安装浏览器", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Toast.makeText(context, "打开链接失败", Toast.LENGTH_SHORT).show()
+                    }
                 }
         }
     )

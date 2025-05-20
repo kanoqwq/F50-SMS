@@ -17,7 +17,9 @@ object SmbThrottledRunner {
             return
         }
         val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
         val gatewayIP = sharedPrefs.getString(PREF_GATEWAY_IP, "192.168.0.1:445")
+
         Log.d("kano_ZTE_LOG", "SMB 命令正在执行中,IP:${gatewayIP}，跳过")
 
         val host = gatewayIP?.substringBefore(":")

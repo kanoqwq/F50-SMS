@@ -131,11 +131,15 @@ class WebService : Service() {
             "gateway_ip", "192.168.0.1:8080"
         ) ?: "192.168.0.1:8080"
         Thread {
-            webServer = WebServer(applicationContext, port, ip)
-            webServer?.start()
-            Log.d("kano_ZTE_LOG", "Web server started on http://0.0.0.0:$port")
-            Log.d("kano_ZTE_LOG", "Web server proxy IP: $ip")
-            sendStickyBroadcast(Intent(SERVER_INTENT).putExtra("status", true))
+            try {
+                webServer = WebServer(applicationContext, port, ip)
+                webServer?.start()
+                Log.d("kano_ZTE_LOG", "Web server started on http://0.0.0.0:$port")
+                Log.d("kano_ZTE_LOG", "Web server proxy IP: $ip")
+                sendStickyBroadcast(Intent(SERVER_INTENT).putExtra("status", true))
+            } catch (e:Exception){
+                Log.d("kano_ZTE_LOG", "Web server start Error:${e.message}")
+            }
         }.start()
     }
 
@@ -162,7 +166,7 @@ class WebService : Service() {
         val builder =
             NotificationCompat.Builder(this, channelId).setContentTitle("ZTE Tools Web Server")
                 .setContentText("服务正在后台运行中")
-                .setSmallIcon(R.drawable.ic_launcher_foreground) // 替换成你的图标
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setOngoing(true)
 
         return builder.build()
