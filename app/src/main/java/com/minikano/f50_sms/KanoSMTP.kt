@@ -1,5 +1,4 @@
 package com.minikano.f50_sms
-import android.content.Context
 import android.util.Log
 import java.util.*
 import javax.mail.*
