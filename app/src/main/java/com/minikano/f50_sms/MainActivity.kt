@@ -61,15 +61,11 @@ class MainActivity : ComponentActivity() {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        //短信权限
-        ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), 1)
 
         //请求通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -85,6 +81,18 @@ class MainActivity : ComponentActivity() {
                     arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
                     114514 // 请求码随便定义一个
                 )
+            }
+        }
+
+        //短信权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.READ_SMS
+                )
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), 1919810)
             }
         }
 
@@ -105,6 +113,9 @@ class MainActivity : ComponentActivity() {
 
         val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
 
+        //每次启动时需要检测IP变动，适应用户ip网段更改
+        adaptIPChange()
+
         //防止服务重复启动
         if (!isServiceRunning(WebService::class.java)) {
             startForegroundService(Intent(this, WebService::class.java))
@@ -118,9 +129,6 @@ class MainActivity : ComponentActivity() {
             serverStatusReceiver, IntentFilter(SERVER_INTENT),
             Context.RECEIVER_EXPORTED
         )
-
-        //每次启动时需要检测IP变动，适应用户ip网段更改
-        adaptIPChange()
 
         setContent {
             val context = this@MainActivity
