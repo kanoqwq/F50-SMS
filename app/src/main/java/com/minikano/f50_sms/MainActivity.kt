@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
         val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
 
         //每次启动时需要检测IP变动，适应用户ip网段更改
-        adaptIPChange()
+        KanoUtils.adaptIPChange(applicationContext)
 
         //防止服务重复启动
         if (!isServiceRunning(WebService::class.java)) {
@@ -171,7 +171,7 @@ class MainActivity : ComponentActivity() {
                     onAutoCheckIpChange = {
                         isAutoIpEnabled = it.toString()
                         if (it.toString() == true.toString()) {
-                            adaptIPChange(true) { newIp ->
+                            KanoUtils.adaptIPChange(context,true) { newIp ->
                                 gatewayIp = newIp // 更新 Compose 状态变量，UI 立即更新
                             }
                         }
@@ -238,38 +238,6 @@ class MainActivity : ComponentActivity() {
             } else {
                 Log.d("权限", "短信权限被拒绝")
             }
-        }
-    }
-    private fun adaptIPChange(userTouched: Boolean = false, onIpChanged: ((String) -> Unit)? = null) {
-        val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val ip_add = prefs.getString(PREF_GATEWAY_IP, null)
-        val need_auto_ip = prefs.getString(PREF_AUTO_IP_ENABLED, true.toString())
-        val currentIp = IPManager.getHotspotGatewayIp("8080")
-
-        if ((ip_add != null && need_auto_ip == "true") || userTouched) {
-            Log.d("kano_ZTE_LOG", "自动检测IP网关:$currentIp")
-            if(currentIp == null){
-                Log.d("kano_ZTE_LOG", "自动检测IP网关失败")
-                Toast.makeText(applicationContext, "自动检测IP网关失败...", Toast.LENGTH_SHORT).show()
-                return
-            }
-            if ((currentIp != ip_add) || userTouched) {
-                if(userTouched){
-                    Log.d("kano_ZTE_LOG", "用户点击，自动检测IP网关")
-                    Toast.makeText(applicationContext, "自动检测IP网关~", Toast.LENGTH_SHORT).show()
-                }else{
-                    Log.d("kano_ZTE_LOG", "检测到本地IP网关变动，自动修改IP网关为:$currentIp")
-                    Toast.makeText(applicationContext, "检测到本地IP网关变动，自动修改IP网关为:$currentIp", Toast.LENGTH_SHORT).show()
-                }
-                prefs.edit().putString(PREF_GATEWAY_IP, currentIp).apply()
-                if (currentIp != null) {
-                    onIpChanged?.invoke(currentIp)
-                } // 通知 Compose 更新 UI
-            }
-        }else if(need_auto_ip == "true"){
-            //说明可能是第一次启动
-            prefs.edit().putString(PREF_GATEWAY_IP, currentIp).apply()
-            Log.d("kano_ZTE_LOG", "可能是第一次启动，自动修改IP网关为:$currentIp")
         }
     }
 

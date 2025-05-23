@@ -105,10 +105,12 @@ class WebService : Service() {
         }.start()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
         startForegroundNotification()
+
+        //检测IP变动，适应用户ip网段更改
+        KanoUtils.adaptIPChange(applicationContext)
 
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(

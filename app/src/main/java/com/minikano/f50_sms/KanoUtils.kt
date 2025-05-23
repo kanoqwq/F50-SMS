@@ -13,6 +13,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Date
@@ -227,6 +228,39 @@ class KanoUtils {
             return matcher.findAll(command).map {
                 it.value.trim('"') // 去除引号
             }.toList()
+        }
+
+        fun adaptIPChange(context: Context,userTouched: Boolean = false, onIpChanged: ((String) -> Unit)? = null) {
+            val prefs = context.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+            val ip_add = prefs.getString("gateway_ip", null)
+            val need_auto_ip = prefs.getString("auto_ip_enabled", true.toString())
+            val currentIp = IPManager.getHotspotGatewayIp("8080")
+
+            if ((ip_add != null && need_auto_ip == "true") || userTouched) {
+                Log.d("kano_ZTE_LOG", "自动检测IP网关:$currentIp")
+                if(currentIp == null){
+                    Log.d("kano_ZTE_LOG", "自动检测IP网关失败")
+                    Toast.makeText(context, "自动检测IP网关失败...", Toast.LENGTH_SHORT).show()
+                    return
+                }
+                if ((currentIp != ip_add) || userTouched) {
+                    if(userTouched){
+                        Log.d("kano_ZTE_LOG", "用户点击，自动检测IP网关")
+                        Toast.makeText(context, "自动检测IP网关~", Toast.LENGTH_SHORT).show()
+                    }else{
+                        Log.d("kano_ZTE_LOG", "检测到本地IP网关变动，自动修改IP网关为:$currentIp")
+                        Toast.makeText(context, "检测到本地IP网关变动，自动修改IP网关为:$currentIp", Toast.LENGTH_SHORT).show()
+                    }
+                    prefs.edit().putString("gateway_ip", currentIp).apply()
+                    if (currentIp != null) {
+                        onIpChanged?.invoke(currentIp)
+                    } // 通知 Compose 更新 UI
+                }
+            }else if(need_auto_ip == "true"){
+                //说明可能是第一次启动
+                prefs.edit().putString("gateway_ip", currentIp).apply()
+                Log.d("kano_ZTE_LOG", "可能是第一次启动，自动修改IP网关为:$currentIp")
+            }
         }
 
         fun copyAssetToExternalStorage(context: Context, assetPath: String, skipIfExists: Boolean = false): File? {
