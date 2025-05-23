@@ -42,6 +42,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val REQUEST_CODE_NOTIFICATION = 114514
+        const val REQUEST_CODE_SMS = 1919810
+    }
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
@@ -67,34 +71,7 @@ class MainActivity : ComponentActivity() {
         // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        //请求通知权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                )
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    114514 // 请求码随便定义一个
-                )
-            }
-        }
-
-        //短信权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_SMS
-                )
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), 1919810)
-            }
-        }
+        requestNotificationPermissionIfNeeded()
 
         // 忽略电池优化权限
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -217,6 +194,55 @@ class MainActivity : ComponentActivity() {
         runADB()
     }
 
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_CODE_NOTIFICATION
+            )
+        } else {
+            requestSmsPermissionIfNeeded()
+        }
+    }
+
+    private fun requestSmsPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.READ_SMS),
+                REQUEST_CODE_SMS
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_CODE_NOTIFICATION) {
+            // 无论用户是否同意，继续请求短信权限
+            requestSmsPermissionIfNeeded()
+        }
+
+        // 你可以根据需要处理 SMS 请求的结果
+        if (requestCode == REQUEST_CODE_SMS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("权限", "短信权限已授予")
+            } else {
+                Log.d("权限", "短信权限被拒绝")
+            }
+        }
+    }
     private fun adaptIPChange(userTouched: Boolean = false, onIpChanged: ((String) -> Unit)? = null) {
         val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val ip_add = prefs.getString(PREF_GATEWAY_IP, null)

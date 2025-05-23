@@ -222,6 +222,13 @@ class KanoUtils {
             }
         }
 
+        fun parseShellArgs(command: String): List<String> {
+            val matcher = Regex("""(".*?"|\S+)""")
+            return matcher.findAll(command).map {
+                it.value.trim('"') // 去除引号
+            }.toList()
+        }
+
         fun copyAssetToExternalStorage(context: Context, assetPath: String, skipIfExists: Boolean = false): File? {
             val fileName = File(assetPath).name
             val outFile = File(context.getExternalFilesDir(null), fileName)

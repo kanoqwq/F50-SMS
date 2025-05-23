@@ -2930,7 +2930,6 @@ function main_func() {
     // 配置观察器_锁基站
     collapseGen("#collapse_lkcell_btn", "#collapse_lkcell", "collapse_lkcell")
 
-
     //软件更新
     const queryUpdate = async () => {
         if (!(await initRequestData())) {
@@ -3232,24 +3231,23 @@ function main_func() {
         })
     }, 100);
 
-    //初始化短信转发模态框
-    const initSmsForwardModal = async () => {
-        const btn = document.querySelector('#smsForward')
-        if (!(await initRequestData())) {
-            btn.onclick = () => createToast('请登录', 'red')
-            btn.style.backgroundColor = '#80808073'
-            return null
+
+    //初始化短信转发表单
+    const initSmsForward = async (needSwitch = true, method = undefined) => {
+        //判断是SMTP还是CURL转发
+        if (!method) {
+            const { sms_forward_method } = await (await fetchWithTimeout(`${KANO_baseURL}/sms_forward_method`, {
+                method: 'GET',
+                headers: common_headers
+            })).json()
+            method = sms_forward_method
         }
-        btn.style.backgroundColor = 'var(--dark-btn-color)'
-        btn.onclick = async () => {
-            showModal('#smsForwardModal')
+        if (method.toLowerCase() == 'smtp') {
             //获取模态框数据
             const data = await (await fetch(`${KANO_baseURL}/sms_forward_mail`, {
                 method: 'GET',
                 headers: common_headers
             })).json()
-            console.log(data);
-
             const { smtp_host, smtp_port, smtp_username, smtp_password, smtp_to } = data
             const smtpHostEl = document.querySelector('#smtp_host')
             const smtpPortEl = document.querySelector('#smtp_port')
@@ -3261,6 +3259,55 @@ function main_func() {
             smtpUsernameEl.value = smtp_username || ''
             smtpPasswordEl.value = smtp_password || ''
             smtpToEl.value = smtp_to || ''
+            needSwitch && switchSmsForwardMethodTab({ target: document.querySelector('#smtp_btn') })
+        } else if (method.toLowerCase() == 'curl') {
+            //获取模态框数据
+            const data = await (await fetch(`${KANO_baseURL}/sms_forward_curl`, {
+                method: 'GET',
+                headers: common_headers
+            })).json()
+            const { curl_text } = data
+            const curlTextEl = document.querySelector('#curl_text')
+            curlTextEl.value = curl_text || ''
+            needSwitch && switchSmsForwardMethodTab({ target: document.querySelector('#curl_btn') })
+        } else {
+            needSwitch && switchSmsForwardMethodTab({ target: document.querySelector('#smtp_btn') })
+        }
+    }
+
+    //切换短信转发方式
+    const switchSmsForwardMethod = (method) => {
+        const smsForwardForm = document.querySelector('#smsForwardForm')
+        const smsForwardCurlForm = document.querySelector('#smsForwardCurlForm')
+        switch (method.toLowerCase()) {
+            case 'smtp':
+                smsForwardForm.style.display = 'block'
+                smsForwardCurlForm.style.display = 'none'
+                break
+            case 'curl':
+                smsForwardForm.style.display = 'none'
+                smsForwardCurlForm.style.display = 'block'
+                break
+            default:
+                smsForwardForm.style.display = 'block'
+                smsForwardCurlForm.style.display = 'none'
+                break
+        }
+        initSmsForward(false, method)
+        return method.toLowerCase()
+    }
+    //初始化短信转发模态框
+    const initSmsForwardModal = async () => {
+        const btn = document.querySelector('#smsForward')
+        if (!(await initRequestData())) {
+            btn.onclick = () => createToast('请登录', 'red')
+            btn.style.backgroundColor = '#80808073'
+            return null
+        }
+        btn.style.backgroundColor = 'var(--dark-btn-color)'
+        btn.onclick = () => {
+            showModal('#smsForwardModal')
+            initSmsForward()
         }
     }
     initSmsForwardModal()
@@ -3298,11 +3345,15 @@ function main_func() {
                 })
             })).json()
             if (res.result == 'success') {
-                createToast('设置成功！', 'green')
+                createToast('设置成功,系统会向目标邮箱发送一个测试消息，请注意查收~', 'green')
                 // form.reset()
                 // closeModal('#smsForwardModal')
             } else {
-                throw '设置失败'
+                if (res.error) {
+                    createToast(res.error, 'red')
+                } else {
+                    createToast('设置失败', 'red')
+                }
             }
         }
         catch (e) {
@@ -3311,8 +3362,89 @@ function main_func() {
         }
     }
 
+    const handleSmsForwardCurlForm = async (e) => {
+        e.preventDefault()
+        const form = e.target
+        const formData = new FormData(form);
+        const curl_text = formData.get('curl_text')
+
+        if (!curl_text || curl_text.trim() == '') return createToast('请输入curl请求！', 'red')
+
+        //请求
+        try {
+            const res = await (await fetch(`${KANO_baseURL}/sms_forward_curl`, {
+                method: 'POST',
+                headers: {
+                    ...common_headers,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    curl_text: curl_text.trim(),
+                })
+            })).json()
+            if (res.result == 'success') {
+                createToast('设置成功,系统会向目标地址发送一个测试消息，请注意查收~', 'green')
+                // form.reset()
+                // closeModal('#smsForwardModal')
+            } else {
+                if (res.error) {
+                    createToast(res.error, 'red')
+                } else {
+                    createToast('设置失败', 'red')
+                }
+            }
+        }
+        catch (e) {
+            createToast('请求失败', 'red')
+            return
+        }
+    }
+
+    //切换转发方式
+    const switchSmsForwardMethodTab = (e) => {
+        const target = e.target
+        if (target.tagName != 'BUTTON') return
+        const children = target.parentNode?.children
+        if (!children) return
+        Array.from(children).forEach((item) => {
+            if (item != target) {
+                item.classList.remove('active')
+            }
+        })
+        target.classList.add('active')
+        const method = target.dataset.method
+        switchSmsForwardMethod(method)
+    }
+
+    // 配置观察器_短信转发开关
+    collapseGen("#collapse_smsforward_btn", "#collapse_smsforward", "collapse_smsforward", async (status) => {
+        let enabled = undefined
+        status == 'open' ? enabled = '1' : enabled = '0'
+        if (enabled != undefined) {
+            try {
+                //开启总开关
+                await (await fetch(`${KANO_baseURL}/sms_forward_enabled?enable=${enabled}`, {
+                    method: 'post',
+                    headers: {
+                        ...common_headers,
+                        'Content-Type': 'application/json'
+                    }
+                })).json()
+                createToast(`短信转发${status == 'open' ? '已启用' : '已禁用'}`, 'green')
+                console.log(status);
+            } catch (e) {
+                createToast('操作失败！', 'red')
+            }
+        }
+    })
+
+    //初始化短信转发开关
+
+
     //挂载方法到window
     const methods = {
+        switchSmsForwardMethodTab,
+        handleSmsForwardCurlForm,
         handleSmsForwardForm,
         handleShell,
         handleDownloadSoftwareLink,

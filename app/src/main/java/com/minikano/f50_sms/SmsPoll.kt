@@ -3,8 +3,6 @@ package com.minikano.f50_sms
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import java.net.HttpURLConnection
-import java.net.URL
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -29,44 +27,49 @@ object SmsPoll {
             Log.d("kano_ZTE_LOG", "收到新短信: ${sms.address} - ${sms.body}")
             lastSms = sms
             // 在这里做转发处理
-            forwardByEmail(context)
+            val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val sms_forward_method = sharedPrefs.getString("kano_sms_forward_method", "") ?: ""
+            if(sms_forward_method =="SMTP") {
+                forwardByEmail(lastSms, context)
+            }
+            else if(sms_forward_method == "CURL"){
+                forwardSmsByCurl(lastSms,context)
+            }
         } else {
             Log.d("kano_ZTE_LOG", "无新短信，短信是否${minute}分钟内：$withinMin,短信是否为新：$isNew")
         }
     }
 
-    //TODO：通过API转发
-    private fun forwardSmsToServer(address: String, body: String) {
-        Thread {
-            try {
-                val url = URL("https://your-server.com/api/sms")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.doOutput = true
-                conn.setRequestProperty("Content-Type", "application/json")
+    //通过curl转发
+    fun forwardSmsByCurl(sms_data:SmsInfo?,context: Context) {
+        if (sms_data == null) return
+        val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-                val json = """
-                {
-                    "sender": "${address.replace("\"", "\\\"")}",
-                    "message": "${body.replace("\"", "\\\"")}"
-                }
-                """.trimIndent()
+        val originalCurl = sharedPrefs.getString("kano_sms_curl", null)
+        if (originalCurl.isNullOrEmpty()) {
+            Log.e("kano_ZTE_LOG", "curl 配置错误：kano_sms_curl 为空")
+            return
+        }
 
-                conn.outputStream.use { os ->
-                    os.write(json.toByteArray())
-                }
+        Log.d("kano_ZTE_LOG", "开始转发短信...（CURL）")
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.systemDefault())
+        val smsText = """${sms_data!!.body.trimStart()}
+        📩 来自：${sms_data!!.address}
+        ⏰ 时间：${formatter.format(Instant.ofEpochMilli(sms_data!!.timestamp))}
+        """.trimIndent()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
 
-                val responseCode = conn.responseCode
-                Log.d("kano_ZTE_LOG", "转发完成，状态码: $responseCode")
-            } catch (e: Exception) {
-                Log.e("kano_ZTE_LOG", "转发失败", e)
-            }
-        }.start()
+        //替换并发送
+        val replacedCurl = originalCurl.replace("{{sms}}", smsText)
+        KanoCURL(context).send(replacedCurl)
     }
 
     //通过SMTP邮件转发
-    private fun forwardByEmail(context: Context) {
-        if (lastSms == null) return
+    fun forwardByEmail(sms_data:SmsInfo?,context: Context) {
+        if (sms_data == null) return
         val sharedPrefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
         val smtpHost = sharedPrefs.getString("kano_smtp_host", null)
@@ -101,19 +104,19 @@ object SmsPoll {
 
         val smtpClient = KanoSMTP(smtpHost, smtpPort, username, password)
 
-        Log.d("kano_ZTE_LOG", "开始转发短信...")
+        Log.d("kano_ZTE_LOG", "开始转发短信...(SMTP)")
 
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.systemDefault())
-        val previewText = lastSms!!.body.trimStart().let {
+        val previewText = sms_data!!.body.trimStart().let {
             if (it.length > 37) it.take(37) + "…" else it
         }
         smtpClient.sendEmail(
             to = smtpTo,
             subject = previewText,
-            body = """${lastSms!!.body.trimStart()}
-            📩 <b>来自：</b>${lastSms!!.address}
-            ⏰ <b>时间：</b>${formatter.format(Instant.ofEpochMilli(lastSms!!.timestamp))}
+            body = """${sms_data!!.body.trimStart()}
+            📩 <b>来自：</b>${sms_data!!.address}
+            ⏰ <b>时间：</b>${formatter.format(Instant.ofEpochMilli(sms_data!!.timestamp))}
             <div style="text-align=center"><i>Powered by <a href="">UFI-TOOLS</a></i></div>
             """.trimIndent()
         )

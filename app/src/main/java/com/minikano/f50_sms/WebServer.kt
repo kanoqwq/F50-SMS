@@ -987,9 +987,23 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
             return response
         }
 
-        // 静态文件逻辑
-        if (!session?.uri.orEmpty().startsWith("/api")) {
-            return serveStaticFile(session?.uri ?: "/")
+        //获取短信转发方式
+        if (method == "GET" && uri == "/sms_forward_method"){
+            val sharedPrefs =
+                context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+            val sms_forward_method = sharedPrefs.getString("kano_sms_forward_method", "") ?: ""
+            val json = """
+                {
+                    "sms_forward_method": "${sms_forward_method.replace("\"","\\\"")}"
+                }
+            """.trimIndent()
+
+            return newFixedLengthResponse(
+                Response.Status.OK,
+                "application/json",
+                json
+            )
+
         }
 
         //短信转发参数存入-邮件
@@ -1014,6 +1028,8 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 val sharedPrefs =
                     context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
                 sharedPrefs.edit().apply {
+                    //切换到smtp的配置
+                    putString("kano_sms_forward_method", "SMTP")
                     putString("kano_smtp_host", smtpHost)
                     putString("kano_smtp_port", smtpPort)
                     putString("kano_smtp_to", smtpTo)
@@ -1023,6 +1039,11 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 }
 
                 Log.d("kano_ZTE_LOG", "SMTP配置已保存：$smtpHost:$smtpPort [$smtpUsername]")
+
+                //发送测试消息
+                val test_msg = SmsInfo("1010721", "UFI-TOOLS TEST消息", 0)
+                SmsPoll.forwardByEmail(test_msg,context_app)
+
                 val response = newFixedLengthResponse(
                     Response.Status.OK,
                     "application/json",
@@ -1068,6 +1089,139 @@ class WebServer(context: Context, port: Int, gatewayIp: String) : NanoHTTPD(port
                 "application/json",
                 json
             )
+        }
+
+        //短信转发参数存入-curl
+        if (method == "POST" && uri == "/sms_forward_curl") {
+            return try {
+                val map = HashMap<String, String>()
+                session?.parseBody(map)
+                val body = map["postData"] ?: throw Exception("postData is null")
+                val json = JSONObject(body)
+
+                // 替换字段值
+                val originalCurl = json.getString("curl_text")
+
+                Log.d("kano_ZTE_LOG", "是否找到{{sms}}：${originalCurl.contains("{{sms}}")}")
+                Log.d("kano_ZTE_LOG", "curl配置：${originalCurl}")
+
+                if(!originalCurl.contains("{{sms}}")) throw Exception("没有找到“{{sms}}”占位符")
+
+                //发送测试消息
+                val test_msg = SmsInfo("1010721", "UFI-TOOLS TEST消息", 0)
+                SmsPoll.forwardSmsByCurl(test_msg,context_app)
+
+                // 存储到 SharedPreferences
+                val sharedPrefs =
+                    context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+                sharedPrefs.edit().apply {
+                    //切换到curl的配置
+                    putString("kano_sms_forward_method", "CURL")
+                    putString("kano_sms_curl", originalCurl)
+                    apply()
+                }
+
+                json.put("curl_text", originalCurl)
+
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"result":"success"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "curl配置出错：${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    "application/json",
+                    """{"error":"curl配置出错：${e.message}"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //读取短信转发curl配置
+        if (method == "GET" && uri == "/sms_forward_curl") {
+            val sharedPrefs =
+                context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+
+            val curl_text = sharedPrefs.getString("kano_sms_curl", "") ?: ""
+
+            val json = """
+                {
+                    "curl_text": "${curl_text.replace("\"","\\\"")}"
+                }
+            """.trimIndent()
+
+            return newFixedLengthResponse(
+                Response.Status.OK,
+                "application/json",
+                json
+            )
+        }
+
+        //短信转发总开关
+        if (method == "POST" && uri == "/sms_forward_enabled"){
+            return try {
+                // 解析 query 参数
+                val rawParams = session?.parameters ?: throw Exception("缺少 query 参数")
+                val enable_arr =
+                    rawParams["enable"] ?: throw Exception("qeury 缺少 enable 参数")
+                val enable = enable_arr[0]
+                Log.d("kano_ZTE_LOG", "短信转发 enable 传入参数：${enable}")
+                val sharedPrefs =
+                    context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+                sharedPrefs.edit().apply {
+                    putString("kano_sms_forward_enabled", enable)
+                    apply()
+                }
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"result":"success"}""".trimIndent()
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "请求出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR, "application/json", """{"error":"请求出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        //获取短信转发状态
+        if (method == "GET" && uri == "/sms_forward_enabled"){
+            return try {
+                // 解析 query 参数
+                val sharedPrefs =
+                    context_app.getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+                val str =  sharedPrefs.getString("kano_sms_forward_enabled","0")
+                val response = newFixedLengthResponse(
+                    Response.Status.OK,
+                    "application/json",
+                    """{"enabled":"$str"}""".trimIndent()
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            } catch (e: Exception) {
+                Log.d("kano_ZTE_LOG", "请求出错： ${e.message}")
+                val response = newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR, "application/json", """{"error":"请求出错"}"""
+                )
+                response.addHeader("Access-Control-Allow-Origin", "*")
+                response
+            }
+        }
+
+        // 静态文件逻辑
+        if (!session?.uri.orEmpty().startsWith("/api")) {
+            return serveStaticFile(session?.uri ?: "/")
         }
 
         // 获取查询参数

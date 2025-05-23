@@ -37,7 +37,8 @@ body {
     /* background-image: url(https://t.alcy.cc/ycy); */
     background-position: center;
     background-attachment: fixed;
-    color: var(--dark-text-color)
+    color: var(--dark-text-color);
+    word-break: break-all;
 }
 
 .bg {
@@ -56,10 +57,23 @@ a {
 
 input::placeholder {
     color: var(--dark-text-color);
+    opacity: 0.7;
 }
 
 .h100 {
     height: 100%;
+}
+
+textarea {
+    background-color: var(--dark-bgi-color);
+    color: var(--dark-text-color);
+    outline: none;
+    resize: vertical;
+}
+
+textarea::placeholder {
+    color: var(--dark-text-color);
+    opacity: 0.7;
 }
 
 .container {
@@ -615,6 +629,10 @@ li.dragging {
     transform: translateX(-96%);
     background-color: #fff !important;
     opacity: .7;
+}
+
+.active {
+    background-color: rgba(1, 138, 216, 0.69);
 }
 
 .Switch .outer input {
