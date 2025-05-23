@@ -42,6 +42,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val REQUEST_CODE_NOTIFICATION = 114514
+        const val REQUEST_CODE_SMS = 1919810
+    }
     private val port = 2333
     private val PREFS_NAME = "kano_ZTE_store"
     private val PREF_GATEWAY_IP = "gateway_ip"
@@ -67,34 +71,7 @@ class MainActivity : ComponentActivity() {
         // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        //请求通知权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                )
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    114514 // 请求码随便定义一个
-                )
-            }
-        }
-
-        //短信权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_SMS
-                )
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.READ_SMS), 1919810)
-            }
-        }
+        requestNotificationPermissionIfNeeded()
 
         // 忽略电池优化权限
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -114,7 +91,7 @@ class MainActivity : ComponentActivity() {
         val versionName = this.packageManager.getPackageInfo(this.packageName, 0).versionName
 
         //每次启动时需要检测IP变动，适应用户ip网段更改
-        adaptIPChange()
+        KanoUtils.adaptIPChange(applicationContext)
 
         //防止服务重复启动
         if (!isServiceRunning(WebService::class.java)) {
@@ -194,7 +171,7 @@ class MainActivity : ComponentActivity() {
                     onAutoCheckIpChange = {
                         isAutoIpEnabled = it.toString()
                         if (it.toString() == true.toString()) {
-                            adaptIPChange(true) { newIp ->
+                            KanoUtils.adaptIPChange(context,true) { newIp ->
                                 gatewayIp = newIp // 更新 Compose 状态变量，UI 立即更新
                             }
                         }
@@ -217,30 +194,49 @@ class MainActivity : ComponentActivity() {
         runADB()
     }
 
-    private fun adaptIPChange(userTouched: Boolean = false, onIpChanged: ((String) -> Unit)? = null) {
-        val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val ip_add = prefs.getString(PREF_GATEWAY_IP, null)
-        val need_auto_ip = prefs.getString(PREF_AUTO_IP_ENABLED, true.toString())
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_CODE_NOTIFICATION
+            )
+        } else {
+            requestSmsPermissionIfNeeded()
+        }
+    }
 
-        if ((ip_add != null && need_auto_ip == "true") || userTouched) {
-            val currentIp = IPManager.getHotspotGatewayIp("8080")
-            if(currentIp == null){
-                Log.d("kano_ZTE_LOG", "自动检测IP网关失败")
-                Toast.makeText(applicationContext, "自动检测IP网关失败...", Toast.LENGTH_SHORT).show()
-                return
-            }
-            if ((currentIp != ip_add) || userTouched) {
-                if(userTouched){
-                    Log.d("kano_ZTE_LOG", "用户点击，自动检测IP网关")
-                    Toast.makeText(applicationContext, "自动检测IP网关~", Toast.LENGTH_SHORT).show()
-                }else{
-                    Log.d("kano_ZTE_LOG", "检测到本地IP网关变动，自动修改IP网关")
-                    Toast.makeText(applicationContext, "检测到本地IP网关变动，自动修改IP网关", Toast.LENGTH_SHORT).show()
-                }
-                prefs.edit().putString(PREF_GATEWAY_IP, currentIp).apply()
-                if (currentIp != null) {
-                    onIpChanged?.invoke(currentIp)
-                } // 通知 Compose 更新 UI
+    private fun requestSmsPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.READ_SMS),
+                REQUEST_CODE_SMS
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_CODE_NOTIFICATION) {
+            requestSmsPermissionIfNeeded()
+        }
+        if (requestCode == REQUEST_CODE_SMS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("权限", "短信权限已授予")
+            } else {
+                Log.d("权限", "短信权限被拒绝")
             }
         }
     }

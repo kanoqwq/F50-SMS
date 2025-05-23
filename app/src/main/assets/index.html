@@ -896,7 +896,8 @@
                         margin: 15px 0;
                         max-width: 400px;">
                         <div class="speedtest" style="font-size: 12px;" id="OTATextContent">正在检查更新...</div>
-                        <div class="speedtest" style="font-size: 12px;margin-top: 10px;" id="ChangelogTextContent"></div>
+                        <div class="speedtest" style="font-size: 12px;margin-top: 10px;" id="ChangelogTextContent">
+                        </div>
                     </div>
                     <div class="btn" style="text-align: right;">
                         <button id="doUpdate">一键更新</button>
@@ -909,57 +910,100 @@
             <!-- 短信转发模态框 -->
             <div class="mask" id="smsForwardModal" style="display: none">
                 <div class="modal">
-                    <div class="title">短信转发(Beta)</div>
-                    <div class="title" style="margin-top: 10px; margin-bottom: 0px;font-size: 12px;">
-                        <i>目前只有SMTP邮件转发形式，其他转发方式：comming s∞n（</i>
+                    <div class="title" style="justify-content: space-between;"><span>短信转发(Beta)</span> <button
+                            type="button" onclick="closeModal('#smsForwardModal')">关闭</button></div>
+                    总开关:<div style="margin-top: 8px;display: inline-block;" id="collapse_smsforward_btn"></div>
+                    <!-- tab -->
+                    <div class="tabs" onclick="switchSmsForwardMethodTab(event)"
+                        style="width: 100%;display: flex;margin-top: 10px;gap: 10px;">
+                        <button id="smtp_btn" data-method="smtp" id="smtpForwardBtn" style="flex: 1;"
+                            class="tab-btn">SMTP方式</button>
+                        <button id="curl_btn" data-method="curl" id="curlForwardBtn" style="flex: 1;"
+                            class="tab-btn">CURL方式</button>
                     </div>
-                    <form onsubmit="handleSmsForwardForm(event)" id="smsForwardForm">
-                        <div class="content" style="
+                    <div id="collapse_smsforward" class="collapse">
+                        <div class="collapse_box">
+                            <!-- smtp转发 -->
+                            <form onsubmit="handleSmsForwardForm(event)" id="smsForwardForm">
+                                <div class="content" style="
                         overflow-y: scroll;
                         padding: 15px;
                         width: 66vw;
                         max-width: 400px;">
-                            <div class="item" style="margin: 10px auto;">
-                                <label style="
+                                    <div class="title" style="font-size: 12px;">
+                                        接收方邮箱也可以是转发方邮箱
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
-                            ">主机：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_host" name="smtp_host" type="text"
-                                        placeholder="SMTP地址"></label>
-                            </div>
-                            <div class="item" style="margin: 10px auto;">
-                                <label style="
+                            ">主机：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_host" name="smtp_host"
+                                                type="text" placeholder="SMTP地址"></label>
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
-                            ">端口：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_port" name="smtp_port" type="number"
-                                        placeholder="SMTP端口号"></label>
-                            </div>
-                            <div class="item" style="margin: 10px auto;">
-                                <label style="
+                            ">端口：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_port" name="smtp_port"
+                                                type="number" placeholder="SMTP端口号"></label>
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
-                            ">用户：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_username" name="smtp_username"
-                                        type="text" placeholder="SMTP用户名"></label>
-                            </div>
-                            <div class="item" style="margin: 10px auto;">
-                                <label style="
+                            ">用户：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_username"
+                                                name="smtp_username" type="text" placeholder="SMTP用户名"></label>
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
-                            ">密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_password" name="smtp_password"
-                                        type="password" placeholder="SMTP密码"></label>
-                            </div>
-                            <div class="item" style="margin: 10px auto;">
-                                <label style="
+                            ">密码：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_password"
+                                                name="smtp_password" type="password" placeholder="SMTP密码"></label>
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <label style="
                                 display: flex;
                                 align-items: center;
                             ">发给：<input style="flex: 1;padding: 4px 6px;width: 100%;" id="smtp_to" name="smtp_to"
-                                        type="email" placeholder="你要转发给谁呢？"></label>
-                            </div>
+                                                type="email" placeholder="你要转发给谁呢？"></label>
+                                    </div>
+                                </div>
+                                <div class="btn" style="text-align: right;">
+                                    <button type="submit">提交</button>
+                                    <button type="button" onclick="closeModal('#smsForwardModal')">关闭</button>
+                                </div>
+                            </form>
+                            <!-- curl请求转发 -->
+                            <form onsubmit="handleSmsForwardCurlForm(event)" id="smsForwardCurlForm"
+                                style="display: none;">
+                                <div class="content" style="
+                        overflow-y: scroll;
+                        padding: 15px;
+                        width: 66vw;
+                        max-width: 400px;">
+                                    <div class="title" style="font-size: 12px;">
+                                        短信内容占位符为：{{sms}}
+                                    </div>
+                                    <div class="item" style="margin: 10px auto;">
+                                        <div style="
+                                display: flex;
+                                align-items: center;
+                            ">
+                                            <textarea rows="10" style="flex: 1;padding: 4px 6px;width: 100%;"
+                                                id="curl_text" name="curl_text" type="text"
+                                                placeholder="curl 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx'"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="btn" style="text-align: right;">
+                                    <button type="submit">提交</button>
+                                    <button type="button" onclick="closeModal('#smsForwardModal')">关闭</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="btn" style="text-align: right;">
-                            <button type="submit">提交</button>
-                            <button type="button" onclick="closeModal('#smsForwardModal')">关闭</button>
-                        </div>
-                    </form>
+                    </div>
+
                 </div>
             </div>
             <!-- ❤️ -->

@@ -326,7 +326,7 @@ const createCollapseObserver = (boxEl = null) => {
     }
 }
 
-const collapseGen = (btn_id, collapse_id, storName) => {
+const collapseGen = (btn_id, collapse_id, storName, callback = undefined) => {
     const { el: collapseMenuEl } = createCollapseObserver(document.querySelector(collapse_id))
     collapseMenuEl.dataset.name = localStorage.getItem(storName) || 'open'
     const collapseBtn = document.querySelector(btn_id)
@@ -336,6 +336,7 @@ const collapseGen = (btn_id, collapse_id, storName) => {
         onChange: (newVal) => {
             if (collapseMenuEl && collapseMenuEl.dataset) {
                 collapseMenuEl.dataset.name = newVal ? 'open' : 'close'
+                callback?.(newVal ? 'open' : 'close')
                 localStorage.setItem(storName, collapseMenuEl.dataset.name)
             }
         }

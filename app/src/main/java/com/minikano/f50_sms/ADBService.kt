@@ -4,18 +4,23 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
+import android.os.HandlerThread
 import androidx.core.app.NotificationCompat
 import com.minikano.f50_sms.ShellKano.Companion.executeShellFromAssetsSubfolderWithArgs
+import java.util.concurrent.Executors
 
 class ADBService : Service() {
-    private val handler = Handler(Looper.getMainLooper())
     private lateinit var runnable: Runnable
+    private lateinit var handlerThread: HandlerThread
+    private lateinit var handler: Handler
+    private val adbExecutor = Executors.newSingleThreadExecutor()
+
 
     companion object {
         @Volatile
@@ -23,44 +28,56 @@ class ADBService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(1, createNotification())
-        Thread{
-            while (true){
+        startForeground(1234599, createNotification())
+        handlerThread = HandlerThread("KanoBackgroundHandler")
+        handlerThread.start()
+        handler = Handler(handlerThread.looper)
+
+        startAdbKeepAliveTask(applicationContext)
+        val executor = Executors.newFixedThreadPool(2)
+        executor.execute(runnableSMS)
+        executor.execute(runnableSMB)
+
+        return START_STICKY
+    }
+
+    private val runnableSMS = object : Runnable {
+        override fun run() {
+            val sharedPrefs = getSharedPreferences("kano_ZTE_store", Context.MODE_PRIVATE)
+            if (sharedPrefs.getString("kano_sms_forward_enabled", "0") == "1") {
                 try {
                     SmsPoll.checkNewSmsAndSend(applicationContext)
-                }catch (e:Exception){
-                    Log.e("kano_ZTE_LOG", "读取短信时发生错误",e)
+                } catch (e: Exception) {
+                    Log.e("kano_ZTE_LOG", "读取短信时发生错误", e)
                 }
-                // 等待下一轮检测
-                Thread.sleep(5_000)
             }
-        }.start()
+            handler.postDelayed(this, 5000)
+        }
+    }
 
-        Thread{
-            while (true){
-                try {
-                    //激活SMB指令
-                    Log.d("kano_ZTE_LOG", "激活SMB内置脚本中...")
-                    SmbThrottledRunner.runOnceInThread(applicationContext)
-                }catch (e:Exception){
-                    Log.e("kano_ZTE_LOG", "激活SMB内置脚本错误")
-                }
-                // 等待下一轮检测
-                Thread.sleep(10_000)
+    private val runnableSMB = object : Runnable {
+        override fun run() {
+            try {
+                Log.d("kano_ZTE_LOG", "激活SMB内置脚本中...")
+                SmbThrottledRunner.runOnceInThread(applicationContext)
+            } catch (e: Exception) {
+                Log.e("kano_ZTE_LOG", "激活SMB内置脚本错误")
             }
-        }.start()
+            handler.postDelayed(this, 15_000)
+        }
+    }
 
-        Thread {
+    private fun startAdbKeepAliveTask(context: Context) {
+        adbExecutor.execute {
             try {
                 val adbPath = "shell/adb"
 
-                while (true) {
+                while (!Thread.currentThread().isInterrupted) {
                     Log.d("kano_ZTE_LOG", "保活ADB服务中...")
-                    var result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices",
-                        onTimeout = {
-                            ShellKano.killProcessByName("adb")
-                        })
-                    Log.d("kano_ZTE_LOG", "adb devices 执行状态：$result")
+
+                    var result = executeShellFromAssetsSubfolderWithArgs(context, adbPath, "devices") {
+                        ShellKano.killProcessByName("adb")
+                    }
 
                     if (result?.contains("localhost:5555\tdevice") == true) {
                         Log.d("kano_ZTE_LOG", "adb存活，无需启动")
@@ -69,31 +86,28 @@ class ADBService : Service() {
                         Log.w("kano_ZTE_LOG", "adb无设备或已退出，尝试启动")
                         adbIsReady = false
 
-                        // 重启 ADB 服务
                         ShellKano.killProcessByName("adb")
-//                        executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "kill-server", logTag = "kill-server")
                         Thread.sleep(1000)
-                        executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "connect", "localhost",
-                            onTimeout = {
-                                ShellKano.killProcessByName("adb")
-                            })
 
-                        // 等待最多 5 秒，看设备是否连接成功
+                        executeShellFromAssetsSubfolderWithArgs(context, adbPath, "connect", "localhost") {
+                            ShellKano.killProcessByName("adb")
+                        }
+
                         val maxWaitMs = 5_000
                         val interval = 500
                         var waited = 0
 
                         while (waited < maxWaitMs) {
-                            result = executeShellFromAssetsSubfolderWithArgs(applicationContext, adbPath, "devices",
-                                onTimeout = {
+                            result = executeShellFromAssetsSubfolderWithArgs(context, adbPath, "devices") {
                                 ShellKano.killProcessByName("adb")
-                            })
+                            }
+
                             if (result?.contains("localhost:5555\tdevice") == true) {
                                 Log.d("kano_ZTE_LOG", "ADB连接成功: $result")
                                 adbIsReady = true
                                 break
                             } else {
-                                Log.d("kano_ZTE_LOG", "未等待到ADB成功结果：$result")
+                                Log.d("kano_ZTE_LOG", "ADB未连接: $result")
                             }
 
                             Thread.sleep(interval.toLong())
@@ -101,19 +115,18 @@ class ADBService : Service() {
                         }
                     }
 
-                    // 等待下一轮检测
+                    // 每 11 秒轮询一次
                     Thread.sleep(11_000)
                 }
             } catch (e: Exception) {
-                Log.e("kano_ZTE_LOG", "ADB 保活线程异常: ${e.message}")
+                Log.e("kano_ZTE_LOG", "ADB 保活线程异常", e)
             }
-        }.start()
-
-        return START_STICKY
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        handlerThread.quitSafely()
         handler.removeCallbacks(runnable)
     }
 
